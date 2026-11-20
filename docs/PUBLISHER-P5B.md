@@ -75,3 +75,27 @@ Only same-origin browser POST is accepted. Every API endpoint verifies the Googl
 ## Tests
 
 Run \`npm test\`, or only publisher tests with \`npm run publisher:test\`. Tests use generated local cryptographic keys and mocked Google/GitHub responses; they do not call real APIs, and do not need secrets.
+
+
+## Deployment workflow: strictly manual and exact-SHA checked
+
+Workflow: \`.github/workflows/deploy-publisher-dev.yml\`, **workflow_dispatch only** on reviewed \`main\`. It cannot be triggered by PR creation, merges, Cron, or main pushes. The job uses the \`techblogtip-publisher-dev\` environment and deploys only the separate Worker \`techblogtip-publisher-dev\`.
+
+Configure these **new TechBlogTip GitHub Actions Secrets** in the environment (or scoped repository secrets). The old blog credentials must never be reused:
+
+| Secret | Purpose |
+| --- | --- |
+| \`TBT_GOOGLE_OAUTH_CLIENT_ID\` | New Google Identity Services web-client ID, authorized origin for Publisher Worker |
+| \`TBT_ALLOWED_EDITORS\` | Exact comma-delimited editor emails; no wildcard |
+| \`TBT_SHEETS_SPREADSHEET_ID\` | Dedicated TechBlogTip native Google Sheet, tab VN |
+| \`TBT_SHEETS_GID\` | Pinned numeric GID for tab VN |
+| \`TBT_GOOGLE_SERVICE_ACCOUNT_JSON\` | Entire JSON for a **new** service account granted Editor on only this Sheet |
+| \`TBT_GITHUB_PUBLISHER_TOKEN\` | New GitHub fine-grained token/App installation, restricted to \`duykhang68/techblogtip\`, Contents/Pull Requests write |
+
+The GitHub Actions secret \`CLOUDFLARE_API_TOKEN\` is also required; its Cloudflare permissions must allow Workers deployment. Nonsecret \`CLOUDFLARE_ACCOUNT_ID\` may be set via Actions variable or will use the authorized staging account ID. Access should be restricted to the required account.
+
+Before release, the workflow checks **all** required bindings and validates JSON with no logging, builds the Worker, writes a temporary file with \`0600\` permissions, and runs \`cf deploy --secrets-file\`. It deletes the temporary file even if deploy fails. The public smoke test checks \`/health\` exact SHA, \`/admin\` noindex, and unauthorized \`/api/rows\` returns 401. It never makes an authorized request or creates an article. The real OAuth+Sheets+Draft PR E2E remains a separate manual acceptance gate.
+
+Run the workflow via \`https://github.com/duykhang68/techblogtip/actions/workflows/deploy-publisher-dev.yml\` after configuring secrets. Choose the required \`deploy-dev-only\` confirmation. The workflow uses \`concurrency\` with no cancellation.
+
+**Security note:** Even with server-side OAuth allowlisting, deploy only after validating the authorized Google client origin and setting up WAF/Cloudflare Access and a single responsible editor. The current Google Sheets Values API implementation lacks transactional row locking; do not use concurrent editors until a Durable Object/source lock is implemented.

@@ -242,3 +242,15 @@ test('normalizer enforces only READY and stable article path',()=>{
   assert.match(r.path,/^src\/content\/articles\/[a-z0-9-]+\.md$/);
   assert.equal(r.sourceRevision.length,64);
 });
+
+test('public health exposes exact deployment SHA but not private bindings',async()=>{
+  const f=await fixture();
+  f.env.DEPLOY_SHA='abcdefabcdefabcdefabcdefabcdefabcdefabcd';
+  const res=await handleRequest(f.request('/health',''),f.env,{fetcher:f.fetcher});
+  const payload=await res.json();
+  assert.equal(res.status,200);
+  assert.equal(payload.releaseSha,f.env.DEPLOY_SHA);
+  assert.equal(payload.status,'online');
+  assert.ok(!JSON.stringify(payload).includes('fake-secret-not-for-browser'));
+  assert.ok(!JSON.stringify(payload).includes('PRIVATE KEY'));
+});
