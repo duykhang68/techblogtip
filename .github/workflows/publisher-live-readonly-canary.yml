@@ -7,6 +7,11 @@ on:
       - "tests/publisher-worker.test.mjs"
       - ".github/workflows/publisher-live-readonly-canary.yml"
   workflow_dispatch:
+    inputs:
+      source_id:
+        description: "Optional TBT source ID for read-only Sheets/PR audit"
+        required: false
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -24,6 +29,7 @@ jobs:
       TBT_SHEETS_GID: ${{ secrets.TBT_SHEETS_GID }}
       TBT_GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.TBT_GOOGLE_SERVICE_ACCOUNT_JSON }}
       TBT_GITHUB_PUBLISHER_TOKEN: ${{ secrets.TBT_GITHUB_PUBLISHER_TOKEN }}
+      TBT_E2E_SOURCE_ID: ${{ github.event.inputs.source_id || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -35,5 +41,5 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
       - name: Mock contract regression tests
         run: node --test tests/publisher-worker.test.mjs
-      - name: Verify live Google Sheets, GitHub and Worker access (GET only)
+      - name: Verify live Google Sheets, GitHub and optional source PR (GET only)
         run: node scripts/publisher/live-readonly-canary.mjs

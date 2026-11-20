@@ -44,3 +44,18 @@ Current focus: B/P5b live READY→Draft PR→Sheet K:L acceptance (Issue #19) an
 - No auto-publish, auto-merge, browser GitHub API, cron, or secret exposure.
 
 - **P5c.2 write coordination:** a Durable Object lease is required for Writer APIs (allocate source ID, save draft, create Draft PR). The Worker fails closed without the binding; this feature needs a separate manual Publisher DEV deployment and exact SHA verification. Google Sheets direct editing outside the Worker is not serialized.
+
+
+## P5b live E2E checkpoint — 21/11/2026
+
+An authorized editor approved a dedicated test row (VN row 3, source ID
+\`TBT-ed3fa834-d43c-4852-ad7b-1128cd4486c0\`). Publisher DEV generated
+[Draft PR #35](https://github.com/duykhang68/techblogtip/pull/35),
+recorded the independently matching SHA-256 source fingerprint in K and the PR
+URL in L. Release columns M:O stayed blank. The Quality workflow
+[#44837806420](https://github.com/duykhang68/techblogtip/actions/runs/44837806420)
+passed on exact PR head \`b3f9712ac482d7df88bbe408f96e951178bbfe32\`.
+PR #35 was then **closed unmerged** to prevent a test article with
+\`draft: false\` from entering main. Core READY → Draft PR → K:L is verified;
+live replay of an identical POST and failure injection have not been tested.
+The optional read-only audit can now recheck the cross-system result by source ID.

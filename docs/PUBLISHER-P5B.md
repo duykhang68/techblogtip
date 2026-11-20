@@ -245,3 +245,26 @@ Passing content checks is **not editorial approval**. A DRAFT row must remain
 DRAFT until a human editor approves and explicitly changes it to READY in
 Google Sheets. This endpoint never opens PRs, writes Google Sheets, or marks
 anything published. Existing PRs require review rather than re-submission.
+
+## On-demand real E2E audit (safe GET only)
+
+After an authorized editor completes READY → Draft PR → Sheet K:L, run
+[Publisher DEV · Live Read-only Canary](../.github/workflows/publisher-live-readonly-canary.yml)
+manually on trusted \`main\` and provide its optional \`source_id\` (e.g. \`TBT-...\`).
+The canary uses the existing protected environment secrets; browser auth is **not**
+replayed or bypassed. It reads Google Sheets and GitHub only, except for the
+necessary Google service-account OAuth token exchange. The source ID is validated
+before any reads and content/secrets are never printed.
+
+The audit independently recomputes SHA-256 from the pinned VN row, verifies K
+matches the current source, L points to the exact repository Draft PR, PR body
+markers and the deterministic source branch agree, the PR changes exactly one
+matching article file, and there is exactly one PR for the branch (including
+closed PRs). M:O must remain empty. The check also retains the existing Worker
+health/ancestor SHA, noindex and anonymous-denial checks.
+
+Closing a **test** Draft PR unmerged is allowed after evidence capture, but
+merging test content is not: the generated article frontmatter defaults to
+\`draft: false\`. This audit never merges, creates PRs, writes Sheets, or marks
+anything published. It cannot prove an additional live duplicate POST occurred;
+the server-side idempotency path remains covered by mock integration tests.
