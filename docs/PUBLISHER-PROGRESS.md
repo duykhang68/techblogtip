@@ -47,8 +47,9 @@ snapshot chỉ đọc theo yêu cầu của biên tập viên đã đăng nhập
   cùng origin. Không có cron, polling, push hook hoặc tự động phát hành.
 - Snapshot không được cache hoặc lưu vào localStorage; logout xóa dữ liệu UI.
 - Fine-grained GitHub publisher token có thể cần **Actions: Read** để hiện
-  đầy đủ lịch sử Actions; nếu bị từ chối, UI hiện trạng thái unavailable,
-  không biến lỗi thành PASS. Cấp thêm quyền theo nguyên tắc tối thiểu.
+  đầy đủ lịch sử Actions; Worker thử fallback GET endpoint công khai của
+  repository (không có Authorization header). Nếu cả hai đều không đọc được, UI
+  hiện unavailable và không biến lỗi thành PASS. Không cần nới quyền token.
 
 **Phân biệt môi trường**
 - `MAIN`: commit ref hiện tại, không phải release.
