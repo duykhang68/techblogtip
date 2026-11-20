@@ -15,7 +15,8 @@
     "test": "node --test tests/*.test.mjs",
     "verify:build": "node scripts/verify-build.mjs",
     "quality": "npm run check && npm run lint:content && npm test && npm run build && npm run verify:build",
-    "qa:visual": "node scripts/visual-qa.mjs"
+    "qa:visual": "node scripts/visual-qa.mjs",
+    "publisher:test": "node --test tests/publisher-worker.test.mjs"
   },
   "dependencies": {
     "astro": "^7.4.13"
@@ -25,5 +26,8 @@
     "typescript": "^6.0.3",
     "cf": "^1.0.0-rc.1",
     "playwright-core": "^1.56.0"
-  }
+  },
+  "workspaces": [
+    "workers/publisher"
+  ]
 }

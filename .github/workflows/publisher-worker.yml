@@ -1,0 +1,36 @@
+name: Publisher Worker · Bundle & Auth Contract
+on:
+  pull_request:
+    paths:
+      - "workers/publisher/**"
+      - "scripts/publisher/**"
+      - "tests/publisher-worker.test.mjs"
+      - "package.json"
+      - ".github/workflows/publisher-worker.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publisher:
+    name: Cloudflare cf build · no network deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Verify backend auth + source contract (mock-only)
+        run: npm run publisher:test
+      - name: Bundle Cloudflare Worker without deploying
+        working-directory: workers/publisher
+        run: npx cf build
+      - name: Confirm exact validated source SHA
+        run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
