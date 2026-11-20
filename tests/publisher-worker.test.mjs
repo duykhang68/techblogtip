@@ -370,3 +370,45 @@ test('Publisher admin disables overlapping row actions and hides redundant Draft
   assert.match(content,/row\.status\.toUpperCase\(\)==='READY'&&row\.sourceId&&!row\.draftPr/);
   assert.match(content,/window\.google\?\.accounts\?\.id\?\.disableAutoSelect/);
 });
+
+test('live read-only canary checks Sheets, GitHub and deployed Worker without source writes',async()=>{
+  const {verifyPublisherLiveReadOnly}=await import('../scripts/publisher/live-readonly-canary.mjs');
+  const f=await fixture(),events=[];
+  const deployed='a'.repeat(40),main='b'.repeat(40);
+  const fetcher=(input,options={})=>{
+    const url=new URL(String(input)),method=options.method||'GET';
+    events.push({hostname:url.hostname,method});
+    if(url.hostname==='techblogtip-publisher-dev.tamsudev-com.workers.dev'){
+      if(url.pathname==='/health')return Response.json({app:'techblogtip-publisher',releaseSha:deployed});
+      if(['/api/rows','/api/preflight'].includes(url.pathname))
+        return Response.json({error:'not_authenticated'},{status:401});
+      if(url.pathname==='/admin')return new Response('<meta name="robots" content="noindex,nofollow">');
+    }
+    if(url.hostname==='api.github.com'&&url.pathname.startsWith('/repos/duykhang68/techblogtip/compare/'))
+      return Response.json({status:'ahead'});
+    return f.fetcher(input,options);
+  };
+  const report=await verifyPublisherLiveReadOnly({
+    TBT_SHEETS_SPREADSHEET_ID:f.env.SHEETS_SPREADSHEET_ID,
+    TBT_SHEETS_GID:f.env.SHEETS_GID,
+    TBT_GOOGLE_SERVICE_ACCOUNT_JSON:f.env.GOOGLE_SERVICE_ACCOUNT_JSON,
+    TBT_GITHUB_PUBLISHER_TOKEN:f.env.GITHUB_PUBLISHER_TOKEN,
+    GITHUB_SHA:main,
+  },{fetcher});
+  assert.equal(report.sheet.rows,1);
+  assert.equal(report.github.ok,true);
+  assert.equal(report.publisherDev.deployedSha,deployed);
+  assert.equal(report.publisherDev.exactMainSha,false);
+  assert.equal(report.anonymousDenied,true);
+  assert.equal(report.draftPrWritePermission,'not_tested');
+  assert.equal(events.some(e=>e.hostname==='oauth2.googleapis.com'&&e.method==='POST'),true);
+  assert.equal(events.filter(e=>e.hostname==='sheets.googleapis.com'&&e.method!=='GET').length,0);
+  assert.equal(events.filter(e=>e.hostname==='api.github.com'&&e.method!=='GET').length,0);
+});
+test('live canary requires secrets before contacting external services',async()=>{
+  const {verifyPublisherLiveReadOnly}=await import('../scripts/publisher/live-readonly-canary.mjs');
+  await assert.rejects(
+    verifyPublisherLiveReadOnly({GITHUB_SHA:'a'.repeat(40)},{fetcher:()=>{throw Error('Should never fetch');}}),
+    /Missing credential: TBT_SHEETS_SPREADSHEET_ID/
+  );
+});

@@ -138,3 +138,19 @@ It never mutates a Google Sheet, creates a GitHub branch or opens a PR.
 It returns restricted status codes rather than upstream error bodies or secrets.
 **A successful read-only test does NOT prove GitHub Contents/PR write permissions.**
 Those are validated only by the explicit, separate READY→Draft PR human acceptance step.
+
+
+## Live read-only integration canary
+
+Workflow: \`.github/workflows/publisher-live-readonly-canary.yml\`. It runs once
+after this feature is merged into trusted main, and is also manually dispatchable.
+It does not deploy or mutate any resources. It checks the real Google service
+account access to the pinned \`VN\` Sheet, the scoped GitHub token's ability to
+read main, Publisher DEV health SHA, noindex admin, and HTTP 401 for anonymous
+\`/api/rows\` and \`/api/preflight\`. The Worker SHA must be an ancestor of
+the tested main SHA.
+
+Only the Google OAuth service-account token exchange POST is used; all Google
+Sheets and GitHub requests are GET. No private source content is printed.
+A passing result **does not validate GitHub write permissions** or the actual
+READY → Draft PR → K:L writeback path; those require explicit editor acceptance.
