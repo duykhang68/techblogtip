@@ -1,0 +1,39 @@
+name: Publisher DEV · Live Read-only Canary
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/publisher/live-readonly-canary.mjs"
+      - "tests/publisher-worker.test.mjs"
+      - ".github/workflows/publisher-live-readonly-canary.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: techblogtip-publisher-readonly-canary
+  cancel-in-progress: false
+jobs:
+  canary:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    name: Real Google Sheets + GitHub read access · no writes
+    runs-on: ubuntu-latest
+    environment: techblogtip-publisher-dev
+    timeout-minutes: 12
+    env:
+      TBT_SHEETS_SPREADSHEET_ID: ${{ secrets.TBT_SHEETS_SPREADSHEET_ID }}
+      TBT_SHEETS_GID: ${{ secrets.TBT_SHEETS_GID }}
+      TBT_GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.TBT_GOOGLE_SERVICE_ACCOUNT_JSON }}
+      TBT_GITHUB_PUBLISHER_TOKEN: ${{ secrets.TBT_GITHUB_PUBLISHER_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "24"
+      - name: Verify exact tested source SHA
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Mock contract regression tests
+        run: node --test tests/publisher-worker.test.mjs
+      - name: Verify live Google Sheets, GitHub and Worker access (GET only)
+        run: node scripts/publisher/live-readonly-canary.mjs
