@@ -1,0 +1,55 @@
+name: CI Incident Collector
+
+# Capture failures on completion. Backfill once at installation or on manual dispatch.
+# No periodic polling; do not run untrusted pull request code with a write token.
+on:
+  workflow_run:
+    workflows:
+      - Quality
+      - Workflow Security Audit
+      - Deploy · Cloudflare staging
+    types: [completed]
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/ci-incident-collector.yml
+      - scripts/collect-ci-incidents.mjs
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: "Backfill CI failures from the previous 1–14 days"
+        required: false
+        default: "7"
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: techblogtip-ci-incident-collector
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    name: Collect failed runs into GitHub Issues
+    if: >-
+      github.event_name != 'workflow_run' ||
+      contains(fromJSON('["failure", "timed_out", "startup_failure", "action_required"]'), github.event.workflow_run.conclusion)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout only trusted main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+      - name: Collect failed workflow diagnostics
+        env:
+          GH_TOKEN: \${{ github.token }}
+          LOOKBACK_DAYS: \${{ inputs.lookback_days }}
+        run: node scripts/collect-ci-incidents.mjs
