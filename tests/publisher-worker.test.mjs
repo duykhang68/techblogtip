@@ -730,3 +730,60 @@ test('row ID allocation lock blocks repeated concurrent writes for the same pinn
   assert.equal(yes.status,200);
   assert.equal(yes.data.created,true);
 });
+
+
+test('ready validator evaluates DRAFT without changing Sheet status or creating a PR',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const assigned=await f.call('/api/allocate-id',token,'POST',{rowNumber:2});
+  const sourceId=assigned.data.sourceId;
+  const before=f.state.calls.length;
+  const result=await f.call('/api/validate?sourceId='+sourceId,token);
+  assert.equal(result.status,200);
+  assert.equal(result.data.sourceId,sourceId);
+  assert.equal(result.data.status,'DRAFT');
+  assert.equal(result.data.contentValid,true);
+  assert.equal(result.data.canSubmit,false);
+  assert.equal(result.data.approvalRequired,true);
+  assert.match(result.data.sourceRevision,/^[a-f0-9]{64}$/);
+  assert.equal(f.state.values[1][8],'DRAFT');
+  const calls=f.state.calls.slice(before);
+  assert.equal(calls.filter(c=>c.url.includes('api.github.com')).length,0);
+  assert.equal(calls.filter(c=>c.url.includes('sheets.googleapis.com')&&c.method!=='GET').length,0);
+});
+test('ready validator reports invalid article fields and does not create GitHub PR',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][9]='INVALID SLUG';
+  const invalid=await f.call('/api/validate?sourceId='+id,token);
+  assert.equal(invalid.status,200);
+  assert.equal(invalid.data.contentValid,false);
+  assert.equal(invalid.data.canSubmit,false);
+  assert.equal(invalid.data.issues[0].code,'content_invalid');
+  assert.equal(f.state.pr,null);
+  f.state.values[1][9]='';
+  f.state.values[1][8]='READY';
+  const okay=await f.call('/api/validate?sourceId='+id,token);
+  assert.equal(okay.data.contentValid,true);
+  assert.equal(okay.data.canSubmit,true);
+});
+test('ready validator blocks a second submission when system fields already occupied',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][8]='READY';
+  f.state.values[1][11]='https://github.com/duykhang68/techblogtip/pull/123';
+  const result=await f.call('/api/validate?sourceId='+id,token);
+  assert.equal(result.status,200);
+  assert.equal(result.data.contentValid,true);
+  assert.equal(result.data.canSubmit,false);
+  assert.equal(result.data.submittedOrPublished,true);
+});
+test('ready validator requires authorized editor and does not expose public GitHub API',async()=>{
+  const f=await fixture();
+  assert.equal((await f.call('/api/validate?sourceId=TBT-fake-1234567890','')).status,401);
+  const html=await (await handleRequest(f.request('/admin',''),f.env,{fetcher:f.fetcher})).text();
+  const js=await (await handleRequest(f.request('/admin.js',''),f.env,{fetcher:f.fetcher})).text();
+  assert.match(html,/id="validation-panel"/);
+  assert.match(js,/Kiểm tra bài/);
+  assert.match(js,/api\/validate/);
+  assert.ok(!js.includes('api.github.com'));
+});

@@ -155,6 +155,36 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         const row=rowById(sheet.records,sourceId);
         return respond(await inspectPublisherPR(env,row,sourceId,fetcher));
       }
+      if(request.method==='GET'&&path==='/api/validate'){
+        const sourceId=new URL(request.url).searchParams.get('sourceId');
+        if(!sourceId||!/^TBT-[A-Za-z0-9-]{8,80}$/.test(sourceId))
+          fail(400,'source_invalid','System-issued source ID required');
+        const sheet=await readSheet(env,fetcher);
+        const row=rowById(sheet.records,sourceId);
+        const status=String(row.cells[8]||'DRAFT').trim().toUpperCase();
+        const source=sheetConfig(env);
+        const proposed=[...row.cells];
+        // Validate publication requirements without changing the actual
+        // user-controlled status cell in Google Sheets.
+        proposed[8]='READY';
+        const context={spreadsheetId:source.spreadsheetId,sheetGid:source.gid,
+          publishedDate:new Date().toISOString().slice(0,10)};
+        const systemOccupied=row.cells.slice(10,15).some(x=>String(x||'').trim());
+        try{
+          const article=prepareSheetArticle(proposed,context);
+          return respond({sourceId,status,contentValid:true,
+            canSubmit:status==='READY'&&!systemOccupied,
+            submittedOrPublished:systemOccupied,
+            sourceRevision:article.sourceRevision,issues:[],
+            approvalRequired:status!=='READY'});
+        }catch(error){
+          return respond({sourceId,status,contentValid:false,
+            canSubmit:false,submittedOrPublished:systemOccupied,
+            sourceRevision:null,
+            issues:[{code:'content_invalid',message:String(error.message||'Invalid article').slice(0,240)}],
+            approvalRequired:true});
+        }
+      }
       if(request.method==='GET'&&path==='/api/revision'){
         const sourceId=new URL(request.url).searchParams.get('sourceId');
         if(!sourceId||!/^TBT-[A-Za-z0-9-]{8,80}$/.test(sourceId))
