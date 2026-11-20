@@ -7,16 +7,16 @@ test('main routes and SEO endpoints are authored',()=>{
 });
 test('content and staging policy',()=>{
  const schema=read('src/content.config.ts');
- assert.match(schema,/\.endsWith\('\.webp'\)/);
- assert.match(read('src/layouts/BaseLayout.astro'),/noindex,nofollow/);
- assert.match(read('src/pages/robots.txt.ts'),/Disallow: \\//);
- assert.match(read('astro.config.mjs'),/output: 'static'/);
+ assert.ok(schema.includes(".endsWith('.webp')"));
+ assert.ok(read('src/layouts/BaseLayout.astro').includes('noindex,nofollow'));
+ assert.ok(read('src/pages/robots.txt.ts').includes('Disallow: /'));
+ assert.ok(read('astro.config.mjs').includes("output: 'static'"));
 });
 test('production deploy is not in milestone A',()=>{
  assert.ok(existsSync('.github/workflows/deploy-staging.yml'));
  assert.ok(!existsSync('.github/workflows/deploy-production.yml'));
  const deploy=read('.github/workflows/deploy-staging.yml');
- assert.match(deploy,/GITHUB_SHA/);assert.match(deploy,/cf deploy/);assert.match(deploy,/verify-deploy/);
+ assert.match(deploy,/SOURCE_SHA/);assert.match(deploy,/cf deploy/);assert.match(deploy,/verify-deploy/);
 });
 test('demo post slugs are unique, no image format violation',()=>{
  const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));
@@ -24,7 +24,7 @@ test('demo post slugs are unique, no image format violation',()=>{
  assert.equal(new Set(names).size,names.length);
  for(const name of names){
   const data=read('src/content/articles/'+name);
-  assert.match(data,/^---\n/);
+  assert.ok(data.startsWith('---\n'));
   assert.doesNotMatch(data,/!\[[^\]]*\]\([^)]*\.(png|jpg|jpeg)(?:\?|\))/i);
  }
 });

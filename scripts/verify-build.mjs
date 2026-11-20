@@ -12,5 +12,6 @@ const index=JSON.parse(readFileSync('dist/search-index.json','utf8'));
 if(!Array.isArray(index)||index.length<8)throw new Error('Search index empty or malformed');
 if(!index.every(x=>x.title&&x.url&&x.category))throw new Error('Search index entries invalid');
 const release=JSON.parse(readFileSync('dist/release.json','utf8'));
-if(process.env.GITHUB_ACTIONS==='true' && release.sha!==process.env.GITHUB_SHA)throw new Error('Built release SHA mismatch');
+const sha=process.env.SOURCE_SHA || process.env.GITHUB_SHA;
+if(process.env.GITHUB_ACTIONS==='true' && release.sha!==sha)throw new Error('Built release SHA mismatch');
 console.log('Verified HTML, RSS, sitemap, noindex, search index and exact SHA marker');
