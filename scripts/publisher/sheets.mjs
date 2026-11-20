@@ -83,6 +83,15 @@ export function normalizeSheetRow(source, { spreadsheetId, sheetGid, publishedDa
     throw new Error('Image attachments must be converted to WebP before publication');
   if (/!\[[^\]]*\]\(https?:\/\/(?:drive|docs)\.google\.com\//i.test(body))
     throw new Error('Google Drive media must be imported, never hotlinked');
+  // No raw HTML in Sheet imports: protect the future public Markdown renderer
+  // against inline event handlers, embedded HTML and unsafe URL schemes.
+  if (/<\s*\/?[a-z][^>]*>/i.test(body) || /\]\(\s*(?:javascript|data|vbscript)\s*:/i.test(body))
+    throw new Error('Raw HTML and executable Markdown link protocols are not allowed');
+  for (const match of body.matchAll(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^)]*["'])?\)/g)) {
+    const [,alt,source] = match;
+    if (!alt.trim() || !/\.webp(?:\?[^)]*)?$/i.test(source) || /^(?:https?:)?\/\//i.test(source))
+      throw new Error('Images must have alt text and use local WebP assets');
+  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizeCell(publishedDate)) ||
       !Number.isFinite(Date.parse(publishedDate + 'T00:00:00Z')))
     throw new Error('An explicit publication ISO date is required');

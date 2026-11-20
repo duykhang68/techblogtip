@@ -1,0 +1,77 @@
+# TechBlogTip · Google Sheets Publisher · Milestone B/P5b
+
+**Project:** duykhang68/techblogtip ONLY. The existing Cloudflare public staging Worker is not modified by this backend.
+
+## What this PR delivers
+
+- Separate Cloudflare Worker source at workers/publisher (never bundled into Astro public pages).
+- Google Identity Services sign-in and **server-side RS256 signature/claims verification** against Google's published JWKS.
+- Strict Google editor email allowlist (configured at Worker runtime).
+- Read-only preview of VN rows from the dedicated TechBlogTip Sheet; no public client-side Google or GitHub API credentials.
+- Explicit system ID assignment in column A. The backend re-reads the row after assignment.
+- Source revision SHA-256 and READY-only server-side publication checks.
+- Create GitHub **Draft PR** on a source-specific branch, with idempotent retry when identical source revision already has an open PR.
+- Write back *only* system columns K–L once a Draft PR exists and the row revision has been rechecked.
+- Reject HTML markup in imported Markdown. Images are local WebP with descriptive alt text.
+- Automated mock-integration tests: Google OIDC signature/claims, row authorization, id assignment, draft-only GitHub flow, stale source and repeat submission.
+
+**This PR does not yet create a live Worker, connect OAuth credentials or publish an article.**
+Do not merge, deploy, or expose a write-capable API until all security gates and runtime bindings are reviewed.
+
+## Workflow
+
+\`\`\`
+Google Sheet VN → Google sign-in → read rows → Preview
+    → [create system ID if missing]
+    → Editor changes status in Sheet to READY
+    → Worker re-reads source and calculates SHA-256 revision
+    → user confirms Create Draft PR
+    → Worker re-reads revision and status
+    → GitHub branch + Markdown commit + Draft PR
+    → Worker re-reads source by stable source ID (not row index)
+    → fill source_hash (K) and draft_pr (L)
+    → human review → CI → FIFO merge → verified Cloudflare production SHA
+    → [future milestone] release_sha/published_url/published_at
+\`\`\`
+
+## Required one-time setup (not present in repository)
+
+1. **Google Cloud project**: configure OAuth consent screen and create a Google Identity Services **Web client ID**. Add the actual private admin Worker origin to Authorized JavaScript Origins (for example, \`https://techblogtip-publisher-dev.<your-workers-subdomain>.workers.dev\`). Do not reuse another blog's OAuth client.
+2. **Service account**: create a separate service account with minimum Sheets access. Share the dedicated TechBlogTip Spreadsheet only with its service-account address, with Editor rights for system columns. Drive access is NOT needed for this API.
+3. **GitHub**: create a least-privilege publisher token or GitHub App installation scoped to **techblogtip only**, with Contents Read/Write and Pull Requests Read/Write. Do not reuse OneBlog's token; never expose it to JS.
+4. **Cloudflare**: use \`workers/publisher/cloudflare.config.ts\` with the **cf CLI**, not Wrangler. Add nonsecret variables \`GOOGLE_OAUTH_CLIENT_ID\`, \`ALLOWED_EDITORS\`, \`SHEETS_SPREADSHEET_ID\`, \`SHEETS_GID\` to Worker configuration. Put \`GOOGLE_SERVICE_ACCOUNT_JSON\` and \`GITHUB_PUBLISHER_TOKEN\` into **encrypted Worker secrets**. Do not commit any .env containing credentials.
+5. Deploy this Worker separately **only after** unit/integration tests, credential binding and explicit admin access controls have passed. Do not deploy to \`techblogtip-staging\`.
+6. Configure Cloudflare WAF Rate Limiting (and optionally Access) for the admin Worker to reduce abusive public requests.
+
+## Runtime routes
+
+| Method | Path | Access | Behavior |
+| --- | --- | --- | --- |
+| GET | /health | Public | No sensitive config |
+| GET | /admin | Public shell | No data until Google auth |
+| GET | /admin.js, /admin.css | Public assets | In-memory client token only |
+| GET | /api/rows | Authenticated editor | VN sheet rows |
+| GET | /api/revision?sourceId=... | Authenticated editor | Current READY source revision |
+| POST | /api/allocate-id | Authenticated editor + same origin | System A ID, reread |
+| POST | /api/submit | Authenticated editor + same origin | Revision check → Draft PR → K/L writeback |
+
+Only same-origin browser POST is accepted. Every API endpoint verifies the Google ID token signature, issuer, audience, expiry, verified email and allowlist.
+
+## Acceptance and known remaining work
+
+- [ ] PR Quality and Security Audit PASS on exact SHA.
+- [ ] Review Google OAuth and service-account access policies (separate user credentials needed).
+- [ ] Real authorized login; verify unauthorized editor denied.
+- [ ] DRAFT cannot create a PR; READY can create precisely one Draft PR.
+- [ ] Sort rows, retry request and simulate stale data between read and write.
+- [ ] Check that GitHub token, Google service key and sheets author content never enter client-side bundled scripts.
+- [ ] Confirm K/L writeback after PR and no write to M/N/O before **verified production**.
+- [ ] E2E deployed Worker → real new Sheet → GitHub Draft PR.
+
+**Concurrency caveat:** the Google Sheets Values API lacks compare-and-swap for cell updates. The current source-ID allocation and K/L writeback re-read and reject many stale requests, but cannot guarantee transactional uniqueness under simultaneous writes. Add a per-source Cloudflare Durable Object (or another lock) before enabling multi-editor concurrent publishing. Until then keep the Worker undeployed or single-editor and manually supervised.
+
+**P5c is still required:** Google Drive→WebP media import, rich WYSIWYG editor, CI feedback and verified production release writeback. No cron or repeated polling is part of this implementation.
+
+## Tests
+
+Run \`npm test\`, or only publisher tests with \`npm run publisher:test\`. Tests use generated local cryptographic keys and mocked Google/GitHub responses; they do not call real APIs, and do not need secrets.
