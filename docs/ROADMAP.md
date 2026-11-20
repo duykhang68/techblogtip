@@ -9,7 +9,7 @@
 | C | Knowledge graph and editorial dashboard | Accessible, low-JS, event-driven |
 | D | Brand, domain, SEO launch, Search Console | Indexability/canonical verified with domain |
 
-Milestone A code merged at `bd8999e089cfa22f19da953200e4c8a6443449e2`. Quality on main PASS, but staging remains BLOCKED by missing GitHub Actions Cloudflare secrets. See [ops issue #5](https://github.com/duykhang68/techblogtip/issues/5); do not claim staging deployed.
+Milestone A code merged at `bd8999e089cfa22f19da953200e4c8a6443449e2`. Quality on main PASS. Staging **deployed and exact-SHA verified** on 20/11/2026; run #44767372250 at SHA `93af1203429e16f46774ec40c5b1d8c03513cd98`. See [ops issue #5](https://github.com/duykhang68/techblogtip/issues/5) for remaining visual QA.
 
 Current focus: B/P5a preparation while staging credentials are handled separately. P0 product/keyword research remains an open editorial activity; do not present keyword traffic without a trusted source.
 
@@ -20,5 +20,5 @@ Current focus: B/P5a preparation while staging credentials are handled separatel
 - [ ] Responsive 360/390/430px, tablet and desktop visual acceptance
 - [x] Content + output tests; WebP policy
 - [x] Dependabot and Draft PR review process
-- [ ] Cloudflare staging deployed, publicly verified for exact SHA
+- [x] Cloudflare staging deployed, publicly verified for exact SHA
 - [ ] Production domain, brand and secrets finalized before SEO launch

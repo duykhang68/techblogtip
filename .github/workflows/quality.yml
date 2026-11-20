@@ -29,3 +29,13 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA" || { echo "::error::Checkout SHA mismatch"; exit 1; }
           node -e "const r=require('./dist/release.json');if(r.sha!==process.env.SOURCE_SHA) process.exit(1);"
+      - name: Browser visual QA · mobile / desktop (no browser download)
+        run: npm run qa:visual
+      - name: Preserve screenshots (on failure or success)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: techblogtip-ui-${{ env.SOURCE_SHA }}
+          path: artifacts/visual-qa/
+          if-no-files-found: ignore
+          retention-days: 7
