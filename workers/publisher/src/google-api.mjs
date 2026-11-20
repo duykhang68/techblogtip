@@ -97,3 +97,28 @@ export function rowById(records,sourceId){
   if(matches.length!==1)fail(409,'source_missing','Source ID missing or duplicated after sheet reorder');
   return matches[0];
 }
+
+
+// Writes only editor-owned cells B:H and J. Status I and all system-owned
+// columns A, K:O remain untouched in this atomic Sheets batchUpdate.
+export async function putEditorialCells(env,token,rowNumber,values,fetcher=fetch){
+  if(!Number.isInteger(rowNumber)||rowNumber<2||rowNumber>200)
+    fail(400,'row_invalid','Row number out of range');
+  const names=['title','body','author','category','tags','summary','series','slug'];
+  if(!values||names.some(name=>typeof values[name]!=='string'))
+    fail(422,'draft_invalid','Invalid editorial field values');
+  const {spreadsheetId}=sheetConfig(env);
+  const endpoint=API+encodeURIComponent(spreadsheetId)+'/values:batchUpdate';
+  const data=[
+    {range:'VN!B'+rowNumber+':H'+rowNumber,majorDimension:'ROWS',
+      values:[names.slice(0,7).map(name=>values[name])]},
+    {range:'VN!J'+rowNumber,majorDimension:'ROWS',values:[[values.slug]]}
+  ];
+  const response=await fetcher(endpoint,{
+    method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({valueInputOption:'RAW',data,includeValuesInResponse:false}),
+    signal:AbortSignal.timeout(12000),
+  });
+  if(!response.ok)
+    fail(502,'sheet_write_failed','Could not write TechBlogTip editorial cells');
+}

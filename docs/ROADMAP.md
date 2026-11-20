@@ -31,6 +31,14 @@ Current focus: B/P5b live READY→Draft PR→Sheet K:L acceptance (Issue #19) an
 - [Live integration check #44830236907](https://github.com/duykhang68/techblogtip/actions/runs/44830236907) passed against the dedicated Sheet VN, Github read-only main and Publisher DEV. It does **not** test Github PR write permissions.
 - **Pending P5b:** authorized editor submits a real READY article → exactly one Draft PR → verify Sheet K:L. Keep [Issue #19](https://github.com/duykhang68/techblogtip/issues/19) open until verified.
 - **P5c.1:** on-demand PR/CI tracker using authenticated Worker; CI checks always pinned to PR head SHA, optional GitHub Checks:Read; failed/unavailable check data is never treated as PASS. Manual separate Publisher DEV deployment required after merge.
-- **P5c.2:** WYSIWYG and Google Drive media→WebP, multi-editor locking and recovery; not implemented.
+- **P5c.2 (phased):** First visual editor for IDEA/DRAFT/REVIEW (simple headings, lists, emphasis, metadata; Sheets B:H + J only) is being implemented, with 409 conflict detection and locked READY/PR rows. Advanced Markdown and Drive→WebP, multi-editor transactional locking and recovery are still not implemented.
 - **P5c.3:** verified production release writeback M:O requires a production domain, deployed public URL and exact release SHA; not implemented.
 - **P6–P8/C/D:** Notion, Obsidian, Drive adapter, knowledge graph and public SEO launch remain planned.
+
+## P5c.2 — Visual editor (first slice)
+
+- Only authorized editors with active Google sessions may open and save a draft by stable source ID. The server re-reads the source and compares SHA-256 snapshot of all A:O fields before saving.
+- The visual editor supports basic headings, lists, bold/italic, paragraphs and metadata. Advanced Markdown (code blocks, tables, images, links) is display-only and must be edited in Google Sheets until lossless conversion is available.
+- Atomic Google Sheets values:batchUpdate modifies only B:H and J. Column I status and A/K:O system fields are never written by this editor. READY, PR-submitted or published rows are locked.
+- Note the Google Sheets API does not provide a transaction-level compare-and-swap. Keep single-editor use until per-source locking is implemented; a concurrent edit between compare and write remains a known limitation.
+- No auto-publish, auto-merge, browser GitHub API, cron, or secret exposure.
