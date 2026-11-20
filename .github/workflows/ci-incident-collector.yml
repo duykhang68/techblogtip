@@ -50,6 +50,6 @@ jobs:
           node-version: '24'
       - name: Collect failed workflow diagnostics
         env:
-          GH_TOKEN: \${{ github.token }}
-          LOOKBACK_DAYS: \${{ inputs.lookback_days }}
+          GH_TOKEN: ${{ github.token }}
+          LOOKBACK_DAYS: ${{ inputs.lookback_days }}
         run: node scripts/collect-ci-incidents.mjs
