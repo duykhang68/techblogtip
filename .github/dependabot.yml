@@ -9,6 +9,10 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Ho_Chi_Minh"
+    # Wait 7 days before adopting new version releases.
+    # Security updates are not delayed by this cooldown.
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 3
     groups:
       github-actions:
