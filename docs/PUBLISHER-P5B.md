@@ -205,3 +205,29 @@ verification. Multi-editor usage awaits a transactional per-source lock.
 ## Markdown integrity fix for the visual draft editor
 
 The editor now retains the **exact original `body` from the authorized Sheet** when the visual canvas has not changed, even when a user edits metadata such as title, summary or tags. Contenteditable's implicit paragraph spacing must never rewrite source Markdown on a metadata-only save. Only deliberate changes in the visual body are serialized. Successful saves reset the original-body baseline using the canonical server response; a 409 conflict disables further writes until the editor is reloaded. This still requires a separate per-source lock before concurrent writers can be enabled.
+
+## P5c.2 · Source-level write coordination (Durable Objects)
+
+Publisher DEV now uses a **SQLite-backed SourceWriteLock Durable Object**, deterministically
+keyed by spreadsheet, GID, and source ID. Each request that writes editorial
+cells or creates a GitHub Draft PR must first acquire a 120-second lease.
+Source ID allocation uses a separate key scoped to the pinned row number.
+
+- Simultaneous Publisher requests for the same source are rejected with HTTP
+  **409 source_busy** instead of racing across Sheets and GitHub.
+- Locks are released in a finally block; a Worker crash cannot leave one
+  permanently held because the SQLite lease expires after two minutes.
+- If the binding is missing/unavailable, the Worker returns **503** and does
+  not attempt writes. The manual Publisher DEV deployment will verify that the
+  binding is present on the public health endpoint at the exact SHA.
+- Each source gets its own Durable Object, so unrelated articles are not blocked.
+- This uses `cf/config` with `bindings.durableObject` and a
+  `exports.durableObject({storage:'sqlite'})` declaration. Cloudflare account
+  support and usage charges for Durable Objects may apply.
+- **Important limitation:** a separate person editing cells directly in Google
+  Sheets cannot be forced to acquire the Worker lock. The SHA-256 snapshot
+  precondition plus post-write verification still help detect such edits,
+  but this is *not* a Google Sheets transaction-level compare-and-swap.
+  Do not claim fully lossless multi-editor concurrency for external Sheet edits.
+
+No automatic merges, public deployment, polling, or privileged browser token.
