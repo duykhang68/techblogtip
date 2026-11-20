@@ -4,7 +4,9 @@ import ArticleList from '../../components/ArticleList.astro';
 import { getArticles } from '../../lib/content';
 const pageSize=8;
 export async function getStaticPaths() {
-  const articles=await getArticles(); const total=Math.ceil(articles.length/pageSize);
+  const pageSize=8;
+  const articles=await getArticles();
+  const total=Math.ceil(articles.length/pageSize);
   return Array.from({length:Math.max(0,total-1)},(_,i)=>({params:{page:String(i+2)}}));
 }
 const page=Number(Astro.params.page);
