@@ -9,15 +9,15 @@
 | C | Knowledge graph and editorial dashboard | Accessible, low-JS, event-driven |
 | D | Brand, domain, SEO launch, Search Console | Indexability/canonical verified with domain |
 
-Milestone A code merged at `bd8999e089cfa22f19da953200e4c8a6443449e2`. Quality on main PASS. Staging **deployed and exact-SHA verified** on 20/11/2026; run #44767372250 at SHA `93af1203429e16f46774ec40c5b1d8c03513cd98`. See [ops issue #5](https://github.com/duykhang68/techblogtip/issues/5) for remaining visual QA.
+Milestone A **accepted on staging** on 20/11/2026. PR #15 merged at `d907346041cb4d74cdc69541e765805288e23eca`, and [Cloudflare deploy #44770658345](https://github.com/duykhang68/techblogtip/actions/runs/44770658345) verified the public SHA. Browser tests at 360/390/430/768/1440px all passed; [ops issue #5](https://github.com/duykhang68/techblogtip/issues/5) closed.
 
-Current focus: B/P5a preparation while staging credentials are handled separately. P0 product/keyword research remains an open editorial activity; do not present keyword traffic without a trusted source.
+Current focus: B/P5b authenticated Google Sheets Publisher Worker. P5a contract is merged; production/editor credentials and live integration are not yet configured. P0 product/keyword research remains an open editorial activity; do not present keyword traffic without a trusted source.
 
 ## A acceptance
 - [x] Astro build, strict TypeScript, Node 24 CI green
 - [x] Homepage and article route; category/tag/series filtering
 - [x] Search generated at build, RSS, sitemap, robots, release marker
-- [ ] Responsive 360/390/430px, tablet and desktop visual acceptance
+- [x] Responsive 360/390/430px, tablet and desktop visual acceptance
 - [x] Content + output tests; WebP policy
 - [x] Dependabot and Draft PR review process
 - [x] Cloudflare staging deployed, publicly verified for exact SHA
