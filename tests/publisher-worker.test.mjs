@@ -518,7 +518,7 @@ test('P5c visual editor saves exactly B:H and J, preserving A, I and K:O',async(
   const opened=(await f.call('/api/draft?sourceId='+id,token)).data;
   const unchanged=JSON.stringify({id:f.state.values[1][0],status:f.state.values[1][8],sys:f.state.values[1].slice(10)});
   const changed={...opened.fields,title:'Hướng dẫn GitHub Actions dành cho người mới',
-    body:'## Giới thiệu\n'+('Hướng dẫn tích hợp GitHub Actions có kiểm chứng cho bạn đọc. ').repeat(3),
+    body:'## Giới thiệu\n'+('Hướng dẫn tích hợp GitHub Actions có kiểm chứng cho bạn đọc. ').repeat(3).trimEnd(),
     summary:'Giới thiệu quy trình GitHub Actions, CI/CD và cách kiểm chứng thay đổi một cách an toàn.',
     slug:'huong-dan-github-actions'};
   const result=await f.call('/api/draft',token,'PUT',{sourceId:id,expectedSnapshot:opened.snapshot,fields:changed});
