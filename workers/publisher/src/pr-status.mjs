@@ -37,7 +37,7 @@ export async function inspectPublisherPR(env,row,sourceId,fetcher=fetch){
   const stage=pr.merged_at?'merged':pr.state==='closed'?'closed_unmerged':
     pr.state==='open'?(pr.draft?'draft':'review'):'unknown';
   let ci={availability:'unavailable',checkedSha:headSha,checks:[]};
-  if(stage==='draft'||stage==='review'){
+  if(stage==='draft'||stage==='review'||stage==='merged'){
     try{
       const response=await githubRequest(env,'/commits/'+headSha+'/check-runs?per_page=100',{fetcher});
       if(!Array.isArray(response?.check_runs))throw new Error('Invalid check-runs response');

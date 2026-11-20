@@ -3,11 +3,13 @@ import { issueSessionCookie,verifySession,expiredSessionCookie,SESSION_TTL_SECON
 import { readSheet,putSystemCells,rowById,sheetConfig } from './google-api.mjs';
 import { createDraftPR,githubRequest } from './github-api.mjs';
 import { inspectPublisherPR } from './pr-status.mjs';
+import { readProductionStatus } from './production-status.mjs';
 import { loadEditableDraft,saveEditableDraft } from './editorial.mjs';
 import { withSourceWriteLock,withRowWriteLock } from './source-lock.mjs';
 import { EDITOR_HTML,EDITOR_JS,EDITOR_CSS } from './editor-ui.mjs';
 import { prepareSheetArticle } from '../../../scripts/publisher/sheets.mjs';
 import { ADMIN_HTML, ADMIN_JS, ADMIN_CSS } from './ui.mjs';
+import { PRODUCTION_HTML, PRODUCTION_JS, PRODUCTION_CSS } from './production-ui.mjs';
 
 function respond(data,status=200){
   return new Response(JSON.stringify(data),{status,headers:{
@@ -76,8 +78,8 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
       const clientId=String(env.GOOGLE_OAUTH_CLIENT_ID||'');
       const escaped=clientId.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       return staticResponse(ADMIN_HTML.replace('__GOOGLE_CLIENT_ID__',escaped)
-        .replace('</main>',EDITOR_HTML+'</main>')
-        .replace('</body>','<script src="/editor.js" defer></script></body>'),
+        .replace('</main>',EDITOR_HTML+PRODUCTION_HTML+'</main>')
+        .replace('</body>','<script src="/editor.js" defer></script><script src="/production-status.js" defer></script></body>'),
         'text/html; charset=utf-8',{
         'Content-Security-Policy':"default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
       });
@@ -85,9 +87,11 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
     if(request.method==='GET'&&path==='/admin.js')
       return staticResponse(ADMIN_JS,'application/javascript; charset=utf-8');
     if(request.method==='GET'&&path==='/admin.css')
-      return staticResponse(ADMIN_CSS+EDITOR_CSS,'text/css; charset=utf-8');
+      return staticResponse(ADMIN_CSS+EDITOR_CSS+PRODUCTION_CSS,'text/css; charset=utf-8');
     if(request.method==='GET'&&path==='/editor.js')
       return staticResponse(EDITOR_JS,'application/javascript; charset=utf-8');
+    if(request.method==='GET'&&path==='/production-status.js')
+      return staticResponse(PRODUCTION_JS,'application/javascript; charset=utf-8');
     if(path.startsWith('/api/')){
       requireSameOrigin(request);
       if(path==='/api/session'){
@@ -131,6 +135,10 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
           })},
           draftPrWritePermission:'not_tested',
         });
+      }
+      if(request.method==='GET'&&path==='/api/production-status'){
+        // Manual editor-triggered snapshot; read-only, never CI/production verification by inference.
+        return respond(await readProductionStatus(env,fetcher));
       }
       if(request.method==='GET'&&path==='/api/rows'){
         const sheet=await readSheet(env,fetcher);

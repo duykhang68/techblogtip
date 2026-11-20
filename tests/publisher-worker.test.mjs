@@ -501,7 +501,8 @@ test('P5c tracker reports merged PR without claiming production or making source
   assert.equal(result.status,200);
   assert.equal(result.data.stage,'merged');
   assert.equal(result.data.productionVerified,false);
-  assert.equal(result.data.ci.availability,'unavailable');
+  assert.equal(result.data.ci.availability,'available');
+  assert.equal(result.data.ci.checkedSha,f.state.pr.head.sha);
   const calls=f.state.calls.slice(before);
   assert.equal(calls.filter(c=>c.url.includes('api.github.com')&&c.method!=='GET').length,0);
   assert.equal(calls.filter(c=>c.url.includes('sheets.googleapis.com')&&c.method==='PUT').length,0);
@@ -511,7 +512,7 @@ test('P5c UI checks PR on demand via Worker and never exposes GitHub API',async(
   const html=await (await handleRequest(f.request('/admin',''),f.env,{fetcher:f.fetcher})).text();
   const js=await (await handleRequest(f.request('/admin.js',''),f.env,{fetcher:f.fetcher})).text();
   assert.match(html,/id="pr-tracker"/);
-  assert.match(js,/Kiểm tra PR\/CI/);
+  assert.match(js,/Cập nhật tiến độ/);
   assert.match(js,/api\/pr-status/);
   assert.ok(!js.includes('api.github.com'));
 });
