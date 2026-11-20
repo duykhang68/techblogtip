@@ -32,3 +32,35 @@ Không được tự đánh dấu 100%. Các API writer/Google Sheets source kh�
 theo exact SHA, merge theo FIFO. Chạy workflow Publisher DEV manual trên main
 với `deploy-dev-only`, kiểm tra `/health` SHA. Cloudflare staging không dùng
 để triển khai giao diện Admin Publisher.
+
+## Production Status — snapshot GitHub Actions trong Editorial Studio
+
+Ở **cuối trang Editorial Studio**, section phụ **Production Status** hiển thị
+snapshot chỉ đọc theo yêu cầu của biên tập viên đã đăng nhập Google.
+
+**Cơ chế dữ liệu**
+- Nhấn **Lấy snapshot mới** gọi Worker `/api/production-status` (GET).
+- Worker lấy ref `main`, danh sách PR đang mở theo thời gian tạo (FIFO presentation),
+  GitHub Actions gần nhất và kiểm tra hai marker public:
+  staging `/release.json` và Publisher DEV `/health`.
+- Toàn bộ GitHub API và token nằm **trên Worker**, trình duyệt chỉ gọi
+  cùng origin. Không có cron, polling, push hook hoặc tự động phát hành.
+- Snapshot không được cache hoặc lưu vào localStorage; logout xóa dữ liệu UI.
+- Fine-grained GitHub publisher token có thể cần **Actions: Read** để hiện
+  đầy đủ lịch sử Actions; nếu bị từ chối, UI hiện trạng thái unavailable,
+  không biến lỗi thành PASS. Cấp thêm quyền theo nguyên tắc tối thiểu.
+
+**Phân biệt môi trường**
+- `MAIN`: commit ref hiện tại, không phải release.
+- `STAGING`: SHA marker tại public `/release.json`. Chỉ được ghi là
+  **staging** ngay cả khi trùng main. Staging có `noindex`.
+- `PUBLISHER DEV`: SHA và Durable Object binding được báo bởi `/health`;
+  Worker admin không phải public blog production.
+- `PRODUCTION`: chưa có public production URL, exact SHA + verification gate;
+  vì thế section hiển thị **Chưa xác minh**, tuyệt đối không báo thành công.
+
+Snapshot chỉ phục vụ quan sát tình hình repository. **Không tự merge PR,
+không triển khai code và không sửa Google Sheets**.
+
+Khung được đặt sau editor, giao diện responsive. Nội dung từ GitHub được đưa
+vào DOM bằng `textContent`, đường dẫn được tạo/kiểm tra theo repository cố định.
