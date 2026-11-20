@@ -201,3 +201,7 @@ credential storage. Reloading the browser does not retain unsaved edits.
 no compare-and-swap. An external writer changing source cells between the last
 read and batch write can still race, despite snapshot checks and post-write
 verification. Multi-editor usage awaits a transactional per-source lock.
+
+## Markdown integrity fix for the visual draft editor
+
+The editor now retains the **exact original `body` from the authorized Sheet** when the visual canvas has not changed, even when a user edits metadata such as title, summary or tags. Contenteditable's implicit paragraph spacing must never rewrite source Markdown on a metadata-only save. Only deliberate changes in the visual body are serialized. Successful saves reset the original-body baseline using the canonical server response; a 409 conflict disables further writes until the editor is reloaded. This still requires a separate per-source lock before concurrent writers can be enabled.
