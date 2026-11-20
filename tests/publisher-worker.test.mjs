@@ -321,3 +321,40 @@ test('admin JS uses secure same-origin cookies and does not persist Google token
   assert.ok(!source.includes('sessionStorage'));
   assert.ok(!source.includes("Authorization:'Bearer '"));
 });
+
+test('read-only preflight reports live Sheet and GitHub connectivity, with no writes',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const ok=await f.call('/api/preflight',token);
+  assert.equal(ok.status,200);
+  assert.equal(ok.data.sheet.ok,true);
+  assert.equal(ok.data.sheet.rows,1);
+  assert.equal(ok.data.github.ok,true);
+  assert.match(ok.data.github.mainSha,/^[a-f0-9]{40}$/);
+  assert.equal(ok.data.draftPrWritePermission,'not_tested');
+  assert.equal(f.state.calls.filter(c=>c.method!=='GET'&&c.url.includes('api.github.com')).length,0);
+  assert.equal(f.state.calls.filter(c=>c.method==='PUT'&&c.url.includes('sheets.googleapis.com')).length,0);
+  const unauth=await f.call('/api/preflight','');
+  assert.equal(unauth.status,401);
+});
+test('preflight safely returns separate errors without disclosing credentials',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const failingFetcher=(input,opts)=>String(input).includes('api.github.com')?
+    Response.json({message:'Access denied'},{status:403}):f.fetcher(input,opts);
+  const res=await handleRequest(f.request('/api/preflight',token),f.env,{fetcher:failingFetcher});
+  assert.equal(res.status,200);
+  const payload=await res.json();
+  assert.equal(payload.sheet.ok,true);
+  assert.equal(payload.github.ok,false);
+  assert.equal(payload.github.code,'github_api');
+  const serialized=JSON.stringify(payload);
+  assert.ok(!serialized.includes(f.env.GITHUB_PUBLISHER_TOKEN));
+  assert.ok(!serialized.includes('PRIVATE KEY'));
+});
+test('admin UI offers authenticated preflight without pretending to test GitHub writes',async()=>{
+  const f=await fixture();
+  const html=await (await handleRequest(f.request('/admin',''),f.env,{fetcher:f.fetcher})).text();
+  assert.match(html,/id="preflight"/);
+  const js=await (await handleRequest(f.request('/admin.js',''),f.env,{fetcher:f.fetcher})).text();
+  assert.match(js,/api\/preflight/);
+  assert.match(js,/Quyền tạo Draft PR chưa được kiểm tra/);
+});
