@@ -3,7 +3,7 @@ name: CI Incident Collector
 # Capture failures on completion. Backfill once at installation or on manual dispatch.
 # No periodic polling; do not run untrusted pull request code with a write token.
 on:
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers] only trusted main is checked out; no PR code or artifacts are executed
     workflows:
       - Quality
       - Workflow Security Audit
