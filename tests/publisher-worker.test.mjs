@@ -87,13 +87,22 @@ async function fixture(){
         return Response.json({message:'unauthorized'}, {status:401});
       const suffix=url.pathname.replace('/repos/duykhang68/techblogtip','');
       if(suffix==='/pulls'&&method==='GET')return Response.json(state.pr?[state.pr]:[]);
+      if(/^\/pulls\/[0-9]+$/.test(suffix)&&method==='GET')
+        return state.pr&&suffix==='/pulls/'+state.pr.number?
+          Response.json(state.pr):Response.json({message:'Not found'},{status:404});
+      if(/^\/commits\/[a-f0-9]{40}\/check-runs$/.test(suffix)&&method==='GET')
+        return Response.json({total_count:2,check_runs:[
+          {name:'Quality',status:'completed',conclusion:'success'},
+          {name:'Security Audit',status:'in_progress',conclusion:null},
+        ]});
       if(suffix==='/pulls'&&method==='POST'){
         const body=JSON.parse(options.body);
         assert.equal(body.draft,true,'Publisher may only create Draft PRs');
         assert.equal(body.base,'main');
         state.pr={
           number:101,html_url:'https://github.com/duykhang68/techblogtip/pull/101',
-          body:body.body,draft:true,base:{ref:'main'}
+          body:body.body,draft:true,state:'open',merged_at:null,base:{ref:'main'},
+          head:{ref:body.head,sha:'c'.repeat(40),repo:{full_name:'duykhang68/techblogtip'}}
         };
         return Response.json(state.pr,{status:201});
       }
@@ -411,4 +420,66 @@ test('live canary requires secrets before contacting external services',async()=
     verifyPublisherLiveReadOnly({GITHUB_SHA:'a'.repeat(40)},{fetcher:()=>{throw Error('Should never fetch');}}),
     /Missing credential: TBT_SHEETS_SPREADSHEET_ID/
   );
+});
+
+test('P5c tracker validates source-linked PR and returns checks for exact head SHA',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][8]='READY';
+  const revision=(await f.call('/api/revision?sourceId='+id,token)).data.sourceRevision;
+  assert.equal((await f.call('/api/submit',token,'POST',{sourceId:id,sourceRevision:revision})).status,201);
+  const result=await f.call('/api/pr-status?sourceId='+id,token);
+  assert.equal(result.status,200);
+  assert.equal(result.data.stage,'draft');
+  assert.equal(result.data.ci.availability,'available');
+  assert.equal(result.data.ci.checkedSha,'c'.repeat(40));
+  assert.deepEqual(result.data.ci.checks.map(c=>c.conclusion),['success',null]);
+  assert.equal(result.data.productionVerified,false);
+});
+test('P5c tracker rejects foreign Sheet PR URL before GitHub PR fetch',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][11]='https://attacker.example/pull/101';
+  const result=await f.call('/api/pr-status?sourceId='+id,token);
+  assert.equal(result.status,409);
+  assert.equal(result.data.error,'pr_not_registered');
+  assert.equal(f.state.calls.filter(c=>c.url.endsWith('/pulls/101')).length,0);
+});
+test('P5c tracker rejects PR whose body and branch do not match source',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][11]='https://github.com/duykhang68/techblogtip/pull/101';
+  f.state.values[1][10]='a'.repeat(64);
+  f.state.pr={number:101,html_url:f.state.values[1][11],state:'open',draft:true,
+    body:'source-id: TBT-wrong-source',base:{ref:'main'},
+    head:{ref:'sheets/tbt-unrelated',sha:'c'.repeat(40),repo:{full_name:'duykhang68/techblogtip'}}};
+  const result=await f.call('/api/pr-status?sourceId='+id,token);
+  assert.equal(result.status,409);
+  assert.equal(result.data.error,'pr_source_mismatch');
+});
+test('P5c tracker reports merged PR without claiming production or making source writes',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][8]='READY';
+  const revision=(await f.call('/api/revision?sourceId='+id,token)).data.sourceRevision;
+  await f.call('/api/submit',token,'POST',{sourceId:id,sourceRevision:revision});
+  f.state.pr.draft=false;f.state.pr.state='closed';f.state.pr.merged_at='2026-11-21T01:00:00Z';
+  const before=f.state.calls.length;
+  const result=await f.call('/api/pr-status?sourceId='+id,token);
+  assert.equal(result.status,200);
+  assert.equal(result.data.stage,'merged');
+  assert.equal(result.data.productionVerified,false);
+  assert.equal(result.data.ci.availability,'unavailable');
+  const calls=f.state.calls.slice(before);
+  assert.equal(calls.filter(c=>c.url.includes('api.github.com')&&c.method!=='GET').length,0);
+  assert.equal(calls.filter(c=>c.url.includes('sheets.googleapis.com')&&c.method==='PUT').length,0);
+});
+test('P5c UI checks PR on demand via Worker and never exposes GitHub API',async()=>{
+  const f=await fixture();
+  const html=await (await handleRequest(f.request('/admin',''),f.env,{fetcher:f.fetcher})).text();
+  const js=await (await handleRequest(f.request('/admin.js',''),f.env,{fetcher:f.fetcher})).text();
+  assert.match(html,/id="pr-tracker"/);
+  assert.match(js,/Kiểm tra PR\/CI/);
+  assert.match(js,/api\/pr-status/);
+  assert.ok(!js.includes('api.github.com'));
 });

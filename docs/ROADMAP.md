@@ -5,13 +5,14 @@
 | A (P0–P4) | Astro, responsive editorial UI, content collection, tags/categories/series, static search, RSS, SEO, CI, Cloudflare staging | Build and checks pass on exact PR SHA; manual review; staging URL returns matching release SHA |
 | B · P5a | Sheets Publisher source schema, normalization, fingerprinting, unit tests | Draft PR CI and security PASS; no live writes |
 | B · P5b | Authorized Google Sheets API + Worker + Draft PR + verified production writeback | Full end-to-end with pinned new TechBlogTip sheet |
+| B · P5c | Visual editorial workflow: on-demand PR/CI feedback, WYSIWYG, Drive→WebP, conflict protection, and verified production release writeback | Review each P5c sub-phase on exact SHA; never claim published based on PR merge alone |
 | B · P6–P8 | Notion editorial adapter, Obsidian selected-note importer, Drive media import | Source identity, replay protection, draft PR, no private data exposure |
 | C | Knowledge graph and editorial dashboard | Accessible, low-JS, event-driven |
 | D | Brand, domain, SEO launch, Search Console | Indexability/canonical verified with domain |
 
 Milestone A **accepted on staging** on 20/11/2026. PR #15 merged at `d907346041cb4d74cdc69541e765805288e23eca`, and [Cloudflare deploy #44770658345](https://github.com/duykhang68/techblogtip/actions/runs/44770658345) verified the public SHA. Browser tests at 360/390/430/768/1440px all passed; [ops issue #5](https://github.com/duykhang68/techblogtip/issues/5) closed.
 
-Current focus: B/P5b authenticated Google Sheets Publisher Worker. P5a contract is merged; production/editor credentials and live integration are not yet configured. P0 product/keyword research remains an open editorial activity; do not present keyword traffic without a trusted source.
+Current focus: B/P5b live READY→Draft PR→Sheet K:L acceptance (Issue #19) and B/P5c Editorial Studio. P5a is merged; OAuth, dedicated service account, and Publisher DEV are configured. The real Google Sheets/GitHub **read-only** integration passed, but the actual Github PR write path has not been verified. P0 product/keyword research remains an open editorial activity; do not present keyword traffic without a trusted source.
 
 ## A acceptance
 - [x] Astro build, strict TypeScript, Node 24 CI green
@@ -22,3 +23,14 @@ Current focus: B/P5b authenticated Google Sheets Publisher Worker. P5a contract 
 - [x] Dependabot and Draft PR review process
 - [x] Cloudflare staging deployed, publicly verified for exact SHA
 - [ ] Production domain, brand and secrets finalized before SEO launch
+
+## Verified 21/11/2026 checkpoint
+
+- Milestone A verified on Cloudflare staging. PR #23 / main `a3c44a015d980d56d5a2c2210b3243c78d948793` passed Quality, Workflow Security Audit and staging exact-SHA deployment.
+- Milestone B P5a is complete. P5b Worker DEV deployed at `2446cb94e38175ef61de55c5fbc8575eb44d88ce` (PR #20–#22), including seven-day session, readonly preflight and duplicate-click prevention.
+- [Live integration check #44830236907](https://github.com/duykhang68/techblogtip/actions/runs/44830236907) passed against the dedicated Sheet VN, Github read-only main and Publisher DEV. It does **not** test Github PR write permissions.
+- **Pending P5b:** authorized editor submits a real READY article → exactly one Draft PR → verify Sheet K:L. Keep [Issue #19](https://github.com/duykhang68/techblogtip/issues/19) open until verified.
+- **P5c.1:** on-demand PR/CI tracker using authenticated Worker; CI checks always pinned to PR head SHA, optional GitHub Checks:Read; failed/unavailable check data is never treated as PASS. Manual separate Publisher DEV deployment required after merge.
+- **P5c.2:** WYSIWYG and Google Drive media→WebP, multi-editor locking and recovery; not implemented.
+- **P5c.3:** verified production release writeback M:O requires a production domain, deployed public URL and exact release SHA; not implemented.
+- **P6–P8/C/D:** Notion, Obsidian, Drive adapter, knowledge graph and public SEO launch remain planned.
