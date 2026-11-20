@@ -231,3 +231,17 @@ Source ID allocation uses a separate key scoped to the pinned row number.
   Do not claim fully lossless multi-editor concurrency for external Sheet edits.
 
 No automatic merges, public deployment, polling, or privileged browser token.
+
+## Editorial readiness validation (read-only)
+
+The authenticated admin offers a **Kiểm tra bài** button for rows with
+system-issued IDs. `GET /api/validate?sourceId=...` reads the actual pinned
+Google Sheet and runs the **same content preparation checks** that would apply
+to READY, without changing the real status cell I. It returns whether the
+content is technically valid, whether the row is truly READY, whether any
+system-managed K:O cells are already populated, and concise validation errors.
+
+Passing content checks is **not editorial approval**. A DRAFT row must remain
+DRAFT until a human editor approves and explicitly changes it to READY in
+Google Sheets. This endpoint never opens PRs, writes Google Sheets, or marks
+anything published. Existing PRs require review rather than re-submission.
