@@ -3,18 +3,22 @@
 | Milestone | Scope | Gate |
 |---|---|---|
 | A (P0–P4) | Astro, responsive editorial UI, content collection, tags/categories/series, static search, RSS, SEO, CI, Cloudflare staging | Build and checks pass on exact PR SHA; manual review; staging URL returns matching release SHA |
-| B | Sheets Publisher, Notion editorial adapter, Obsidian selected-note importer, Drive media import | Source identity, replay protection, Draft PR, no private data exposure |
+| B · P5a | Sheets Publisher source schema, normalization, fingerprinting, unit tests | Draft PR CI and security PASS; no live writes |
+| B · P5b | Authorized Google Sheets API + Worker + Draft PR + verified production writeback | Full end-to-end with pinned new TechBlogTip sheet |
+| B · P6–P8 | Notion editorial adapter, Obsidian selected-note importer, Drive media import | Source identity, replay protection, draft PR, no private data exposure |
 | C | Knowledge graph and editorial dashboard | Accessible, low-JS, event-driven |
 | D | Brand, domain, SEO launch, Search Console | Indexability/canonical verified with domain |
 
-Current focus: A only. P0 product/keyword research is an open editorial activity; do not present competitor volume/keyword metrics without a trusted source.
+Milestone A code merged at `bd8999e089cfa22f19da953200e4c8a6443449e2`. Quality on main PASS, but staging remains BLOCKED by missing GitHub Actions Cloudflare secrets. See [ops issue #5](https://github.com/duykhang68/techblogtip/issues/5); do not claim staging deployed.
+
+Current focus: B/P5a preparation while staging credentials are handled separately. P0 product/keyword research remains an open editorial activity; do not present keyword traffic without a trusted source.
 
 ## A acceptance
-- [ ] Astro build, strict TypeScript, Node 24 CI green
-- [ ] Homepage and article route; category/tag/series filtering
-- [ ] Search generated at build, RSS, sitemap, robots, release marker
-- [ ] Responsive 360/390/430px, tablet and desktop; keyboard navigation
-- [ ] Content + output tests; WebP policy
-- [ ] Dependabot and Draft PR review process
-- [ ] Cloudflare **staging** deployed, publicly verified for exact SHA
-- [ ] Production domain, brand and secrets finalized separately before SEO launch
+- [x] Astro build, strict TypeScript, Node 24 CI green
+- [x] Homepage and article route; category/tag/series filtering
+- [x] Search generated at build, RSS, sitemap, robots, release marker
+- [ ] Responsive 360/390/430px, tablet and desktop visual acceptance
+- [x] Content + output tests; WebP policy
+- [x] Dependabot and Draft PR review process
+- [ ] Cloudflare staging deployed, publicly verified for exact SHA
+- [ ] Production domain, brand and secrets finalized before SEO launch
