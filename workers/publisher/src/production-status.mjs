@@ -24,6 +24,21 @@ function runSummary(run){
   };
 }
 
+// The repository is public. Fine-grained Publisher tokens may intentionally lack
+// Actions:Read, so fall back to its public GitHub Actions endpoint server-side.
+// Still GET-only, bounded, manual and never exposed to the browser.
+async function publicActionsRuns(fetcher){
+  const url='https://api.github.com/repos/duykhang68/techblogtip/actions/runs?per_page=30';
+  const response=await fetcher(url,{
+    method:'GET',
+    headers:{Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',
+      'User-Agent':'techblogtip-production-status'},
+    signal:AbortSignal.timeout(12000),
+  });
+  if(!response.ok)throw Error('public_github_actions_unavailable');
+  return response.json();
+}
+
 async function fetchPublicJson(url,fetcher){
   const response=await fetcher(url,{
     method:'GET',headers:{Accept:'application/json','Cache-Control':'no-cache'},
@@ -43,7 +58,7 @@ export async function readProductionStatus(env,fetcher=fetch){
   const [mainResult,prsResult,runsResult,stagingResult,publisherResult]=await Promise.allSettled([
     get('/git/ref/heads/main'),
     get('/pulls?state=open&per_page=100&sort=created&direction=asc'),
-    get('/actions/runs?per_page=30'),
+    get('/actions/runs?per_page=30').catch(()=>publicActionsRuns(fetcher)),
     fetchPublicJson(STAGING+'/release.json',fetcher),
     fetchPublicJson(PUBLISHER+'/health',fetcher),
   ]);
