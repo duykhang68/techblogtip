@@ -2,6 +2,7 @@ import { PublisherError,fail,requireSameOrigin,verifyGoogleIdToken } from './aut
 import { issueSessionCookie,verifySession,expiredSessionCookie,SESSION_TTL_SECONDS } from './session.mjs';
 import { readSheet,putSystemCells,rowById,sheetConfig } from './google-api.mjs';
 import { createDraftPR,githubRequest } from './github-api.mjs';
+import { inspectPublisherPR } from './pr-status.mjs';
 import { prepareSheetArticle } from '../../../scripts/publisher/sheets.mjs';
 import { ADMIN_HTML, ADMIN_JS, ADMIN_CSS } from './ui.mjs';
 
@@ -126,6 +127,14 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
       if(request.method==='GET'&&path==='/api/rows'){
         const sheet=await readSheet(env,fetcher);
         return respond({editor:editor.email,rows:sheet.records.map(rowPreview)});
+      }
+      if(request.method==='GET'&&path==='/api/pr-status'){
+        const sourceId=new URL(request.url).searchParams.get('sourceId');
+        if(!sourceId||!/^TBT-[A-Za-z0-9-]{8,80}$/.test(sourceId))
+          fail(400,'source_invalid','System-issued source ID required');
+        const sheet=await readSheet(env,fetcher);
+        const row=rowById(sheet.records,sourceId);
+        return respond(await inspectPublisherPR(env,row,sourceId,fetcher));
       }
       if(request.method==='GET'&&path==='/api/revision'){
         const sourceId=new URL(request.url).searchParams.get('sourceId');

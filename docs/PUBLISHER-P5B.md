@@ -154,3 +154,20 @@ Only the Google OAuth service-account token exchange POST is used; all Google
 Sheets and GitHub requests are GET. No private source content is printed.
 A passing result **does not validate GitHub write permissions** or the actual
 READY → Draft PR → K:L writeback path; those require explicit editor acceptance.
+
+## P5c.1 — On-demand PR/CI tracking
+
+Authenticated `GET /api/pr-status?sourceId=<TBT-ID>` re-reads the pinned Sheets row,
+validates the registered PR URL belongs to `duykhang68/techblogtip`, checks GitHub
+source-id, source-revision, expected source branch, base main and exact head SHA.
+It returns Draft / Review / Merged / Closed and does not mutate Google Sheets or GitHub.
+
+For open PRs the Worker attempts optional `Checks: Read` access via GitHub check-runs
+on the **same head SHA**. Tokens restricted to Contents and Pull requests may lack this
+permission; when missing, the result is unavailable, NEVER a passing CI result.
+Even successful reported checks do not verify production release or authorize merge.
+The admin offers `Kiểm tra PR/CI` only when the Sheet has a recorded PR. No polling,
+cron, auto-undraft, auto-merge or release writeback. Browser never calls GitHub API.
+
+This enhancement is effective on Publisher DEV only after the separate manual
+deployment workflow has verified the deployed `/health` exact SHA.
