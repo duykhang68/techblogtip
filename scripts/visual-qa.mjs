@@ -80,7 +80,7 @@ try{
    console.log('PASS homepage '+w+'px; first card y='+Math.round(metric.articleStart)+'; columns='+metric.columns);
   }catch(e){record('homepage '+w,e);}
   try{
-   const response=await page.goto(base+'/bai-viet/lam-quen-voi-google-sheets/',{waitUntil:'domcontentloaded'});
+   const response=await page.goto(base+'/bai-viet/lam-quen-voi-google-sheets/',{waitUntil:'load'});
    assert.equal(response.status(),200);
    assert.equal(await page.locator('.prose h2').count()>0,true,'Article heading missing');
    const state=await page.evaluate(()=>({
