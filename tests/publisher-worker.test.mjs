@@ -709,11 +709,12 @@ test('source lock is fail closed without Durable Object binding and releases on 
     async acquire(){return true;},
     async release(){throw Error('Simulated release network error');}
   };}};
-  const unchanged=await f.call('/api/draft',token,'PUT',{
-    sourceId,expectedSnapshot:draft.snapshot,fields:draft.fields
+  const afterReleaseError=await f.call('/api/draft',token,'PUT',{
+    sourceId,expectedSnapshot:draft.snapshot,fields:{...draft.fields,body:draft.fields.body.trim()}
   });
-  assert.equal(unchanged.status,200);
-  assert.equal(unchanged.data.saved,false);
+  assert.equal(afterReleaseError.status,200);
+  assert.equal(afterReleaseError.data.saved,true);
+  assert.equal(f.state.values[1][2],draft.fields.body.trim());
 });
 test('row ID allocation lock blocks repeated concurrent writes for the same pinned row',async()=>{
   const f=await fixture(),token=await f.sign();
