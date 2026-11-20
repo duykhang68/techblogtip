@@ -501,7 +501,8 @@ test('P5c tracker reports merged PR without claiming production or making source
   assert.equal(result.status,200);
   assert.equal(result.data.stage,'merged');
   assert.equal(result.data.productionVerified,false);
-  assert.equal(result.data.ci.availability,'unavailable');
+  assert.equal(result.data.ci.availability,'available');
+  assert.equal(result.data.ci.checkedSha,f.state.pr.head.sha);
   const calls=f.state.calls.slice(before);
   assert.equal(calls.filter(c=>c.url.includes('api.github.com')&&c.method!=='GET').length,0);
   assert.equal(calls.filter(c=>c.url.includes('sheets.googleapis.com')&&c.method==='PUT').length,0);
