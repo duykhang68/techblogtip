@@ -7,7 +7,7 @@ import {handleRequest} from '../workers/publisher/src/index.mjs';
 const main='a'.repeat(40),previous='b'.repeat(40);
 const env={GITHUB_PUBLISHER_TOKEN:'mock-token'};
 const root='https://api.github.com/repos/duykhang68/techblogtip';
-function fixture({denyActions=false,unavailableStaging=false}={}){
+function fixture({denyActions=false,publicActions=true,unavailableStaging=false}={}){
  const calls=[];
  const fetcher=async(input,options={})=>{
   const url=new URL(String(input)),method=options.method||'GET';
@@ -23,7 +23,7 @@ function fixture({denyActions=false,unavailableStaging=false}={}){
         {number:37,draft:false,title:'Progress PR',head:{sha:main}},
       ]);
     if(url.pathname===new URL(root).pathname+'/actions/runs'){
-      if(denyActions)return Response.json({message:'Forbidden'}, {status:403});
+      if(denyActions&&(options.headers.Authorization||!publicActions))return Response.json({message:'Forbidden'}, {status:403});
       return Response.json({workflow_runs:[
         {id:44838990730,name:'Quality',status:'completed',conclusion:'failure',
          head_sha:main,updated_at:'2026-11-20T23:45:08Z',event:'pull_request',
@@ -58,12 +58,22 @@ test('read-only Production Status snapshot lists queue, actions and public stagi
  assert.ok(f.calls.every(c=>c.method==='GET'));
 });
 test('Actions: Read denied displays unavailable instead of PASS',async()=>{
- const f=fixture({denyActions:true,unavailableStaging:true});
+ const f=fixture({denyActions:true,publicActions:false,unavailableStaging:true});
  const s=await readProductionStatus(env,f.fetcher);
  assert.equal(s.actions.available,false);
  assert.equal(s.staging.available,false);
  assert.equal(s.main.available,true);
  assert.equal(s.production.verified,false);
+});
+test('Public GitHub Actions fallback keeps snapshot usable without Actions:Read token',async()=>{
+ const f=fixture({denyActions:true});
+ const snapshot=await readProductionStatus(env,f.fetcher);
+ assert.equal(snapshot.actions.available,true);
+ assert.equal(snapshot.actions.items[0].name,'Quality');
+ const calls=f.calls.filter(c=>c.url.includes('/actions/runs'));
+ assert.equal(calls.length,2);
+ assert.equal(calls[0].authorization,'Bearer mock-token');
+ assert.equal(calls[1].authorization,'');
 });
 test('Production Status UI is last in admin and never calls browser GitHub API',async()=>{
  assert.ok(PRODUCTION_HTML.includes('id="production-status"'));
