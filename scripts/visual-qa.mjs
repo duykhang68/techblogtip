@@ -15,7 +15,7 @@ const chrome=browserPaths.find(p=>existsSync(p));
 assert.ok(chrome,'Preinstalled Google Chrome/Chromium is required; do not download browsers in CI');
 assert.ok(existsSync('dist/index.html'),'Run npm run build before visual QA');
 mkdirSync('artifacts/visual-qa',{recursive:true});
-const server=spawn(process.execPath,[resolve('node_modules/astro/astro.js'),'preview','--host','127.0.0.1','--port','4325'],{stdio:['ignore','pipe','pipe']});
+const server=spawn(process.platform==='win32'?'npm.cmd':'npm',['run','preview','--','--port','4325'],{stdio:['ignore','pipe','pipe']});
 let serverLog='';
 server.stdout.on('data',chunk=>serverLog+=chunk.toString());
 server.stderr.on('data',chunk=>serverLog+=chunk.toString());
