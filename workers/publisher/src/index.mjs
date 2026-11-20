@@ -4,6 +4,7 @@ import { readSheet,putSystemCells,rowById,sheetConfig } from './google-api.mjs';
 import { createDraftPR,githubRequest } from './github-api.mjs';
 import { inspectPublisherPR } from './pr-status.mjs';
 import { loadEditableDraft,saveEditableDraft } from './editorial.mjs';
+import { withSourceWriteLock,withRowWriteLock } from './source-lock.mjs';
 import { EDITOR_HTML,EDITOR_JS,EDITOR_CSS } from './editor-ui.mjs';
 import { prepareSheetArticle } from '../../../scripts/publisher/sheets.mjs';
 import { ADMIN_HTML, ADMIN_JS, ADMIN_CSS } from './ui.mjs';
@@ -142,7 +143,7 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         }
         if(request.method==='PUT'){
           const input=await jsonRequest(request,150000);
-          return respond(await saveEditableDraft(env,input,fetcher));
+          return respond(await withSourceWriteLock(env,input.sourceId,()=>saveEditableDraft(env,input,fetcher)));
         }
         fail(405,'method_not_allowed','Unsupported draft method');
       }
@@ -167,8 +168,7 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
       }
       if(request.method==='POST'&&path==='/api/allocate-id'){
         const {rowNumber}=await jsonRequest(request);
-        if(!Number.isInteger(rowNumber)||rowNumber<2||rowNumber>200)
-          fail(400,'row_invalid','Invalid Google Sheet row number');
+        return withRowWriteLock(env,rowNumber,async()=>{
         const sheet=await readSheet(env,fetcher);
         const row=findRowByNumber(sheet.records,rowNumber);
         if(row.cells[0].trim())
@@ -180,6 +180,7 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         if(assigned.cells[0].trim()!==id||assigned.cells[1]!==row.cells[1])
           fail(409,'sheet_changed','Row changed during source ID allocation');
         return respond({sourceId:id,created:true});
+        });
       }
       if(request.method==='POST'&&path==='/api/submit'){
         const payload=await jsonRequest(request);
@@ -188,6 +189,7 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
           fail(400,'source_invalid','System-issued source ID required');
         if(typeof payload.sourceRevision!=='string'||!/^[0-9a-f]{64}$/.test(payload.sourceRevision))
           fail(400,'revision_invalid','Refresh preview to get current revision');
+        return withSourceWriteLock(env,sourceId,async()=>{
         const source=sheetConfig(env);
         const context={spreadsheetId:source.spreadsheetId,sheetGid:source.gid,publishedDate:new Date().toISOString().slice(0,10)};
         const sheet=await readSheet(env,fetcher);
@@ -211,6 +213,7 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         if(fresh.cells[10]!==prepared.sourceRevision||fresh.cells[11]!==pr.url)
           await putSystemCells(env,reread.token,fresh.rowNumber,'K:L',[prepared.sourceRevision,pr.url],fetcher);
         return respond({sourceId,sourceRevision:prepared.sourceRevision,prUrl:pr.url,created:pr.created,review:'draft',published:false},pr.created?201:200);
+        });
       }
       fail(405,'method_not_allowed','Unsupported API method or route');
     }
