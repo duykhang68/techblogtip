@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright-core';
 
-const base='http://127.0.0.1:4325';
+let base='http://127.0.0.1:4325';
 const screens=[360,390,430,768,1440];
 const sizes={360:[360,780],390:[390,844],430:[430,932],768:[768,1024],1440:[1440,900]};
 const browserPaths=[process.env.CHROME_PATH,process.env.CHROME_BIN,
@@ -15,17 +15,25 @@ const chrome=browserPaths.find(p=>existsSync(p));
 assert.ok(chrome,'Preinstalled Google Chrome/Chromium is required; do not download browsers in CI');
 assert.ok(existsSync('dist/index.html'),'Run npm run build before visual QA');
 mkdirSync('artifacts/visual-qa',{recursive:true});
-const server=spawn(process.platform==='win32'?'npm.cmd':'npm',['run','preview','--','--host','127.0.0.1','--port','4325'],{stdio:['ignore','pipe','pipe']});
+const server=spawn(process.execPath,[resolve('node_modules/astro/astro.js'),'preview','--host','127.0.0.1','--port','4325'],{stdio:['ignore','pipe','pipe']});
 let serverLog='';
 server.stdout.on('data',chunk=>serverLog+=chunk.toString());
 server.stderr.on('data',chunk=>serverLog+=chunk.toString());
 async function waitForServer(){
+ let lastError='';
+ const candidates=['http://127.0.0.1:4325','http://localhost:4325','http://[::1]:4325'];
  for(let i=0;i<80;i++){
   if(server.exitCode!==null)throw new Error('Astro preview exited: '+serverLog);
-  try{const r=await fetch(base+'/');if(r.ok)return;}catch{}
+  for(const url of candidates){
+   try{
+    const response=await fetch(url+'/',{signal:AbortSignal.timeout(2000)});
+    if(response.ok){base=url;console.log('QA server ready at '+base);return;}
+    lastError=url+' HTTP '+response.status;
+   }catch(e){lastError=url+' '+e.message+(e.cause?' / '+e.cause.message:'');}
+  }
   await new Promise(r=>setTimeout(r,250));
  }
- throw new Error('Astro preview unavailable: '+serverLog);
+ throw new Error('Astro preview unavailable. Last error: '+lastError+'\n'+serverLog);
 }
 let browser;
 const failures=[];
