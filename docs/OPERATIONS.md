@@ -6,11 +6,11 @@ The authorized Cloudflare account has the workers.dev subdomain `tamsudev-com`; 
 
 In GitHub `techblogtip` → Settings → Secrets and variables → Actions:
 - `CLOUDFLARE_API_TOKEN`: API token scoped to deploy Workers within the correct account.
-- `CLOUDFLARE_ACCOUNT_ID`: account identifier (do not embed in source; secret for operational convenience).
+- `CLOUDFLARE_ACCOUNT_ID`: **optional GitHub Actions variable** (not a secret). Default is the verified account `d2228e3f75bc47eff64442ad8a225f85` and can be overridden with a repository/environment variable. GitHub Actions secret with this name is no longer required.
 
 Cloudflare CLI `cf` reads `cloudflare.config.ts`. Source is built via Astro; `npx cf deploy ./dist` uploads an **assets-only Worker**. Only the staging workflow is authored in Milestone A, no production live writer.
 
-Use the **Deploy · Cloudflare staging** workflow after `main` receives a validated merge. The workflow fails on missing secrets and verifies `/release.json` only after deployment. The staging URL must stay noindex. Enforce Cloudflare Access when the preview must be private.
+Use the **Deploy · Cloudflare staging** workflow after `main` receives a validated merge. The workflow fails if the API token secret is absent and verifies `/release.json` only after deployment. The staging URL must stay noindex. Enforce Cloudflare Access when the preview must be private.
 
 ## Pull Request policy
 1. Create Draft PR; run quality checks on the actual HEAD SHA.
