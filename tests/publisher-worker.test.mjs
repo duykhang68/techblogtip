@@ -358,3 +358,15 @@ test('admin UI offers authenticated preflight without pretending to test GitHub 
   assert.match(js,/api\/preflight/);
   assert.match(js,/Quyền tạo Draft PR chưa được kiểm tra/);
 });
+
+test('Publisher admin disables overlapping row actions and hides redundant Draft PR creation',async()=>{
+  const f=await fixture();
+  const content=await (await handleRequest(f.request('/admin.js',''),f.env,{fetcher:f.fetcher})).text();
+  assert.match(content,/pendingRows\.has\(row\.rowNumber\)/);
+  assert.match(content,/pendingRows\.add\(row\.rowNumber\)/);
+  assert.match(content,/pendingRows\.delete\(row\.rowNumber\)/);
+  assert.match(content,/button\.disabled=busy/);
+  assert.match(content,/aria-busy/);
+  assert.match(content,/row\.status\.toUpperCase\(\)==='READY'&&row\.sourceId&&!row\.draftPr/);
+  assert.match(content,/window\.google\?\.accounts\?\.id\?\.disableAutoSelect/);
+});
