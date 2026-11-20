@@ -53,7 +53,9 @@ jobs:
         run: node scripts/publisher/create-deploy-secrets.mjs
       - name: Deploy only publisher-dev Worker
         working-directory: workers/publisher
-        run: npx cf deploy --no-provision --secrets-file "${{ steps.bindings.outputs.file }}" --message "Publisher dev $GITHUB_SHA"
+        env:
+          BINDINGS_FILE: ${{ steps.bindings.outputs.file }}
+        run: npx cf deploy --no-provision --secrets-file "$BINDINGS_FILE" --message "Publisher dev $GITHUB_SHA"
       - name: Remove ephemeral secret file
         if: always()
         env:
