@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleList from '../../components/ArticleList.astro';
+import { getArticles, slugify } from '../../lib/content';
+export async function getStaticPaths(){
+ const all=await getArticles();
+ return [...new Set(all.map(a=>a.data.category))].map(name=>({params:{slug:slugify(name)},props:{name}}));
+}
+const {name}=Astro.props;
+const articles=(await getArticles()).filter(a=>a.data.category===name);
+---
+<BaseLayout title={name} description={'Các hướng dẫn và bài viết thuộc chuyên mục '+name+' trên TechBlogTip.'}><section class="container list-page"><nav class="breadcrumb"><a href="/">Trang chủ</a><span>/</span><a href="/chuyen-muc/">Chuyên mục</a></nav><p class="section-kicker">CHUYÊN MỤC</p><h1>{name}</h1><p class="directory-summary">{articles.length} bài viết trong chuyên mục này</p><ArticleList articles={articles}/></section></BaseLayout>

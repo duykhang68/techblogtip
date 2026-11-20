@@ -1,0 +1,6 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getArticles, valuesWithCounts, tagUrl } from '../../lib/content';
+const tags=valuesWithCounts(await getArticles(),a=>a.data.tags);
+---
+<BaseLayout title="Thẻ" description="Duyệt các thẻ và chủ đề nhỏ để tìm nhanh kiến thức công nghệ."><section class="container list-page"><p class="section-kicker">BỘ LỌC KIẾN THỨC</p><h1>Thẻ nội dung</h1><div class="topic-chips">{tags.map(item=><a href={tagUrl(item.name)}>#{item.name}<span>{item.count}</span></a>)}</div></section></BaseLayout>

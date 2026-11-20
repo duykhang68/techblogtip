@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleList from '../../components/ArticleList.astro';
+import { getArticles } from '../../lib/content';
+const pageSize=8;
+export async function getStaticPaths() {
+  const pageSize=8;
+  const articles=await getArticles();
+  const total=Math.ceil(articles.length/pageSize);
+  return Array.from({length:Math.max(0,total-1)},(_,i)=>({params:{page:String(i+2)}}));
+}
+const page=Number(Astro.params.page);
+const articles=await getArticles();
+const pageCount=Math.ceil(articles.length/pageSize);
+const slice=articles.slice((page-1)*pageSize,page*pageSize);
+---
+<BaseLayout title={'Bài viết · Trang '+page} description={'Danh sách bài viết mới nhất của TechBlogTip, trang '+page+'.'}>
+  <section class="container list-page"><p class="section-kicker">THƯ VIỆN BÀI VIẾT</p><h1>Bài mới nhất · Trang {page}</h1><ArticleList articles={slice} offset={(page-1)*pageSize}/><nav class="pagination" aria-label="Phân trang">{page===2?<a href="/">← Trang 1</a>:<a href={'/page/'+(page-1)+'/'}>← Trang trước</a>} {page<pageCount&&<a href={'/page/'+(page+1)+'/'}>Trang tiếp →</a>}</nav></section>
+</BaseLayout>

@@ -1,0 +1,6 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getArticles, valuesWithCounts, categoryUrl } from '../../lib/content';
+const categories=valuesWithCounts(await getArticles(),a=>[a.data.category]);
+---
+<BaseLayout title="Chuyên mục" description="Khám phá các chuyên mục thủ thuật và kiến thức công nghệ tại TechBlogTip."><section class="container list-page"><p class="section-kicker">KHÁM PHÁ THEO LĨNH VỰC</p><h1>Chuyên mục</h1><div class="directory-grid">{categories.map(item=><a class="directory-item" href={categoryUrl(item.name)}><span>{item.name}</span><small>{item.count} bài viết</small><b>↗</b></a>)}</div></section></BaseLayout>

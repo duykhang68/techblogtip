@@ -1,0 +1,31 @@
+name: Quality
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  quality:
+    name: Astro · Types · Content · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Validate, test and build
+        run: npm run quality
+      - name: Check validated HEAD SHA
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA" || { echo "::error::Checkout SHA mismatch"; exit 1; }
+          node -e "const r=require('./dist/release.json');if(r.sha!==process.env.SOURCE_SHA) process.exit(1);"

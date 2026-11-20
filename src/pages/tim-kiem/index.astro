@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Tìm kiếm" description="Tìm thủ thuật, hướng dẫn và kiến thức công nghệ theo từ khóa trong thư viện TechBlogTip.">
+  <section class="container list-page search-page">
+    <p class="section-kicker">TÌM KIẾM · KHÔNG CẦN TÀI KHOẢN</p>
+    <h1>Bạn đang muốn tìm gì?</h1>
+    <p class="directory-summary">Tìm nhanh trong tiêu đề, mô tả, chuyên mục và thẻ của các bài viết.</p>
+    <label for="search-input">Từ khóa</label>
+    <input id="search-input" class="search-field" name="q" type="search" placeholder="Ví dụ: Google Sheets, Windows, Git..." autocomplete="off" />
+    <p id="search-status" role="status" aria-live="polite">Nhập từ khóa để bắt đầu.</p>
+    <ul id="search-results" class="search-results" aria-label="Kết quả tìm kiếm"></ul>
+    <noscript>Vui lòng bật JavaScript để sử dụng tìm kiếm trong trình duyệt. Bạn vẫn có thể duyệt chuyên mục và RSS.</noscript>
+  </section>
+  <script>
+    interface SearchItem { title:string; description:string; category:string; tags:string[]; url:string; published:string; }
+    const input = document.querySelector<HTMLInputElement>('#search-input');
+    const status = document.querySelector<HTMLElement>('#search-status');
+    const results = document.querySelector<HTMLUListElement>('#search-results');
+    const normalize = (s:string) => s.toLocaleLowerCase('vi').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
+    const items: SearchItem[] = await fetch('/search-index.json').then(r => { if (!r.ok) throw new Error('Không tải được danh sách tìm kiếm'); return r.json(); }).catch(() => []);
+    function renderResults() {
+      if (!input || !status || !results) return;
+      const query = normalize(input.value.trim());
+      const params = new URLSearchParams(window.location.search);
+      if (query) params.set('q', input.value.trim()); else params.delete('q');
+      history.replaceState(null,'',location.pathname+(params.toString()?'?'+params:''));
+      results.replaceChildren();
+      if (!query) { status.textContent='Nhập từ khóa để bắt đầu.'; return; }
+      const tokens=query.split(/\s+/).filter(Boolean);
+      const matches=items.filter(item=>tokens.every(token=>normalize([item.title,item.description,item.category,...item.tags].join(' ')).includes(token))).slice(0,30);
+      status.textContent=matches.length+' kết quả'+(items.length===0?' (dữ liệu tìm kiếm chưa tải được)':'');
+      for (const item of matches) {
+        const li=document.createElement('li');
+        const a=document.createElement('a'); a.href=item.url;
+        const category=document.createElement('span'); category.className='eyebrow'; category.textContent=item.category;
+        const h=document.createElement('strong'); h.textContent=item.title;
+        const p=document.createElement('p'); p.textContent=item.description;
+        a.append(category,h,p); li.append(a); results.append(li);
+      }
+    }
+    if(input) { input.value=new URLSearchParams(location.search).get('q')||''; input.addEventListener('input',renderResults); renderResults(); }
+  </script>
+</BaseLayout>
