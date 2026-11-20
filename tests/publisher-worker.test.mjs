@@ -290,8 +290,9 @@ test('session tampering, token rotation, expiry and revoked editor access are re
   const f=await fixture(),googleToken=await f.sign();
   const signed=await handleRequest(f.request('/api/session','', 'POST',{credential:googleToken}),f.env,{fetcher:f.fetcher});
   const cookie=signed.headers.get('set-cookie').split(';')[0];
-  const tail=cookie.slice(-1)==='a'?'b':'a';
-  const tampered=cookie.slice(0,-1)+tail;
+  const dot=cookie.lastIndexOf('.');
+  const next=cookie[dot+1]==='a'?'b':'a';
+  const tampered=cookie.slice(0,dot+1)+next+cookie.slice(dot+2);
   assert.equal((await f.call('/api/rows','','GET',undefined,{Cookie:tampered})).status,401);
   const rotated={...f.env,GITHUB_PUBLISHER_TOKEN:'a-completely-rotated-valid-publisher-token-0000'};
   const rejected=await handleRequest(f.request('/api/session','','GET',undefined,{Cookie:cookie}),rotated,{fetcher:f.fetcher});
