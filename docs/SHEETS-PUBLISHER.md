@@ -1,6 +1,6 @@
 # TechBlogTip Google Sheets Publisher · P5 contract
 
-This is an **isolated new project** under `duykhang68/techblogtip`, not OneBlog or `khoahoctienghan`. No spreadsheet or Google Drive folder IDs have been selected. Do not copy legacy IDs, credentials or Worker names.
+This is an **isolated new project** under `duykhang68/techblogtip`, not OneBlog or `khoahoctienghan`. A dedicated native Google Spreadsheet and a separate TechBlogTip Google Drive folder were created and verified on 20 November 2026. The workbook has tabs `VN` and `GUIDE`, with an example row in `DRAFT` status. To prevent public repository leakage, store actual spreadsheet/folder IDs in protected environment configuration rather than this public README. Do not copy legacy IDs, credentials or Worker names.
 
 ## Purpose of this first PR
 
@@ -40,7 +40,7 @@ User-owned B:J are never silently modified by backend writeback; system writes o
 
 ## Remaining dependencies
 
-- A **new** TechBlogTip Spreadsheet ID, Drive folder ID, and explicit permission assignment.
+- A dedicated TechBlogTip Spreadsheet and Drive folder now exist. Pending: secure Worker bindings for their IDs, service-account access, and explicit editor permission assignment.
 - New Cloudflare Worker for publisher backend, Google OAuth client, service account, GitHub installation/token with minimum rights, encrypted secrets.
 - Integration tests: OAuth denied, edited row, sorted rows, duplicate source, missing media, failed PR/CI/deploy, verified writeback, stale commit SHA.
 - Real browser WYSIWYG preview/editor, accessible status, explicit publish action.
