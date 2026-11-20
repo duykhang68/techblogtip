@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-labelledby="title desc">
+<title id="title">TechBlogTip roadmap</title><desc id="desc">Four pastel milestone cards with distinct statuses and Lucide symbols.</desc><rect width="1280" height="300" rx="28" fill="#FFFDFB"/><defs><filter id="soft" x="-30%" y="-50%" width="160%" height="200%"><feDropShadow dx="0" dy="10" stdDeviation="13" flood-color="#6573A0" flood-opacity=".10"/></filter></defs><text x="44" y="54" font-family="Arial,Helvetica,sans-serif" font-size="27" font-weight="800" fill="#263052" letter-spacing="1.1">THE ROAD AHEAD</text>
+
+<g filter="url(#soft)"><rect x="43" y="89" width="282" height="170" rx="24" fill="#CFF7E9"/></g>
+<rect x="61" y="108" width="50" height="50" rx="16" fill="#FFFFFF" opacity=".87"/>
+<g transform="translate(71 118) scale(1.28)" fill="none" stroke="#2C7E69" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" />
+  <path d="m16 9-5.5 5.5L8 12" /></g>
+<text x="122" y="134" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="800" fill="#2C7E69" letter-spacing="1.2">PHASE A</text>
+<text x="63" y="203" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="800" fill="#263052" >Foundation</text>
+<text x="63" y="231" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="500" fill="#5C6480" >Astro · UI · CI</text>
+<rect x="179" y="113" width="127" height="25" rx="13" fill="#FFFFFF" opacity=".79"/>
+<text x="242.5" y="130" font-family="Arial,Helvetica,sans-serif" font-size="10" font-weight="800" fill="#2C7E69" text-anchor="middle" letter-spacing=".1">STAGING VERIFIED</text>
+<g filter="url(#soft)"><rect x="347" y="89" width="282" height="170" rx="24" fill="#FFE3D2"/></g>
+<rect x="365" y="108" width="50" height="50" rx="16" fill="#FFFFFF" opacity=".87"/>
+<g transform="translate(375 118) scale(1.28)" fill="none" stroke="#A06250" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" />
+  <path d="M2 6h4" />
+  <path d="M2 10h4" />
+  <path d="M2 14h4" />
+  <path d="M2 18h4" />
+  <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /></g>
+<text x="426" y="134" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="800" fill="#A06250" letter-spacing="1.2">PHASE B</text>
+<text x="367" y="203" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="800" fill="#263052" >Publisher</text>
+<text x="367" y="231" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="500" fill="#5C6480" >Sheets · Worker · PR</text>
+<rect x="483" y="113" width="127" height="25" rx="13" fill="#FFFFFF" opacity=".79"/>
+<text x="546.5" y="130" font-family="Arial,Helvetica,sans-serif" font-size="10" font-weight="800" fill="#A06250" text-anchor="middle" letter-spacing=".1">IN PROGRESS</text>
+<g filter="url(#soft)"><rect x="651" y="89" width="282" height="170" rx="24" fill="#E5D9FF"/></g>
+<rect x="669" y="108" width="50" height="50" rx="16" fill="#FFFFFF" opacity=".87"/>
+<g transform="translate(679 118) scale(1.28)" fill="none" stroke="#7059B6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1" />
+  <rect x="2" y="16" width="6" height="6" rx="1" />
+  <rect x="9" y="2" width="6" height="6" rx="1" />
+  <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" />
+  <path d="M12 12V8" /></g>
+<text x="730" y="134" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="800" fill="#7059B6" letter-spacing="1.2">PHASE C</text>
+<text x="671" y="203" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="800" fill="#263052" >Intelligence</text>
+<text x="671" y="231" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="500" fill="#5C6480" >Knowledge graph</text>
+<rect x="787" y="113" width="127" height="25" rx="13" fill="#FFFFFF" opacity=".79"/>
+<text x="850.5" y="130" font-family="Arial,Helvetica,sans-serif" font-size="10" font-weight="800" fill="#7059B6" text-anchor="middle" letter-spacing=".1">PLANNED</text>
+<g filter="url(#soft)"><rect x="955" y="89" width="282" height="170" rx="24" fill="#CFE9FF"/></g>
+<rect x="973" y="108" width="50" height="50" rx="16" fill="#FFFFFF" opacity=".87"/>
+<g transform="translate(983 118) scale(1.28)" fill="none" stroke="#386DAC" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09" />
+  <path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z" />
+  <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05" /></g>
+<text x="1034" y="134" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="800" fill="#386DAC" letter-spacing="1.2">PHASE D</text>
+<text x="975" y="203" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="800" fill="#263052" >SEO Launch</text>
+<text x="975" y="231" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="500" fill="#5C6480" >Brand · domain · SEO</text>
+<rect x="1091" y="113" width="127" height="25" rx="13" fill="#FFFFFF" opacity=".79"/>
+<text x="1154.5" y="130" font-family="Arial,Helvetica,sans-serif" font-size="10" font-weight="800" fill="#386DAC" text-anchor="middle" letter-spacing=".1">PLANNED</text></svg>
