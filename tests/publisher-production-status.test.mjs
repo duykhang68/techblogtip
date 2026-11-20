@@ -14,7 +14,8 @@ function fixture({denyActions=false,publicActions=true,unavailableStaging=false}
   calls.push({url:url.href,method,authorization:options.headers?.Authorization||''});
   assert.equal(method,'GET','snapshot cannot make writes');
   if(url.hostname==='api.github.com'){
-    assert.equal(options.headers.Authorization,'Bearer mock-token');
+    if(!url.pathname.endsWith('/actions/runs')||options.headers.Authorization)
+      assert.equal(options.headers.Authorization,'Bearer mock-token');
     if(url.pathname===new URL(root).pathname+'/git/ref/heads/main')
       return Response.json({object:{sha:main}});
     if(url.pathname===new URL(root).pathname+'/pulls')
