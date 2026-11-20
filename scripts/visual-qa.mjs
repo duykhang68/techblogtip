@@ -12,6 +12,7 @@ const browserPaths=[process.env.CHROME_PATH,process.env.CHROME_BIN,
  '/usr/bin/chromium','/usr/bin/chromium-browser'
 ].filter(Boolean);
 const chrome=browserPaths.find(p=>existsSync(p));
+// Visual assertions require completed external CSS loading, not just HTML parsing.
 assert.ok(chrome,'Preinstalled Google Chrome/Chromium is required; do not download browsers in CI');
 assert.ok(existsSync('dist/index.html'),'Run npm run build before visual QA');
 mkdirSync('artifacts/visual-qa',{recursive:true});
@@ -57,7 +58,7 @@ try{
   const errors=[];
   page.on('pageerror',err=>errors.push(err.message));
   try{
-   const response=await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+   const response=await page.goto(base+'/',{waitUntil:'load'});
    assert.equal(response.status(),200);
    assert.equal(await page.locator('h1').count(),1);
    const cards=await page.locator('.article-card').count();
@@ -80,7 +81,7 @@ try{
    console.log('PASS homepage '+w+'px; first card y='+Math.round(metric.articleStart)+'; columns='+metric.columns);
   }catch(e){record('homepage '+w,e);}
   try{
-   const response=await page.goto(base+'/bai-viet/lam-quen-voi-google-sheets/',{waitUntil:'domcontentloaded'});
+   const response=await page.goto(base+'/bai-viet/lam-quen-voi-google-sheets/',{waitUntil:'load'});
    assert.equal(response.status(),200);
    assert.equal(await page.locator('.prose h2').count()>0,true,'Article heading missing');
    const state=await page.evaluate(()=>({
@@ -97,20 +98,20 @@ try{
   }catch(e){record('article '+w,e);}
   if(w===390){
     try{
-      await page.goto(base+'/tim-kiem/',{waitUntil:'domcontentloaded'});
+      await page.goto(base+'/tim-kiem/',{waitUntil:'load'});
       await page.locator('#search-input').fill('Google Sheets');
       await page.waitForFunction(()=>document.querySelectorAll('#search-results li').length>0);
       assert.ok((await page.locator('#search-results li').count())>=1,'Search returned no results');
       const url=new URL(page.url());
       assert.equal(url.searchParams.get('q'),'Google Sheets');
       await page.screenshot({path:join('artifacts/visual-qa','search-390.png'),animations:'disabled'});
-      await page.goto(base+'/chuyen-muc/',{waitUntil:'domcontentloaded'});
+      await page.goto(base+'/chuyen-muc/',{waitUntil:'load'});
       assert.ok((await page.locator('.directory-item').count())>=4);
-      await page.goto(base+'/chu-de/',{waitUntil:'domcontentloaded'});
+      await page.goto(base+'/chu-de/',{waitUntil:'load'});
       assert.ok((await page.locator('.directory-item').count())>=2);
-      await page.goto(base+'/the/',{waitUntil:'domcontentloaded'});
+      await page.goto(base+'/the/',{waitUntil:'load'});
       assert.ok((await page.locator('.topic-chips a').count())>=4);
-      await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+      await page.goto(base+'/',{waitUntil:'load'});
       await page.keyboard.press('Tab');
       assert.equal(await page.locator(':focus').getAttribute('href'),'#content','Keyboard skip link not focusable');
       console.log('PASS search, categories, series, tags and keyboard skip link');
