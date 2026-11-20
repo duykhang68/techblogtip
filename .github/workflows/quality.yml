@@ -1,0 +1,26 @@
+name: Quality
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  quality:
+    name: Astro · Types · Content · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Validate, test and build
+        run: npm run quality
+      - name: Show verified source SHA
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo "Checkout SHA mismatch"; exit 1; }
+          node -e "const r=require('./dist/release.json');if(r.sha!==process.env.GITHUB_SHA) process.exit(1);"

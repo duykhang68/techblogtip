@@ -1,0 +1,34 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+const read=p=>readFileSync(p,'utf8');
+test('main routes and SEO endpoints are authored',()=>{
+ for(const p of ['src/pages/index.astro','src/pages/bai-viet/[slug].astro','src/pages/chuyen-muc/index.astro','src/pages/the/index.astro','src/pages/chu-de/index.astro','src/pages/tim-kiem/index.astro','src/pages/rss.xml.ts','src/pages/sitemap.xml.ts','src/pages/robots.txt.ts'])assert.ok(existsSync(p),p);
+});
+test('content and staging policy',()=>{
+ const schema=read('src/content.config.ts');
+ assert.match(schema,/\.endsWith\('\.webp'\)/);
+ assert.match(read('src/layouts/BaseLayout.astro'),/noindex,nofollow/);
+ assert.match(read('src/pages/robots.txt.ts'),/Disallow: \\//);
+ assert.match(read('astro.config.mjs'),/output: 'static'/);
+});
+test('production deploy is not in milestone A',()=>{
+ assert.ok(existsSync('.github/workflows/deploy-staging.yml'));
+ assert.ok(!existsSync('.github/workflows/deploy-production.yml'));
+ const deploy=read('.github/workflows/deploy-staging.yml');
+ assert.match(deploy,/GITHUB_SHA/);assert.match(deploy,/cf deploy/);assert.match(deploy,/verify-deploy/);
+});
+test('demo post slugs are unique, no image format violation',()=>{
+ const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));
+ assert.ok(names.length>=8);
+ assert.equal(new Set(names).size,names.length);
+ for(const name of names){
+  const data=read('src/content/articles/'+name);
+  assert.match(data,/^---\n/);
+  assert.doesNotMatch(data,/!\[[^\]]*\]\([^)]*\.(png|jpg|jpeg)(?:\?|\))/i);
+ }
+});
+test('no GitHub API in public JavaScript',()=>{
+ const pages=readdirSync('src/pages/tim-kiem');
+ for(const name of pages)assert.doesNotMatch(read('src/pages/tim-kiem/'+name),/api\.github\.com/);
+});

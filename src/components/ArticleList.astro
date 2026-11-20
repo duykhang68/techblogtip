@@ -1,0 +1,7 @@
+---
+import ArticleCard from './ArticleCard.astro';
+import type { Article } from '../lib/content';
+interface Props { articles: Article[]; offset?: number; }
+const { articles, offset = 0 } = Astro.props;
+---
+<div class="article-grid">{articles.map((article, index) => <ArticleCard article={article} position={offset+index+1} />)}</div>

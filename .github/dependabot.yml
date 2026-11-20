@@ -1,18 +1,23 @@
 version: 2
-
 updates:
-  # Monitor GitHub Actions when workflows are added to this repository.
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: npm
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Asia/Ho_Chi_Minh"
+      interval: weekly
+      day: monday
+      time: "03:30"
+      timezone: Asia/Ho_Chi_Minh
     open-pull-requests-limit: 3
     groups:
-      github-actions:
-        patterns:
-          - "*"
-    commit-message:
-      prefix: "chore(deps)"
+      routine-dependencies:
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:45"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 2

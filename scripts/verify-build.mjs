@@ -1,0 +1,16 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+const expect=['index.html','robots.txt','rss.xml','sitemap.xml','search-index.json','release.json','chuyen-muc/index.html','chu-de/index.html','the/index.html','tim-kiem/index.html','404.html'];
+for(const path of expect)if(!existsSync(resolve('dist',path)))throw new Error('Missing dist/'+path);
+const html=readFileSync('dist/index.html','utf8');
+if(!html.includes('lang="vi"')||!html.includes('noindex,nofollow'))throw new Error('Staging must have Vietnamese lang and noindex');
+const robots=readFileSync('dist/robots.txt','utf8');
+if(!robots.includes('Disallow: /'))throw new Error('Staging robots policy missing');
+const sitemap=readFileSync('dist/sitemap.xml','utf8');
+if(!sitemap.includes('<urlset'))throw new Error('Sitemap malformed');
+const index=JSON.parse(readFileSync('dist/search-index.json','utf8'));
+if(!Array.isArray(index)||index.length<8)throw new Error('Search index empty or malformed');
+if(!index.every(x=>x.title&&x.url&&x.category))throw new Error('Search index entries invalid');
+const release=JSON.parse(readFileSync('dist/release.json','utf8'));
+if(process.env.GITHUB_ACTIONS==='true' && release.sha!==process.env.GITHUB_SHA)throw new Error('Built release SHA mismatch');
+console.log('Verified HTML, RSS, sitemap, noindex, search index and exact SHA marker');

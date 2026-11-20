@@ -1,0 +1,13 @@
+---
+import { articleUrl, categoryUrl, formatDate, type Article } from '../lib/content';
+interface Props { article: Article; position?: number; }
+const { article, position = 1 } = Astro.props;
+const palette = ['sunny','lavender','mint','sky','peach','steel'];
+const color = palette[(position - 1) % palette.length];
+---
+<article class="article-card">
+  <a class="card-art" href={articleUrl(article)} aria-label={'Đọc bài: ' + article.data.title}>
+    {article.data.cover ? <img src={article.data.cover} alt={article.data.coverAlt || ''} width="640" height="640" loading="lazy" decoding="async" /> : <div class:list={['fallback-art', color]} aria-hidden="true"><span>{String(position).padStart(2,'0')}</span><b>{article.data.category}</b><i>TECHBLOGTIP</i></div>}
+  </a>
+  <div class="card-body"><a class="eyebrow" href={categoryUrl(article.data.category)}>{article.data.category}</a><h3><a href={articleUrl(article)}>{article.data.title}</a></h3><p class="card-desc">{article.data.description}</p><div class="card-meta"><time datetime={article.data.published.toISOString()}>{formatDate(article.data.published)}</time><span>·</span><span>{article.data.author}</span></div></div>
+</article>

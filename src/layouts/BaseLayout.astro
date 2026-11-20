@@ -1,0 +1,45 @@
+---
+import '../styles/global.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+
+interface Props { title: string; description: string; canonicalPath?: string; }
+const { title, description, canonicalPath } = Astro.props;
+const siteBase = Astro.site || new URL(Astro.url.origin);
+const canonical = new URL(canonicalPath || Astro.url.pathname, siteBase).toString();
+const indexable = import.meta.env.PUBLIC_INDEXABLE === 'true';
+const fullTitle = title === 'TechBlogTip' ? 'TechBlogTip — Thủ thuật & kiến thức công nghệ' : title + ' | TechBlogTip';
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'WebSite',
+  name: 'TechBlogTip', url: new URL('/', siteBase).toString(),
+  inLanguage: 'vi-VN',
+};
+---
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f8f7f4" />
+    <meta name="description" content={description} />
+    <meta name="robots" content={indexable ? 'index,follow' : 'noindex,nofollow'} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate" type="application/rss+xml" title="TechBlogTip RSS" href="/rss.xml" />
+    <meta property="og:site_name" content="TechBlogTip" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+    <title>{fullTitle}</title>
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Bỏ qua đến nội dung</a>
+    <SiteHeader />
+    <main id="content"><slot /></main>
+    <SiteFooter />
+  </body>
+</html>

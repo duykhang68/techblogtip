@@ -1,0 +1,6 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getArticles, valuesWithCounts, seriesUrl } from '../../lib/content';
+const series=valuesWithCounts(await getArticles(),a=>a.data.series?[a.data.series]:[]);
+---
+<BaseLayout title="Chủ đề" description="Học theo chuỗi bài viết công nghệ có cấu trúc trên TechBlogTip."><section class="container list-page"><p class="section-kicker">HỌC THEO LỘ TRÌNH</p><h1>Chủ đề & Series</h1><div class="directory-grid">{series.map(item=><a class="directory-item" href={seriesUrl(item.name)}><span>{item.name}</span><small>{item.count} bài viết</small><b>↗</b></a>)}</div></section></BaseLayout>

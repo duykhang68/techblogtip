@@ -1,0 +1,18 @@
+---
+const navigation = [
+  { href: '/', label: 'Trang chủ' },
+  { href: '/chuyen-muc/', label: 'Chuyên mục' },
+  { href: '/chu-de/', label: 'Chủ đề' },
+  { href: '/the/', label: 'Thẻ' },
+];
+const currentPath = Astro.url.pathname;
+---
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/" aria-label="TechBlogTip — Trang chủ"><span class="brand-mark">T<span>·</span></span><span>TECHBLOGTIP</span></a>
+    <nav aria-label="Điều hướng chính" class="main-nav">
+      {navigation.map(item => <a class:list={['nav-link', { active: item.href === '/' ? currentPath === '/' : currentPath.startsWith(item.href) }]} href={item.href} aria-current={(item.href === '/' ? currentPath === '/' : currentPath.startsWith(item.href)) ? 'page' : undefined}>{item.label}</a>)}
+    </nav>
+    <a class="header-search" href="/tim-kiem/" aria-label="Tìm kiếm bài viết"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.7" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="1.9"/></svg><span>Tìm kiếm</span></a>
+  </div>
+</header>
