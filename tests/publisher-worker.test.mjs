@@ -613,3 +613,18 @@ test('P5c editor UI has visual contenteditable, safe paste and no client GitHub 
   assert.ok(!js.includes('localStorage'));
   assert.doesNotThrow(()=>new Function(js));
 });
+
+
+test('P5c visual editor preserves original Sheet body for metadata-only edits',async()=>{
+  const f=await fixture();
+  const js=await (await handleRequest(f.request('/editor.js',''),f.env,{fetcher:f.fetcher})).text();
+  // Serializing the visual DOM is not lossless for paragraph spacing.
+  // Only modified visual contents may be sent as newly serialized Markdown.
+  assert.match(js,/active\.sourceBody/);
+  assert.match(js,/active\.visualInitial/);
+  assert.match(js,/visual===active\.visualInitial\?active\.sourceBody:visual/);
+  assert.match(js,/active\.sourceBody=result\.fields\.body/);
+  assert.match(js,/active\.visualInitial=serialize\(\)/);
+  assert.match(js,/Bản nháp ở nguồn đã thay đổi/);
+  assert.doesNotThrow(()=>new Function(js));
+});
