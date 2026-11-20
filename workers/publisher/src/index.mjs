@@ -68,7 +68,7 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
   const requestId=crypto.randomUUID();
   try{
     if(request.method==='GET'&&path==='/health')
-      return respond({app:'techblogtip-publisher',status:'online',releaseSha:typeof env.DEPLOY_SHA==='string'?env.DEPLOY_SHA:'local'});
+      return respond({app:'techblogtip-publisher',status:'online',releaseSha:typeof env.DEPLOY_SHA==='string'?env.DEPLOY_SHA:'local',sourceWriteLocks:!!env.SOURCE_LOCKS});
     if(request.method==='GET'&&path==='/')
       return Response.redirect(new URL('/admin',request.url),302);
     if(request.method==='GET'&&path==='/admin'){

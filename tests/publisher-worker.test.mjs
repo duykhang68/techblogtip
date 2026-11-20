@@ -55,6 +55,27 @@ async function fixture(){
       'Git từ cơ bản','DRAFT','','','','','',''
     ]],
     pr:null,branches:new Set(),files:new Map(),calls:[],
+    sourceLeases:new Map(), lockEvents:[],
+  };
+  env.SOURCE_LOCKS={
+    getByName(key){
+      return {
+        async acquire(nonce,ttl){
+          state.lockEvents.push({operation:'acquire',key});
+          const old=state.sourceLeases.get(key);
+          if(old&&old.expires>Date.now())return false;
+          state.sourceLeases.set(key,{nonce,expires:Date.now()+ttl});
+          return true;
+        },
+        async release(nonce){
+          state.lockEvents.push({operation:'release',key});
+          const existing=state.sourceLeases.get(key);
+          if(existing?.nonce!==nonce)return false;
+          state.sourceLeases.delete(key);
+          return true;
+        },
+      };
+    },
   };
   async function fetcher(input,options={}){
     const url=new URL(String(input)),method=options.method||'GET';
@@ -627,4 +648,84 @@ test('P5c visual editor preserves original Sheet body for metadata-only edits',a
   assert.match(js,/active\.visualInitial=serialize\(\)/);
   assert.match(js,/Bản nháp ở nguồn đã thay đổi/);
   assert.doesNotThrow(()=>new Function(js));
+});
+
+
+test('source lock blocks concurrent draft writes before touching Google Sheets',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const sourceId=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  const draft=(await f.call('/api/draft?sourceId='+sourceId,token)).data;
+  const key=f.env.SHEETS_SPREADSHEET_ID+':'+f.env.SHEETS_GID+':source:'+sourceId;
+  const stub=f.env.SOURCE_LOCKS.getByName(key);
+  const holder='00000000-0000-0000-0000-000000000001';
+  assert.equal(await stub.acquire(holder,120000),true);
+  const before=f.state.calls.length;
+  const refused=await f.call('/api/draft',token,'PUT',{
+    sourceId,expectedSnapshot:draft.snapshot,fields:{...draft.fields,title:'Changed on second request'}
+  });
+  assert.equal(refused.status,409);
+  assert.equal(refused.data.error,'source_busy');
+  assert.equal(f.state.calls.length,before,'Lock denial must happen before reading or writing source');
+  assert.equal(await stub.release(holder),true);
+  const accepted=await f.call('/api/draft',token,'PUT',{
+    sourceId,expectedSnapshot:draft.snapshot,fields:{...draft.fields,title:'Changed after lock released'}
+  });
+  assert.equal(accepted.status,200);
+  assert.equal(accepted.data.saved,true);
+  assert.equal(f.state.sourceLeases.size,0);
+});
+test('source lock rejects overlapping Draft PR submissions before any GitHub writes',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const sourceId=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][8]='READY';
+  const revision=(await f.call('/api/revision?sourceId='+sourceId,token)).data.sourceRevision;
+  const key=f.env.SHEETS_SPREADSHEET_ID+':'+f.env.SHEETS_GID+':source:'+sourceId;
+  const stub=f.env.SOURCE_LOCKS.getByName(key);
+  const holder='00000000-0000-0000-0000-000000000002';
+  assert.equal(await stub.acquire(holder,120000),true);
+  const before=f.state.calls.length;
+  const refused=await f.call('/api/submit',token,'POST',{sourceId,sourceRevision:revision});
+  assert.equal(refused.status,409);
+  assert.equal(refused.data.error,'source_busy');
+  assert.equal(f.state.calls.length,before);
+  assert.equal(f.state.pr,null);
+  await stub.release(holder);
+  assert.equal((await f.call('/api/submit',token,'POST',{sourceId,sourceRevision:revision})).status,201);
+  assert.equal(f.state.sourceLeases.size,0);
+});
+test('source lock is fail closed without Durable Object binding and releases on error',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const sourceId=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  const draft=(await f.call('/api/draft?sourceId='+sourceId,token)).data;
+  f.env.SOURCE_LOCKS=undefined;
+  const before=f.state.calls.length;
+  const denied=await f.call('/api/draft',token,'PUT',{
+    sourceId,expectedSnapshot:draft.snapshot,fields:{...draft.fields,title:'Unauthorized write without DO'}
+  });
+  assert.equal(denied.status,503);
+  assert.equal(denied.data.error,'source_lock_unconfigured');
+  assert.equal(f.state.calls.length,before);
+  f.env.SOURCE_LOCKS={getByName(key){return {
+    async acquire(){return true;},
+    async release(){throw Error('Simulated release network error');}
+  };}};
+  const unchanged=await f.call('/api/draft',token,'PUT',{
+    sourceId,expectedSnapshot:draft.snapshot,fields:draft.fields
+  });
+  assert.equal(unchanged.status,200);
+  assert.equal(unchanged.data.saved,false);
+});
+test('row ID allocation lock blocks repeated concurrent writes for the same pinned row',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const key=f.env.SHEETS_SPREADSHEET_ID+':'+f.env.SHEETS_GID+':row:2';
+  const stub=f.env.SOURCE_LOCKS.getByName(key);
+  const holder='00000000-0000-0000-0000-000000000003';
+  await stub.acquire(holder,120000);
+  const no=await f.call('/api/allocate-id',token,'POST',{rowNumber:2});
+  assert.equal(no.status,409);
+  assert.equal(f.state.values[1][0],'');
+  await stub.release(holder);
+  const yes=await f.call('/api/allocate-id',token,'POST',{rowNumber:2});
+  assert.equal(yes.status,200);
+  assert.equal(yes.data.created,true);
 });

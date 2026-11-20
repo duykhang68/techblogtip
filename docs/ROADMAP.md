@@ -42,3 +42,5 @@ Current focus: B/P5b live READY→Draft PR→Sheet K:L acceptance (Issue #19) an
 - Atomic Google Sheets values:batchUpdate modifies only B:H and J. Column I status and A/K:O system fields are never written by this editor. READY, PR-submitted or published rows are locked.
 - Note the Google Sheets API does not provide a transaction-level compare-and-swap. Keep single-editor use until per-source locking is implemented; a concurrent edit between compare and write remains a known limitation.
 - No auto-publish, auto-merge, browser GitHub API, cron, or secret exposure.
+
+- **P5c.2 write coordination:** a Durable Object lease is required for Writer APIs (allocate source ID, save draft, create Draft PR). The Worker fails closed without the binding; this feature needs a separate manual Publisher DEV deployment and exact SHA verification. Google Sheets direct editing outside the Worker is not serialized.

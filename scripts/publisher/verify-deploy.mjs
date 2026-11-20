@@ -16,6 +16,7 @@ for(let attempt=1;attempt<=6;attempt++){
     if(health.status!==200)throw new Error('Health HTTP '+health.status);
     const data=await health.json();
     if(data.releaseSha!==sha)throw new Error('Public Publisher SHA does not match deployed commit');
+    if(data.sourceWriteLocks!==true)throw new Error('Required per-source Durable Object lock binding missing');
     const admin=await get('/admin',attempt);
     if(admin.status!==200)throw new Error('Admin HTTP '+admin.status);
     const html=await admin.text();
