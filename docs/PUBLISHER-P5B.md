@@ -99,3 +99,27 @@ Before release, the workflow checks **all** required bindings and validates JSON
 Run the workflow via \`https://github.com/duykhang68/techblogtip/actions/workflows/deploy-publisher-dev.yml\` after configuring secrets. Choose the required \`deploy-dev-only\` confirmation. The workflow uses \`concurrency\` with no cancellation.
 
 **Security note:** Even with server-side OAuth allowlisting, deploy only after validating the authorized Google client origin and setting up WAF/Cloudflare Access and a single responsible editor. The current Google Sheets Values API implementation lacks transactional row locking; do not use concurrent editors until a Durable Object/source lock is implemented.
+
+
+## Persistent browser session (post-P5b UX enhancement)
+
+After Google Identity Services grants an authorized editor's Google ID token, the
+Worker verifies the Google signature and allowlist, then issues a purpose-signed
+**7-day** cookie (HttpOnly, Secure, SameSite=Strict, Path=/). Reloading the same
+browser or reopening it within seven days automatically restores the editor session
+through \`GET /api/session\` and fetches the Sheet without another Google prompt.
+\`DELETE /api/session\` removes the browser cookie on explicit logout.
+
+No Google ID token, GitHub token, or service-account credential is stored in
+\`localStorage\`, \`sessionStorage\`, or JavaScript-managed cookies. Every Worker
+API request checks the cookie signature, expiry, and current allowed-editor list;
+mutating requests remain same-origin only. A modified or expired cookie fails closed.
+This is a same-browser convenience session, not permanent Google OAuth refresh access:
+after seven days, log in again. Google OAuth settings and access rules still apply.
+
+Without requiring another Actions secret, the Worker currently derives a
+purpose-separated HMAC signer using HKDF from its existing high-entropy GitHub
+Publisher token. Rotating that token invalidates previous browser sessions.
+Optionally supply a **separate** Worker secret named \`SESSION_SIGNING_KEY\`
+(minimum 20 characters) to decouple the cookie lifetime from GitHub token rotation.
+This value must only exist in encrypted Worker bindings, never in public page JS.
