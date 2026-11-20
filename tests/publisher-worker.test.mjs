@@ -511,7 +511,7 @@ test('P5c UI checks PR on demand via Worker and never exposes GitHub API',async(
   const html=await (await handleRequest(f.request('/admin',''),f.env,{fetcher:f.fetcher})).text();
   const js=await (await handleRequest(f.request('/admin.js',''),f.env,{fetcher:f.fetcher})).text();
   assert.match(html,/id="pr-tracker"/);
-  assert.match(js,/Kiểm tra PR\/CI/);
+  assert.match(js,/Cập nhật tiến độ/);
   assert.match(js,/api\/pr-status/);
   assert.ok(!js.includes('api.github.com'));
 });
