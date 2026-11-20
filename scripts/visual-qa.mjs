@@ -15,7 +15,7 @@ const chrome=browserPaths.find(p=>existsSync(p));
 assert.ok(chrome,'Preinstalled Google Chrome/Chromium is required; do not download browsers in CI');
 assert.ok(existsSync('dist/index.html'),'Run npm run build before visual QA');
 mkdirSync('artifacts/visual-qa',{recursive:true});
-const server=spawn(process.platform==='win32'?'npm.cmd':'npm',['run','preview','--','--port','4325'],{stdio:['ignore','pipe','pipe']});
+const server=spawn(process.execPath,[resolve('node_modules/.bin/astro'),'preview','--host','127.0.0.1','--port','4325'],{stdio:['ignore','pipe','pipe']});
 let serverLog='';
 server.stdout.on('data',chunk=>serverLog+=chunk.toString());
 server.stderr.on('data',chunk=>serverLog+=chunk.toString());
@@ -52,6 +52,8 @@ try{
   const context=await browser.newContext({viewport:{width:w,height:h},deviceScaleFactor:1,reducedMotion:'reduce'});
   const page=await context.newPage();
   page.setDefaultTimeout(9000);
+  await page.route('**/fonts.googleapis.com/**',route=>route.abort());
+  await page.route('**/fonts.gstatic.com/**',route=>route.abort());
   const errors=[];
   page.on('pageerror',err=>errors.push(err.message));
   try{
@@ -126,5 +128,7 @@ try{
 }finally{
  if(browser)await browser.close();
  server.kill('SIGTERM');
+ server.stdout.destroy();
+ server.stderr.destroy();
 }
 if(failures.length){console.error(failures.join('\n\n'));process.exitCode=1;}
