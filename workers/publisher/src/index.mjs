@@ -168,7 +168,7 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
       }
       if(request.method==='POST'&&path==='/api/allocate-id'){
         const {rowNumber}=await jsonRequest(request);
-        return withRowWriteLock(env,rowNumber,async()=>{
+        return await withRowWriteLock(env,rowNumber,async()=>{
         const sheet=await readSheet(env,fetcher);
         const row=findRowByNumber(sheet.records,rowNumber);
         if(row.cells[0].trim())
@@ -189,7 +189,7 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
           fail(400,'source_invalid','System-issued source ID required');
         if(typeof payload.sourceRevision!=='string'||!/^[0-9a-f]{64}$/.test(payload.sourceRevision))
           fail(400,'revision_invalid','Refresh preview to get current revision');
-        return withSourceWriteLock(env,sourceId,async()=>{
+        return await withSourceWriteLock(env,sourceId,async()=>{
         const source=sheetConfig(env);
         const context={spreadsheetId:source.spreadsheetId,sheetGid:source.gid,publishedDate:new Date().toISOString().slice(0,10)};
         const sheet=await readSheet(env,fetcher);
