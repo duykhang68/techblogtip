@@ -1,4 +1,5 @@
 import { PublisherError,fail,requireSameOrigin,verifyGoogleIdToken } from './auth.mjs';
+import { issueSessionCookie,verifySession,expiredSessionCookie,SESSION_TTL_SECONDS } from './session.mjs';
 import { readSheet,putSystemCells,rowById,sheetConfig } from './google-api.mjs';
 import { createDraftPR } from './github-api.mjs';
 import { prepareSheetArticle } from '../../../scripts/publisher/sheets.mjs';
@@ -21,16 +22,16 @@ function staticResponse(body,type,headers={}){
 }
 async function requireEditor(request,env,fetcher){
   const match=/^Bearer ([A-Za-z0-9_\-\.]+)$/.exec(request.headers.get('Authorization')||'');
-  if(!match)fail(401,'not_authenticated','Sign in using Google to continue');
-  return verifyGoogleIdToken(match[1],env.GOOGLE_OAUTH_CLIENT_ID,env.ALLOWED_EDITORS,fetcher);
+  if(match)return verifyGoogleIdToken(match[1],env.GOOGLE_OAUTH_CLIENT_ID,env.ALLOWED_EDITORS,fetcher);
+  return verifySession(request,env);
 }
-async function jsonRequest(request){
+async function jsonRequest(request,maxLength=4096){
   if(!/^application\/json(?:;|$)/i.test(request.headers.get('Content-Type')||''))
     fail(415,'unsupported_media','Expected application/json');
-  if(Number(request.headers.get('Content-Length')||0)>4096)
+  if(Number(request.headers.get('Content-Length')||0)>maxLength)
     fail(413,'too_large','Request body too large');
   const text=await request.text();
-  if(text.length>4096)fail(413,'too_large','Request body too large');
+  if(text.length>maxLength)fail(413,'too_large','Request body too large');
   let data;
   try{data=JSON.parse(text);}catch{fail(400,'json_invalid','Invalid JSON payload');}
   if(!data||typeof data!=='object'||Array.isArray(data))fail(400,'json_invalid','Object body required');
@@ -80,6 +81,26 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
       return staticResponse(ADMIN_CSS,'text/css; charset=utf-8');
     if(path.startsWith('/api/')){
       requireSameOrigin(request);
+      if(path==='/api/session'){
+        if(request.method==='GET'){
+          const editor=await verifySession(request,env);
+          return respond({authenticated:true,editor:editor.email,expiresAt:editor.expiresAt});
+        }
+        if(request.method==='POST'){
+          const data=await jsonRequest(request,16000);
+          const editor=await verifyGoogleIdToken(data.credential,env.GOOGLE_OAUTH_CLIENT_ID,env.ALLOWED_EDITORS,fetcher);
+          const sessionCookie=await issueSessionCookie(env,editor);
+          const response=respond({authenticated:true,editor:editor.email,expiresIn:SESSION_TTL_SECONDS});
+          response.headers.set('Set-Cookie',sessionCookie);
+          return response;
+        }
+        if(request.method==='DELETE'){
+          const response=respond({authenticated:false});
+          response.headers.set('Set-Cookie',expiredSessionCookie());
+          return response;
+        }
+        fail(405,'method_not_allowed','Unsupported session method');
+      }
       const editor=await requireEditor(request,env,fetcher);
       if(request.method==='GET'&&path==='/api/rows'){
         const sheet=await readSheet(env,fetcher);

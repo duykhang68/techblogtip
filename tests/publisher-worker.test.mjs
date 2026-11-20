@@ -254,3 +254,69 @@ test('public health exposes exact deployment SHA but not private bindings',async
   assert.ok(!JSON.stringify(payload).includes('fake-secret-not-for-browser'));
   assert.ok(!JSON.stringify(payload).includes('PRIVATE KEY'));
 });
+
+test('one Google login creates a 7-day HttpOnly cookie that survives page reload',async()=>{
+  const f=await fixture(),idToken=await f.sign();
+  const loggedIn=await handleRequest(
+    f.request('/api/session','', 'POST',{credential:idToken}),
+    f.env,{fetcher:f.fetcher}
+  );
+  assert.equal(loggedIn.status,200);
+  const login=await loggedIn.json();
+  assert.equal(login.editor,'editor@example.test');
+  const setCookie=loggedIn.headers.get('set-cookie');
+  assert.match(setCookie,/^tbt_editor_session=/);
+  assert.match(setCookie,/Max-Age=604800/);
+  assert.match(setCookie,/HttpOnly/);
+  assert.match(setCookie,/Secure/);
+  assert.match(setCookie,/SameSite=Strict/);
+  assert.ok(!setCookie.includes(idToken),'Google token must never appear in cookie');
+  const persisted=setCookie.split(';')[0];
+  const newPageSession=await f.call('/api/session','', 'GET',undefined,{Cookie:persisted});
+  assert.equal(newPageSession.status,200);
+  assert.equal(newPageSession.data.editor,'editor@example.test');
+  const reloaded=await f.call('/api/rows','', 'GET',undefined,{Cookie:persisted});
+  assert.equal(reloaded.status,200);
+  assert.equal(reloaded.data.rows.length,1);
+  const logout=await handleRequest(
+    f.request('/api/session','', 'DELETE',undefined,{Cookie:persisted}),
+    f.env,{fetcher:f.fetcher}
+  );
+  assert.equal(logout.status,200);
+  assert.match(logout.headers.get('set-cookie'),/Max-Age=0/);
+  assert.equal((await f.call('/api/session','')).status,401);
+});
+test('session tampering, token rotation, expiry and revoked editor access are rejected',async()=>{
+  const f=await fixture(),googleToken=await f.sign();
+  const signed=await handleRequest(f.request('/api/session','', 'POST',{credential:googleToken}),f.env,{fetcher:f.fetcher});
+  const cookie=signed.headers.get('set-cookie').split(';')[0];
+  const tail=cookie.slice(-1)==='a'?'b':'a';
+  const tampered=cookie.slice(0,-1)+tail;
+  assert.equal((await f.call('/api/rows','','GET',undefined,{Cookie:tampered})).status,401);
+  const rotated={...f.env,GITHUB_PUBLISHER_TOKEN:'a-completely-rotated-valid-publisher-token-0000'};
+  const rejected=await handleRequest(f.request('/api/session','','GET',undefined,{Cookie:cookie}),rotated,{fetcher:f.fetcher});
+  assert.equal(rejected.status,401);
+  const noAccess={...f.env,ALLOWED_EDITORS:'other@example.test'};
+  const blocked=await handleRequest(f.request('/api/rows','','GET',undefined,{Cookie:cookie}),noAccess,{fetcher:f.fetcher});
+  assert.equal(blocked.status,403);
+  const {verifySession}=await import('../workers/publisher/src/session.mjs');
+  await assert.rejects(verifySession(f.request('/api/session','','GET',undefined,{Cookie:cookie}),f.env,Math.floor(Date.now()/1000)+604801),{code:'session_expired'});
+});
+test('cookie session sign-in and logout require same origin, without GitHub access',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const wrong=await f.call('/api/session','','POST',{credential:token},{Origin:'https://phishing.example.test'});
+  assert.equal(wrong.status,403);
+  const crossLogout=await f.call('/api/session','','DELETE',undefined,{Origin:'https://phishing.example.test'});
+  assert.equal(crossLogout.status,403);
+  assert.equal(f.state.calls.filter(c=>c.url.includes('api.github.com')).length,0);
+});
+test('admin JS uses secure same-origin cookies and does not persist Google tokens in browser storage',async()=>{
+  const f=await fixture();
+  const source=await (await handleRequest(f.request('/admin.js',''),f.env,{fetcher:f.fetcher})).text();
+  assert.match(source,/credentials:'same-origin'/);
+  assert.match(source,/api\/session/);
+  assert.match(source,/Đã đăng nhập:/);
+  assert.ok(!source.includes('localStorage'));
+  assert.ok(!source.includes('sessionStorage'));
+  assert.ok(!source.includes("Authorization:'Bearer '"));
+});
