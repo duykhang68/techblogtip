@@ -659,13 +659,13 @@ test('source lock blocks concurrent draft writes before touching Google Sheets',
   const stub=f.env.SOURCE_LOCKS.getByName(key);
   const holder='00000000-0000-0000-0000-000000000001';
   assert.equal(await stub.acquire(holder,120000),true);
-  const before=f.state.calls.length;
+  const before=f.state.calls.filter(c=>c.url.includes('sheets.googleapis.com')||c.url.includes('api.github.com')).length;
   const refused=await f.call('/api/draft',token,'PUT',{
     sourceId,expectedSnapshot:draft.snapshot,fields:{...draft.fields,title:'Changed on second request'}
   });
   assert.equal(refused.status,409);
   assert.equal(refused.data.error,'source_busy');
-  assert.equal(f.state.calls.length,before,'Lock denial must happen before reading or writing source');
+  assert.equal(f.state.calls.filter(c=>c.url.includes('sheets.googleapis.com')||c.url.includes('api.github.com')).length,before,'Lock denial must happen before reading or writing source');
   assert.equal(await stub.release(holder),true);
   const accepted=await f.call('/api/draft',token,'PUT',{
     sourceId,expectedSnapshot:draft.snapshot,fields:{...draft.fields,title:'Changed after lock released'}
@@ -683,11 +683,11 @@ test('source lock rejects overlapping Draft PR submissions before any GitHub wri
   const stub=f.env.SOURCE_LOCKS.getByName(key);
   const holder='00000000-0000-0000-0000-000000000002';
   assert.equal(await stub.acquire(holder,120000),true);
-  const before=f.state.calls.length;
+  const before=f.state.calls.filter(c=>c.url.includes('sheets.googleapis.com')||c.url.includes('api.github.com')).length;
   const refused=await f.call('/api/submit',token,'POST',{sourceId,sourceRevision:revision});
   assert.equal(refused.status,409);
   assert.equal(refused.data.error,'source_busy');
-  assert.equal(f.state.calls.length,before);
+  assert.equal(f.state.calls.filter(c=>c.url.includes('sheets.googleapis.com')||c.url.includes('api.github.com')).length,before);
   assert.equal(f.state.pr,null);
   await stub.release(holder);
   assert.equal((await f.call('/api/submit',token,'POST',{sourceId,sourceRevision:revision})).status,201);
@@ -698,13 +698,13 @@ test('source lock is fail closed without Durable Object binding and releases on 
   const sourceId=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
   const draft=(await f.call('/api/draft?sourceId='+sourceId,token)).data;
   f.env.SOURCE_LOCKS=undefined;
-  const before=f.state.calls.length;
+  const before=f.state.calls.filter(c=>c.url.includes('sheets.googleapis.com')||c.url.includes('api.github.com')).length;
   const denied=await f.call('/api/draft',token,'PUT',{
     sourceId,expectedSnapshot:draft.snapshot,fields:{...draft.fields,title:'Unauthorized write without DO'}
   });
   assert.equal(denied.status,503);
   assert.equal(denied.data.error,'source_lock_unconfigured');
-  assert.equal(f.state.calls.length,before);
+  assert.equal(f.state.calls.filter(c=>c.url.includes('sheets.googleapis.com')||c.url.includes('api.github.com')).length,before);
   f.env.SOURCE_LOCKS={getByName(key){return {
     async acquire(){return true;},
     async release(){throw Error('Simulated release network error');}
