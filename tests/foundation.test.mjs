@@ -32,3 +32,11 @@ test('no GitHub API in public JavaScript',()=>{
  const pages=readdirSync('src/pages/tim-kiem');
  for(const name of pages)assert.doesNotMatch(read('src/pages/tim-kiem/'+name),/api\.github\.com/);
 });
+
+test('Cloudflare deploy has a verified nonsecret account fallback', () => {
+  const workflow=read('.github/workflows/deploy-staging.yml');
+  assert.ok(workflow.includes('secrets.CLOUDFLARE_API_TOKEN'));
+  assert.ok(workflow.includes('vars.CLOUDFLARE_ACCOUNT_ID'));
+  assert.ok(workflow.includes('d2228e3f75bc47eff64442ad8a225f85'));
+  assert.ok(!workflow.includes('secrets.CLOUDFLARE_ACCOUNT_ID'));
+});
