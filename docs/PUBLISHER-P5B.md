@@ -123,3 +123,18 @@ Publisher token. Rotating that token invalidates previous browser sessions.
 Optionally supply a **separate** Worker secret named \`SESSION_SIGNING_KEY\`
 (minimum 20 characters) to decouple the cookie lifetime from GitHub token rotation.
 This value must only exist in encrypted Worker bindings, never in public page JS.
+
+
+## Read-only Preflight Diagnostics (next P5b acceptance step)
+
+The authenticated admin page provides a **Kiểm tra kết nối** button.
+\`GET /api/preflight\` uses the current editor session and runs two isolated
+nonmutating checks:
+
+- Google service account OAuth and read-only access to the validated \`VN\` schema.
+- GitHub publisher token access to \`duykhang68/techblogtip\` main SHA.
+
+It never mutates a Google Sheet, creates a GitHub branch or opens a PR.
+It returns restricted status codes rather than upstream error bodies or secrets.
+**A successful read-only test does NOT prove GitHub Contents/PR write permissions.**
+Those are validated only by the explicit, separate READY→Draft PR human acceptance step.

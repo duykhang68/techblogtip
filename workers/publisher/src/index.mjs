@@ -1,7 +1,7 @@
 import { PublisherError,fail,requireSameOrigin,verifyGoogleIdToken } from './auth.mjs';
 import { issueSessionCookie,verifySession,expiredSessionCookie,SESSION_TTL_SECONDS } from './session.mjs';
 import { readSheet,putSystemCells,rowById,sheetConfig } from './google-api.mjs';
-import { createDraftPR } from './github-api.mjs';
+import { createDraftPR,githubRequest } from './github-api.mjs';
 import { prepareSheetArticle } from '../../../scripts/publisher/sheets.mjs';
 import { ADMIN_HTML, ADMIN_JS, ADMIN_CSS } from './ui.mjs';
 
@@ -102,6 +102,27 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         fail(405,'method_not_allowed','Unsupported session method');
       }
       const editor=await requireEditor(request,env,fetcher);
+      if(request.method==='GET'&&path==='/api/preflight'){
+        // Authorized, strictly read-only connection verification. Never create
+        // branches, PRs or edit Sheet cells during this endpoint.
+        const [sheetCheck,repoCheck]=await Promise.allSettled([
+          readSheet(env,fetcher),
+          githubRequest(env,'/git/ref/heads/main',{fetcher}),
+        ]);
+        const sheetOk=sheetCheck.status==='fulfilled';
+        const repoOk=repoCheck.status==='fulfilled'&&
+          /^[a-f0-9]{40}$/.test(repoCheck.value?.object?.sha||'');
+        return respond({
+          sheet:{ok:sheetOk,...(sheetOk?{rows:sheetCheck.value.records.length}:{
+            code:sheetCheck.reason instanceof PublisherError?sheetCheck.reason.code:'connection_failed'
+          })},
+          github:{ok:repoOk,...(repoOk?{mainSha:repoCheck.value.object.sha}:{
+            code:repoCheck.status==='rejected'&&repoCheck.reason instanceof PublisherError?
+              repoCheck.reason.code:'connection_failed'
+          })},
+          draftPrWritePermission:'not_tested',
+        });
+      }
       if(request.method==='GET'&&path==='/api/rows'){
         const sheet=await readSheet(env,fetcher);
         return respond({editor:editor.email,rows:sheet.records.map(rowPreview)});
