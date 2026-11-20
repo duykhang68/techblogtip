@@ -26,5 +26,8 @@
     "typescript": "^6.0.3",
     "cf": "^1.0.0-rc.1",
     "playwright-core": "^1.56.0"
-  }
+  },
+  "workspaces": [
+    "workers/publisher"
+  ]
 }
