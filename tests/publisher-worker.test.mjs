@@ -68,6 +68,17 @@ async function fixture(){
       if(auth!=='Bearer mock-access-token')return Response.json({}, {status:401});
       if(url.searchParams.has('fields'))
         return Response.json({sheets:[{properties:{sheetId:142694714,title:'VN'}}]});
+      if(method==='POST'&&url.pathname.endsWith('/values:batchUpdate')){
+        const body=JSON.parse(options.body);
+        assert.equal(body.valueInputOption,'RAW');
+        assert.equal(body.data.length,2);
+        assert.equal(body.data[0].range,'VN!B2:H2');
+        assert.equal(body.data[1].range,'VN!J2');
+        assert.equal(body.data[0].values[0].length,7);
+        body.data[0].values[0].forEach((value,i)=>{state.values[1][i+1]=value;});
+        state.values[1][9]=body.data[1].values[0][0];
+        return Response.json({totalUpdatedCells:8});
+      }
       if(method==='GET'&&url.pathname.includes('/values/'))
         return Response.json({values:state.values.map(row=>[...row])});
       if(method==='PUT'&&url.pathname.includes('/values/')){
@@ -482,4 +493,123 @@ test('P5c UI checks PR on demand via Worker and never exposes GitHub API',async(
   assert.match(js,/Kiểm tra PR\/CI/);
   assert.match(js,/api\/pr-status/);
   assert.ok(!js.includes('api.github.com'));
+});
+
+
+test('P5c visual editor opens only authorized editable drafts with snapshot',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const anon=await f.call('/api/draft?sourceId=TBT-fake-1234567890','');
+  assert.equal(anon.status,401);
+  const assigned=await f.call('/api/allocate-id',token,'POST',{rowNumber:2});
+  const draft=await f.call('/api/draft?sourceId='+assigned.data.sourceId,token);
+  assert.equal(draft.status,200);
+  assert.equal(draft.data.sourceId,assigned.data.sourceId);
+  assert.match(draft.data.snapshot,/^[a-f0-9]{64}$/);
+  assert.equal(draft.data.status,'DRAFT');
+  assert.equal(draft.data.fields.title,'Tìm hiểu GitHub Actions cho người mới');
+  assert.equal(draft.data.fields.body.includes('## Giới thiệu'),true);
+  assert.equal(draft.data.fields.slug,'');
+  assert.equal(Object.keys(draft.data.fields).length,8);
+});
+
+test('P5c visual editor saves exactly B:H and J, preserving A, I and K:O',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  const opened=(await f.call('/api/draft?sourceId='+id,token)).data;
+  const unchanged=JSON.stringify({id:f.state.values[1][0],status:f.state.values[1][8],sys:f.state.values[1].slice(10)});
+  const changed={...opened.fields,title:'Hướng dẫn GitHub Actions dành cho người mới',
+    body:'## Giới thiệu\n'+('Hướng dẫn tích hợp GitHub Actions có kiểm chứng cho bạn đọc. ').repeat(3),
+    summary:'Giới thiệu quy trình GitHub Actions, CI/CD và cách kiểm chứng thay đổi một cách an toàn.',
+    slug:'huong-dan-github-actions'};
+  const result=await f.call('/api/draft',token,'PUT',{sourceId:id,expectedSnapshot:opened.snapshot,fields:changed});
+  assert.equal(result.status,200);
+  assert.equal(result.data.saved,true);
+  assert.equal(f.state.values[1][1],changed.title);
+  assert.equal(f.state.values[1][2],changed.body);
+  assert.equal(f.state.values[1][6],changed.summary);
+  assert.equal(f.state.values[1][9],changed.slug);
+  assert.equal(JSON.stringify({id:f.state.values[1][0],status:f.state.values[1][8],sys:f.state.values[1].slice(10)}),unchanged);
+  const calls=f.state.calls.filter(c=>c.method==='POST'&&c.url.includes('sheets.googleapis.com'));
+  assert.equal(calls.length,1);
+  assert.equal(f.state.calls.filter(c=>c.url.includes('api.github.com')).length,0);
+  const again=await f.call('/api/draft',token,'PUT',{
+    sourceId:id,expectedSnapshot:result.data.snapshot,fields:changed
+  });
+  assert.equal(again.status,200);
+  assert.equal(again.data.saved,false);
+  assert.equal(f.state.calls.filter(c=>c.method==='POST'&&c.url.includes('sheets.googleapis.com')).length,1);
+});
+
+test('P5c visual editor rejects stale snapshot and cross-origin writes',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  const opened=(await f.call('/api/draft?sourceId='+id,token)).data;
+  f.state.values[1][1]='Changed directly by another editor';
+  const stale=await f.call('/api/draft',token,'PUT',{
+    sourceId:id,expectedSnapshot:opened.snapshot,fields:{...opened.fields,title:'Different title'}
+  });
+  assert.equal(stale.status,409);
+  assert.equal(stale.data.error,'draft_conflict');
+  const forbidden=await f.call('/api/draft',token,'PUT',{
+    sourceId:id,expectedSnapshot:opened.snapshot,fields:opened.fields
+  },{Origin:'https://hostile.example'});
+  assert.equal(forbidden.status,403);
+  assert.equal(f.state.calls.filter(c=>c.method==='POST'&&c.url.includes('sheets.googleapis.com')).length,0);
+});
+
+test('P5c visual editor locks READY, submitted and published rows before writes',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  const snap=(await f.call('/api/draft?sourceId='+id,token)).data;
+  f.state.values[1][8]='READY';
+  assert.equal((await f.call('/api/draft?sourceId='+id,token)).status,409);
+  assert.equal((await f.call('/api/draft',token,'PUT',{sourceId:id,expectedSnapshot:snap.snapshot,fields:snap.fields})).status,409);
+  f.state.values[1][8]='DRAFT';
+  f.state.values[1][11]='https://github.com/duykhang68/techblogtip/pull/100';
+  assert.equal((await f.call('/api/draft?sourceId='+id,token)).status,409);
+  f.state.values[1][11]='';
+  f.state.values[1][12]='https://example.test/article';
+  assert.equal((await f.call('/api/draft?sourceId='+id,token)).status,409);
+  assert.equal(f.state.calls.filter(c=>c.method==='POST'&&c.url.includes('sheets.googleapis.com')).length,0);
+});
+
+test('P5c visual editor rejects unsafe HTML, invalid body, and system-field injection',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  const opened=(await f.call('/api/draft?sourceId='+id,token)).data;
+  const base={sourceId:id,expectedSnapshot:opened.snapshot};
+  const wrong=await f.call('/api/draft',token,'PUT',{
+    ...base,fields:{...opened.fields,sourceHash:'forge'}
+  });
+  assert.equal(wrong.status,422);
+  const html=await f.call('/api/draft',token,'PUT',{
+    ...base,fields:{...opened.fields,body:'<img src=x onerror=alert(1)>'}
+  });
+  assert.equal(html.status,422);
+  const media=await f.call('/api/draft',token,'PUT',{
+    ...base,fields:{...opened.fields,body:'![cover](https://drive.google.com/image.webp)'}
+  });
+  assert.equal(media.status,422);
+  const invalid=await f.call('/api/draft',token,'PUT',{
+    ...base,fields:{...opened.fields,slug:'Unsafe Slug'}
+  });
+  assert.equal(invalid.status,422);
+  assert.equal(f.state.calls.filter(c=>c.method==='POST'&&c.url.includes('sheets.googleapis.com')).length,0);
+});
+
+test('P5c editor UI has visual contenteditable, safe paste and no client GitHub API',async()=>{
+  const f=await fixture();
+  const html=await (await handleRequest(f.request('/admin',''),f.env,{fetcher:f.fetcher})).text();
+  const js=await (await handleRequest(f.request('/editor.js',''),f.env,{fetcher:f.fetcher})).text();
+  const mainJs=await (await handleRequest(f.request('/admin.js',''),f.env,{fetcher:f.fetcher})).text();
+  assert.match(html,/id="editor-panel"/);
+  assert.match(html,/id="editor-body"[^>]*contenteditable="true"/);
+  assert.match(html,/src="\/editor.js"/);
+  assert.match(mainJs,/Sửa trực quan/);
+  assert.match(js,/api\/draft/);
+  assert.match(js,/clipboardData.*text\/plain/);
+  assert.ok(!js.includes('innerHTML'));
+  assert.ok(!js.includes('api.github.com'));
+  assert.ok(!js.includes('localStorage'));
+  assert.doesNotThrow(()=>new Function(js));
 });

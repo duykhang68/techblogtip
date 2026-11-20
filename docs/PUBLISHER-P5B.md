@@ -171,3 +171,33 @@ cron, auto-undraft, auto-merge or release writeback. Browser never calls GitHub 
 
 This enhancement is effective on Publisher DEV only after the separate manual
 deployment workflow has verified the deployed `/health` exact SHA.
+
+
+## P5c.2 · Visual drafting, first safe slice
+
+The Publisher Admin includes a **Sửa trực quan** button for rows with system ID
+in IDEA, DRAFT or REVIEW that have not been sent to GitHub or published.
+\`GET /api/draft?sourceId=...\` loads an editable row and SHA-256 snapshot of its
+source identity plus all 15 Google Sheets cells.
+\`PUT /api/draft\` requires an authorized Google editor, same-origin request,
+the original snapshot and exactly eight editor-owned values. It fails with 409
+if the source changed, status became READY, or any K:O release/PR cell is filled.
+
+The server allows only an atomic Google Sheets batchUpdate to **B:H and J**;
+it never changes system ID A, human workflow status I or system K:O.
+It rereads the Sheet after saving to detect unexpected changes. Validation
+rejects raw HTML, executable Markdown links, unsupported media and malformed
+metadata. Draft text may be shorter than READY validation's publication minimum;
+\`/api/submit\` retains the strict READY content checks.
+
+The first WYSIWYG canvas supports headings H2/H3, paragraphs, lists, bold/italic,
+undo/redo and plain-text paste. Advanced Markdown such as links, images,
+fenced code and tables is **view-only** in this slice to prevent destructive
+round trips; continue editing those articles in the original Google Sheet.
+No media upload is enabled. Manual save only; no cron or autosave, no local
+credential storage. Reloading the browser does not retain unsaved edits.
+
+**Single-editor restriction remains in force:** the Google Sheets Values API has
+no compare-and-swap. An external writer changing source cells between the last
+read and batch write can still race, despite snapshot checks and post-write
+verification. Multi-editor usage awaits a transactional per-source lock.
