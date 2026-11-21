@@ -14,7 +14,14 @@ for(let page=0;page<45&&more;page++){
     },body:JSON.stringify({runId,releaseSha,cursor}),
     signal:AbortSignal.timeout(30000),
   });
-  if(res.status!==200)throw new Error('Production sync endpoint HTTP '+res.status);
+  if(res.status!==200){
+    // Report only the Worker's non-sensitive error code, never bearer tokens.
+    const detail=await res.json().catch(()=>null);
+    const code=typeof detail?.error==='string'&&
+      /^[a-z][a-z0-9_]{1,63}$/.test(detail.error)?' ['+detail.error+']':'';
+    throw new Error('Production sync endpoint HTTP '+res.status+code+
+      '. Pages SHA verification passed, but Sheets writeback did not complete.');
+  }
   const response=await res.json();
   if(!Number.isInteger(response.nextCursor)||response.nextCursor<cursor||
      typeof response.hasMore!=='boolean'||!Array.isArray(response.results))
