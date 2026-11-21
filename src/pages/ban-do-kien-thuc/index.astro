@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getArticles, articleUrl, categoryUrl, tagUrl, seriesUrl, withBase } from '../../lib/content';
+
+const articles = await getArticles();
+const categories = new Map<string, { name:string; count:number; tags: Map<string,number>; series:Map<string,number> }>();
+const tags = new Map<string,number>();
+const series = new Map<string,number>();
+for (const article of articles) {
+  const category = article.data.category;
+  if (!categories.has(category)) categories.set(category,{name:category,count:0,tags:new Map(),series:new Map()});
+  const entry = categories.get(category)!;
+  entry.count++;
+  for (const tag of new Set(article.data.tags)) {
+    tags.set(tag,(tags.get(tag) ?? 0)+1);
+    entry.tags.set(tag,(entry.tags.get(tag) ?? 0)+1);
+  }
+  if (article.data.series) {
+    const name = article.data.series;
+    series.set(name,(series.get(name) ?? 0)+1);
+    entry.series.set(name,(entry.series.get(name) ?? 0)+1);
+  }
+}
+const ordered = [...categories.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'vi'));
+const topTags = [...tags].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'vi')).slice(0,12);
+const recent = articles.slice(0,6);
+---
+<BaseLayout title="Bản đồ tri thức" description="Khám phá mối liên hệ giữa chuyên mục, thẻ, series và bài viết của TechBlogTip. Dữ liệu tĩnh từ các bài đã xuất bản.">
+  <section class="container km-page" aria-labelledby="km-heading">
+    <nav class="breadcrumb" aria-label="Đường dẫn"><a href={withBase('/')}>Trang chủ</a><span>/</span><span aria-current="page">Bản đồ tri thức</span></nav>
+    <p class="section-kicker">KHÁM PHÁ KIẾN THỨC</p>
+    <h1 id="km-heading">Bản đồ tri thức</h1>
+    <p class="km-intro">Bắt đầu từ một chuyên mục, theo các thẻ liên quan và đi sâu vào series. Tất cả liên kết được tạo từ nội dung công khai lúc build, không cần tài khoản hay API phía trình duyệt.</p>
+    <div class="km-stats" aria-label="Tổng quan nội dung">
+      <div><strong>{articles.length}</strong><span>Bài viết</span></div>
+      <div><strong>{ordered.length}</strong><span>Chuyên mục</span></div>
+      <div><strong>{tags.size}</strong><span>Thẻ kiến thức</span></div>
+      <div><strong>{series.size}</strong><span>Series</span></div>
+    </div>
+    {ordered.length === 0 ? <p>Chưa có bài viết đã xuất bản để dựng bản đồ.</p> : <>
+      <section aria-labelledby="km-clusters">
+        <div class="km-section-head"><h2 id="km-clusters">Khám phá theo cụm chủ đề</h2><span>Chuyên mục → Thẻ → Series</span></div>
+        <div class="km-grid">
+          {ordered.map((category,idx) => (
+            <article class="km-card">
+              <div class="km-card-top"><span class="km-number">{String(idx+1).padStart(2,'0')}</span><span>{category.count} bài</span></div>
+              <h3><a href={categoryUrl(category.name)}>{category.name}</a></h3>
+              <p>Thẻ liên quan</p>
+              <div class="km-pills">
+                {[...category.tags].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'vi')).slice(0,6).map(([name,count])=>
+                  <a href={tagUrl(name)} title={count+' bài trong chuyên mục này'}>{name} <small>{count}</small></a>)}
+                {category.tags.size===0&&<span class="km-empty">Chưa gắn thẻ</span>}
+              </div>
+              {category.series.size>0&&<div class="km-series"><span>Series</span>{[...category.series].sort((a,b)=>b[1]-a[1]).slice(0,3).map(([name])=><a href={seriesUrl(name)}>{name}</a>)}</div>}
+              <a class="km-open" href={categoryUrl(category.name)}>Xem toàn bộ chuyên mục <span aria-hidden="true">→</span></a>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section aria-labelledby="km-tags">
+        <div class="km-section-head"><h2 id="km-tags">Thẻ kết nối nhiều bài viết</h2><a href={withBase('/the/')}>Tất cả thẻ →</a></div>
+        <div class="km-tag-cloud">{topTags.map(([name,count])=><a href={tagUrl(name)}>{name}<span>{count}</span></a>)}</div>
+      </section>
+      <section aria-labelledby="km-new">
+        <div class="km-section-head"><h2 id="km-new">Điểm bắt đầu gần đây</h2><span>6 bài viết mới nhất</span></div>
+        <ol class="km-recent">{recent.map(article=><li><a href={articleUrl(article)}><strong>{article.data.title}</strong><span>{article.data.category}</span></a></li>)}</ol>
+      </section>
+    </>}
+  </section>
+</BaseLayout>
+<style>
+.km-page{padding-block:36px 88px}.km-page h1{max-width:none;text-wrap:balance;font-size:clamp(2rem,5vw,3.75rem)}.km-intro{max-width:850px;color:var(--muted);margin-top:14px;line-height:1.85;text-align:left}
+.km-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:34px 0 50px;gap:12px}
+.km-stats>div{display:flex;flex-direction:column;gap:4px;padding:20px 24px;background:white;border:1px solid var(--line);border-radius:15px}.km-stats strong{font-size:clamp(1.7rem,3vw,2.4rem);line-height:1.2;font-variant-numeric:tabular-nums}.km-stats span{color:var(--muted);font-size:.82rem}
+.km-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:38px 0 18px}.km-section-head h2{font-size:clamp(1.2rem,2vw,1.65rem)}.km-section-head>span,.km-section-head>a{font-size:.8rem;color:var(--muted)}
+.km-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.km-card{min-width:0;padding:25px;border:1px solid #dfdfeb;border-radius:19px;background:linear-gradient(145deg,#fff 0%,#faf9ff 100%);display:flex;flex-direction:column;gap:15px}
+.km-card:nth-child(3n+2){background:linear-gradient(145deg,#fff 0%,#f5fbf9 100%)}.km-card:nth-child(3n+3){background:linear-gradient(145deg,#fff 0%,#fff9f3 100%)}
+.km-card-top{display:flex;justify-content:space-between;color:#687184;font-size:.77rem}.km-number{font-variant-numeric:tabular-nums;letter-spacing:.09em;font-weight:800;color:#8464aa}.km-card h3{font-size:clamp(1.12rem,1.6vw,1.35rem);overflow-wrap:normal;word-break:normal}.km-card p{color:#667184;font-size:.76rem;margin-top:3px}
+.km-pills{display:flex;flex-wrap:wrap;gap:7px}.km-pills a,.km-tag-cloud a{display:inline-flex;align-items:center;gap:9px;background:white;border:1px solid #dfe5ed;border-radius:999px;padding:7px 11px;font-size:.76rem;line-height:1.4;max-width:100%;overflow-wrap:normal;word-break:normal}.km-pills small{color:#7d8494}.km-empty{color:var(--muted);font-size:.8rem}
+.km-series{display:flex;flex-wrap:wrap;gap:8px;border-top:1px solid #e5e8ef;padding-top:13px}.km-series>span{font-size:.75rem;color:var(--muted);width:100%}.km-series a{font-size:.78rem;font-weight:600;text-decoration:underline;text-decoration-color:#aeb9d4;text-underline-offset:3px}
+.km-open{margin-top:auto;border-top:1px solid #e5e8ef;padding-top:14px;font-weight:700;font-size:.8rem;display:flex;justify-content:space-between;gap:12px}
+.km-tag-cloud{display:flex;flex-wrap:wrap;gap:9px}.km-tag-cloud a{padding:10px 14px;font-weight:650;font-size:.85rem}.km-tag-cloud span{color:#886ba9;font-variant-numeric:tabular-nums}
+.km-recent{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.km-recent li{min-width:0}.km-recent a{display:flex;flex-direction:column;gap:9px;padding:17px 20px;border:1px solid var(--line);border-radius:13px;background:white;min-height:100%}.km-recent strong{font-size:.93rem;line-height:1.55;font-weight:700}.km-recent span{font-size:.75rem;color:var(--muted)}
+@media(max-width:900px){.km-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.km-page{padding-block:24px 55px}.km-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:24px 0 34px}.km-stats>div{padding:15px}.km-grid,.km-recent{grid-template-columns:1fr}.km-card{padding:20px}.km-section-head{align-items:flex-start;flex-direction:column;gap:5px}}
+@media(prefers-reduced-motion:no-preference){.km-card,.km-recent a{transition:transform .15s ease,box-shadow .15s ease}.km-card:hover,.km-recent a:hover{transform:translateY(-2px);box-shadow:0 10px 22px #26334a0b}}
+</style>
