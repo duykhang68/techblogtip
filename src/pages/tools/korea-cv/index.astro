@@ -1,0 +1,125 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { withBase } from '../../../lib/content';
+const sections = [
+  {id:'personal', title:'01 · 인적사항 / Thông tin cá nhân', fields:[['koreanName','Họ tên tiếng Hàn'],['englishName','Họ tên Latin'],['hanjaName','Tên Hanja (không bắt buộc)'],['email','Email'],['phone','Điện thoại'],['address','Địa chỉ (không bắt buộc)'],['preferredLocation','Nơi làm việc mong muốn'],['availableFrom','Ngày có thể bắt đầu']]},
+  {id:'education', title:'02 · 학력사항 / Học vấn', fields:[['school','Trường'],['degree','Bằng cấp'],['major','Chuyên ngành'],['from','Từ (YYYY.MM)'],['to','Đến (YYYY.MM)'],['gpa','Điểm / Thang điểm']]},
+  {id:'employment', title:'03 · 경력사항 / Quá trình công tác', fields:[['employer','Công ty'],['position','Chức danh'],['from','Từ (YYYY.MM)'],['to','Đến (YYYY.MM)'],['responsibilities','Công việc'],['contractType','Loại hợp đồng']]},
+  {id:'projects', title:'04 · 경력 사항 기술 / Dự án chuyên sâu', fields:[['name','Dự án'],['role','Vai trò'],['from','Từ'],['to','Đến'],['context','Bối cảnh / phạm vi'],['actions','Công việc thực hiện'],['results','Kết quả có bằng chứng']]},
+  {id:'certifications', title:'05 · 자격 / Chứng chỉ', fields:[['name','Chứng chỉ'],['level','Cấp độ'],['date','Ngày đạt']]},
+  {id:'languages', title:'06 · 어학 / Ngoại ngữ', fields:[['language','Ngôn ngữ'],['test','Kỳ thi'],['score','Điểm / Trình độ'],['date','Ngày thi']]},
+  {id:'skills', title:'07 · Skills / Kỹ năng', fields:[['name','Kỹ năng']]},
+  {id:'awards', title:'08 · Awards / Giải thưởng', fields:[['name','Giải thưởng'],['date','Thời điểm']]},
+  {id:'training', title:'09 · Training / Đào tạo', fields:[['name','Khóa học'],['date','Thời gian']]},
+  {id:'patents', title:'10 · Patents / Sáng chế', fields:[['name','Sáng chế'],['number','Số đăng ký']]},
+  {id:'referees', title:'11 · Referees / Người tham chiếu', fields:[['name','Họ tên (có sự đồng ý)'],['role','Vai trò'],['contact','Liên hệ']]},
+  {id:'research', title:'12 · 연구(논문)경력 / Nghiên cứu', fields:[['institution','Tổ chức'],['period','Thời gian'],['title','Đề tài'],['description','Mô tả']]},
+];
+const essays = [['growth','성장과정 · Quá trình trưởng thành'],['personality','성격 · Tính cách'],['schoolSocial','학교생활/사회생활 · Hoạt động học đường/xã hội'],['motivation','지원동기/이직사유 · Động lực ứng tuyển'],['future','입사 후 포부 · Mục tiêu sau khi gia nhập']];
+---
+<BaseLayout title="Korea CV Maker" description="Biểu mẫu CV Hàn Quốc theo cấu trúc sáu trang; lưu trữ riêng tư trên Google Drive khi kết nối được kích hoạt.">
+  <div class="container kcv">
+    <nav aria-label="Đường dẫn"><a href={withBase('/')}>Trang chủ</a> / <span>Korea CV Maker</span></nav>
+    <header class="kcv-head">
+      <p class="section-kicker">CAREER TOOLS · KOREA</p>
+      <h1>Korea CV Maker</h1>
+      <p>Biểu mẫu tiếng Hàn theo cấu trúc tài liệu sáu trang, không liên kết hay đại diện cho Samsung. Dữ liệu ban đầu hoàn toàn trống.</p>
+    </header>
+    <div class="kcv-tabs" role="tablist" aria-label="Các bước thực hiện">
+      <button type="button" id="input-tab" role="tab" aria-selected="true" aria-controls="input-panel">01 · Data Input</button>
+      <button type="button" id="saved-tab" role="tab" aria-selected="false" aria-controls="saved-panel">02 · Saved CV &amp; Export</button>
+    </div>
+    <div class="kcv-note" id="service-status" role="status">Chế độ bản nháp giao diện: chưa kết nối Google Drive/Cloudflare. Thông tin đang nhập chỉ ở bộ nhớ của tab này, chưa được lưu.</div>
+    <section id="input-panel" role="tabpanel" aria-labelledby="input-tab">
+      <div class="kcv-panel">
+        <h2>Thông tin lần ứng tuyển</h2>
+        <div class="kcv-fields">
+          <label>Tên phiên bản CV<input name="label" autocomplete="off" placeholder="Ví dụ: CV ứng tuyển kỹ sư" /></label>
+          <label>Công ty ứng tuyển<input name="targetCompany" autocomplete="off" placeholder="Để trống hoặc ABC" /></label>
+          <label>Vị trí ứng tuyển<input name="targetRole" autocomplete="off" /></label>
+          <label>Ngôn ngữ xuất<select name="locale"><option value="ko">한국어 / Korean</option><option value="vi">Tiếng Việt</option></select></label>
+        </div>
+      </div>
+      {sections.map(section => <section class="kcv-panel" data-section={section.id}>
+        <div class="kcv-section-head"><h2>{section.title}</h2>{section.id !== 'personal' && <button type="button" class="kcv-add" data-add={section.id}>+ Thêm dòng</button>}</div>
+        {section.id === 'referees' && <p>Chỉ nhập thông tin người tham chiếu khi được họ đồng ý.</p>}
+        {section.id === 'personal' ? <div class="kcv-fields">{section.fields.map(([key, label]) => <label>{label}<input name={`personal.${key}`} autocomplete="off" /></label>)}</div> :
+        <div class="kcv-rows" data-rows={section.id} data-fields={JSON.stringify(section.fields)}><p class="kcv-empty">Chưa có dữ liệu. Chọn “Thêm dòng”.</p></div>}
+      </section>)}
+      <section class="kcv-panel"><h2>13 · 자기소개서 / Năm câu hỏi tự giới thiệu</h2><div class="kcv-essays">{essays.map(([key,label]) => <label>{label}<textarea name={`essays.${key}`} rows="5" placeholder="Viết trải nghiệm thật; không tự tạo thành tích."></textarea></label>)}</div></section>
+      <div class="kcv-actions"><button type="button" id="review-input">Xem bản nhập tạm thời</button><span>Chỉ xem trước trên thiết bị. Chức năng lưu Google Drive sẽ được kích hoạt ở PR tích hợp riêng.</span></div>
+    </section>
+    <section id="saved-panel" role="tabpanel" aria-labelledby="saved-tab" hidden>
+      <div class="kcv-panel">
+        <h2>Kết quả đã lưu trên Google Drive</h2>
+        <p>Phần này chỉ hiển thị bản đã được Google Drive xác nhận lưu thành công. Không thể tải dữ liệu lưu vì API riêng tư chưa được triển khai.</p>
+        <p id="saved-empty" class="kcv-empty">Chưa có bản CV đã lưu.</p>
+        <div class="kcv-actions"><button type="button" disabled aria-disabled="true">Export A4 PDF · chưa kích hoạt</button><button type="button" disabled aria-disabled="true">Export Excel .xlsx · chưa kích hoạt</button></div>
+      </div>
+      <div class="kcv-panel" id="temporary-review" hidden><h2>Xem bản nhập tạm thời (chưa lưu)</h2><pre id="temporary-json"></pre></div>
+    </section>
+    <p class="kcv-reference">Tham khảo cấu trúc từ <a href={withBase('/bai-viet/giai-ma-ho-so-samsung-heavy-industries-resume-han-quoc/')}>bài phân tích hồ sơ Hàn Quốc</a>. Mẫu lịch sử không phải biểu mẫu tuyển dụng chính thức hiện hành.</p>
+  </div>
+</BaseLayout>
+<script>
+  const q = (selector: string) => document.querySelector(selector) as HTMLElement | null;
+  const inputTab = q('#input-tab') as HTMLButtonElement;
+  const savedTab = q('#saved-tab') as HTMLButtonElement;
+  const inputPanel = q('#input-panel') as HTMLElement;
+  const savedPanel = q('#saved-panel') as HTMLElement;
+  function tab(toSaved: boolean) {
+    inputPanel.hidden = toSaved;
+    savedPanel.hidden = !toSaved;
+    inputTab.setAttribute('aria-selected', String(!toSaved));
+    savedTab.setAttribute('aria-selected', String(toSaved));
+    (toSaved ? savedTab : inputTab).focus();
+  }
+  inputTab?.addEventListener('click', () => tab(false));
+  savedTab?.addEventListener('click', () => tab(true));
+  for (const add of document.querySelectorAll<HTMLButtonElement>('[data-add]')) add.addEventListener('click', () => {
+    const id = add.dataset.add!;
+    const container = document.querySelector<HTMLElement>(`[data-rows="${id}"]`)!;
+    const fields = JSON.parse(container.dataset.fields!) as [string,string][];
+    container.querySelector('.kcv-empty')?.remove();
+    const row = document.createElement('div'); row.className = 'kcv-row';
+    const grid = document.createElement('div'); grid.className = 'kcv-fields';
+    for (const [key, label] of fields) {
+      const wrapper = document.createElement('label'); wrapper.textContent = label;
+      const control = key === 'description' || key === 'actions' || key === 'results' || key === 'responsibilities' || key === 'context' ? document.createElement('textarea') : document.createElement('input');
+      control.setAttribute('data-field', key); control.setAttribute('autocomplete','off');
+      wrapper.append(control); grid.append(wrapper);
+    }
+    const remove = document.createElement('button'); remove.type = 'button'; remove.textContent='Xóa dòng'; remove.className='kcv-remove';
+    remove.addEventListener('click',()=>{row.remove(); if(!container.querySelector('.kcv-row')){const p=document.createElement('p');p.className='kcv-empty';p.textContent='Chưa có dữ liệu. Chọn “Thêm dòng”.';container.append(p);}});
+    row.append(grid,remove); container.append(row);
+  });
+  q('#review-input')?.addEventListener('click',()=>{
+    const data: Record<string,unknown> = {personal:{},essays:{}, label:'',targetCompany:'',targetRole:'',locale:'ko'};
+    for(const control of inputPanel.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>('[name]')){
+      const [group,key]=control.name.split('.');
+      if(key) (data[group] as Record<string,string>)[key]=control.value;
+      else data[group]=control.value;
+    }
+    for(const section of document.querySelectorAll<HTMLElement>('[data-section]')){
+      const id=section.dataset.section!;
+      if(id==='personal')continue;
+      data[id]=Array.from(section.querySelectorAll<HTMLElement>('.kcv-row'), row=>Object.fromEntries(Array.from(row.querySelectorAll<HTMLInputElement|HTMLTextAreaElement>('[data-field]'), input=>[input.dataset.field!,input.value])));
+    }
+    const review=q('#temporary-review')!;review.hidden=false;
+    q('#temporary-json')!.textContent=JSON.stringify(data,null,2);
+    tab(true);review.scrollIntoView({block:'start'});
+  });
+</script>
+<style>
+  .kcv{max-width:1100px;padding-block:28px 72px;color:var(--ink)}.kcv nav{font-size:.85rem;color:var(--muted)}.kcv nav a{color:var(--accent)}
+  .kcv-head{margin:24px 0}.kcv-head h1{font-size:clamp(2rem,5vw,3.5rem);letter-spacing:-.045em;margin:8px 0}.kcv-head p:last-child{max-width:74ch;color:var(--muted)}
+  .kcv-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:24px 0 12px}.kcv-tabs button{background:#f3f1eb;border:1px solid var(--line);border-radius:12px;padding:16px 8px;font-weight:800;color:var(--ink);cursor:pointer}.kcv-tabs button[aria-selected=true]{background:#d5efd9;border-color:#7ba989}
+  .kcv-note{padding:14px;border:1px solid #d6bf70;background:#fff3cc;border-radius:10px;margin-bottom:20px;color:#543c11}
+  .kcv-panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:clamp(16px,3vw,24px);margin:16px 0}.kcv-panel:nth-of-type(even){background:#f5f8ff}.kcv-panel h2{font-size:1.1rem;margin:0 0 16px}
+  .kcv-section-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}.kcv-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .kcv-fields label,.kcv-essays label{display:flex;flex-direction:column;gap:6px;font-size:.86rem;font-weight:650}.kcv-fields input,.kcv-fields select,.kcv-fields textarea,.kcv-essays textarea{width:100%;min-width:0;border:1px solid #a9b1b7;border-radius:8px;padding:12px;font:inherit;background:#fff;color:#191b20}
+  .kcv-essays{display:grid;gap:14px}.kcv-rows{display:grid;gap:14px}.kcv-row{padding:14px;border:1px solid var(--line);border-radius:10px;background:#fff}.kcv-empty{color:var(--muted)}.kcv-add,.kcv-remove,.kcv-actions button{border:1px solid #ad492c;background:#ad492c;color:#fff;border-radius:9px;padding:12px 16px;font-weight:700;cursor:pointer}.kcv-remove{background:#fff;color:#94371f;margin-top:10px}.kcv-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:22px 0}.kcv-actions span{color:var(--muted);font-size:.82rem}.kcv-actions button:disabled{background:#e9e9e9;border-color:#ddd;color:#666;cursor:not-allowed}.kcv-reference{font-size:.85rem;color:var(--muted)}
+  .kcv :is(button,input,select,textarea,a):focus-visible{outline:3px solid #ad492c;outline-offset:3px}#temporary-json{white-space:pre-wrap;overflow-wrap:break-word;max-height:500px;overflow:auto;font-size:.72rem}
+  @media(max-width:600px){.kcv-fields{grid-template-columns:1fr}.kcv-tabs button{font-size:.85rem}.kcv-panel{padding:15px}}
+  @media print{.kcv-tabs,.kcv-note,#input-panel,#saved-panel,.kcv-reference{display:none!important}}
+</style>
