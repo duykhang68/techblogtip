@@ -22,13 +22,13 @@ The repository currently **has no separate production public site**, so nothing 
 2. In protected techblogtip-publisher-dev environment, set the matching variable TBT_PRODUCTION_SITE_URL and secret TBT_PRODUCTION_SYNC_TOKEN (cryptographically random 48+ chars). Add the *same* secret in the production environment for post-deploy synchronization. Do not put this value in code or client JavaScript.
 3. Manually deploy the Publisher DEV Worker from main via deploy-dev-only and verify its health exact SHA.
 4. Manually dispatch **Deploy · Cloudflare production** on main, choosing deploy-production-only. It builds indexable Astro, targets only the production Worker using explicit cf mode, and verifies the custom public domain SHA, canonical and robots.
-5. Only after that workflow succeeds, **Publisher · Reconcile verified production writeback** runs via workflow_run event. Its protected callback token is validated by the Worker against the actual successful GitHub workflow run and release SHA; it scans Sheet rows in bounded batches, verifies each merged article, then writes eligible M:O cells.
+5. **After its successful public release verification step**, the same protected production workflow calls the Publisher release synchronization endpoint. The callback token is validated against the actual active GitHub main production workflow run and release SHA; it scans Sheet rows in bounded batches, verifies each merged article and writes eligible M:O cells. No separate workflow_run trigger is used.
 
 ## Manual inspection
 
 The signed-in Editor exposes **Xác minh & ghi M:O** once its on-demand PR inspection confirms a merge. This calls POST /api/verify-release with same-origin protection and the Google editor session. It provides a safe manual recovery path but cannot bypass any proof.
 
-The automated route POST /api/reconcile-production is **not** a public webhook: it requires a private service token and a verified successful main production workflow run, then uses the existing source locks. No cron or scheduled polling is introduced.
+The automated route POST /api/reconcile-production is **not** a public webhook: it requires a private service token and a verified active or successfully completed main production workflow run, then uses the existing source locks. No cron or scheduled polling is introduced.
 
 **Safety:** staging, Publisher DEV, unmerged PRs, stale editorial revisions, missing CI evidence, missing production domain, wrong source ID, bad canonical, non-indexable content, incorrect ancestry, and conflicting release metadata all fail closed. The old test PR #35 stays closed and must never be merged.
 
