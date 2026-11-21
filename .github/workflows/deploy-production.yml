@@ -1,59 +1,65 @@
-name: Deploy · Cloudflare production
+name: Deploy · GitHub Pages production
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      confirm:
-        description: "Deploy distinct production Worker to approved custom hostname"
-        type: choice
-        required: true
-        options: [deploy-production-only]
 permissions:
   contents: read
 concurrency:
-  group: techblogtip-production-deploy
+  group: techblogtip-github-pages-release
   cancel-in-progress: false
 jobs:
-  deploy:
-    if: ${{ github.ref == 'refs/heads/main' && inputs.confirm == 'deploy-production-only' }}
-    name: Exact SHA · deploy production · public verification
-    environment: techblogtip-production
+  build:
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
     env:
       SOURCE_SHA: ${{ github.sha }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-      SITE_URL: ${{ vars.TBT_PRODUCTION_SITE_URL }}
-      PRODUCTION_URL: ${{ vars.TBT_PRODUCTION_SITE_URL }}
+      SITE_URL: https://duykhang68.github.io/techblogtip/
+      DEPLOY_TARGET: github-pages
       PUBLIC_INDEXABLE: "true"
-      TBT_PRODUCTION_SYNC_TOKEN: ${{ secrets.TBT_PRODUCTION_SYNC_TOKEN }}
-      PRODUCTION_RUN_ID: ${{ github.run_id }}
-      PRODUCTION_RELEASE_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: '24'
-      - name: Reject missing secrets or unsafe production hostname
-        run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Cloudflare production secret missing"; exit 1; }
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Cloudflare account variable missing"; exit 1; }
-          test "$(git rev-parse HEAD)" = "$SOURCE_SHA" || { echo "::error::SHA mismatch"; exit 1; }
-          node --input-type=module -e "
-            const x = new URL(process.env.PRODUCTION_URL);
-            if(x.protocol!=='https:' || x.hostname.endsWith('.workers.dev') || x.hostname.endsWith('.pages.dev') ||
-               !x.hostname.includes('.') || x.port || x.pathname!=='/' || x.search || x.hash)
-              process.exit(1);
-          "
+          node-version: "24"
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - name: Verify main checkout
+        run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Production indexability, content and exact SHA build gate
+      - name: Quality, content tests, Pages base-path and exact release SHA
         run: npm run quality
-      - name: Deploy assets ONLY to distinct production Worker
-        run: npx cf deploy ./dist --mode techblogtip-production --no-provision --message "Production $SOURCE_SHA"
-      - name: Verify custom domain, robots and public exact SHA
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: ./dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    env:
+      SOURCE_SHA: ${{ github.sha }}
+      PRODUCTION_URL: https://duykhang68.github.io/techblogtip/
+      TBT_PRODUCTION_SYNC_TOKEN: ${{ secrets.TBT_PRODUCTION_SYNC_TOKEN }}
+      PRODUCTION_RUN_ID: ${{ github.run_id }}
+      PRODUCTION_RELEASE_SHA: ${{ github.sha }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+      - name: Verify live GitHub Pages release SHA, canonical and public robots
         run: node scripts/publisher/verify-production-deploy.mjs
-      - name: Reconcile verified published articles back to Sheets M:O
+      - name: Reconcile verified Sheets M:O (when service secret is provisioned)
+        if: ${{ env.TBT_PRODUCTION_SYNC_TOKEN != '' }}
         run: node scripts/publisher/reconcile-from-actions.mjs
+      - name: Explain manual recovery until sync token is available
+        if: ${{ env.TBT_PRODUCTION_SYNC_TOKEN == '' }}
+        run: echo '::notice::Pages deployed and verified. Configure TBT_PRODUCTION_SYNC_TOKEN in the github-pages environment and Publisher DEV to enable automatic M:O writeback.'
