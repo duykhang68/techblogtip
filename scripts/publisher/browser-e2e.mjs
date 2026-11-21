@@ -276,6 +276,8 @@ try{
  const mediaPage=await mediaContext.newPage();
  await mediaPage.goto(base+'/editor?sourceId='+draft.sourceId,{waitUntil:'load'});
  await mediaPage.waitForFunction(()=>document.querySelector('#editor-body')?.getAttribute('contenteditable')==='true');
+ // Studio 2.0 progressively moves media tools into a collapsed disclosure.
+ await mediaPage.locator('details.studio-tools summary').click();
  await mediaPage.locator('#import-drive').click();
  await mediaPage.locator('#drive-file-grid input[type="checkbox"]').first().waitFor();
  assert.equal(await mediaPage.locator('#drive-file-grid input[type="checkbox"]').count(),3);
