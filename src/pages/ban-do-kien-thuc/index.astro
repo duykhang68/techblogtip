@@ -3,85 +3,247 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getArticles, articleUrl, categoryUrl, tagUrl, seriesUrl, withBase } from '../../lib/content';
 
 const articles = await getArticles();
-const categories = new Map<string, { name:string; count:number; tags: Map<string,number>; series:Map<string,number> }>();
+const categories = new Map<string, { name: string; count: number }>();
 const tags = new Map<string,number>();
 const series = new Map<string,number>();
 for (const article of articles) {
-  const category = article.data.category;
-  if (!categories.has(category)) categories.set(category,{name:category,count:0,tags:new Map(),series:new Map()});
-  const entry = categories.get(category)!;
-  entry.count++;
-  for (const tag of new Set(article.data.tags)) {
-    tags.set(tag,(tags.get(tag) ?? 0)+1);
-    entry.tags.set(tag,(entry.tags.get(tag) ?? 0)+1);
-  }
-  if (article.data.series) {
-    const name = article.data.series;
-    series.set(name,(series.get(name) ?? 0)+1);
-    entry.series.set(name,(entry.series.get(name) ?? 0)+1);
-  }
+  const name = article.data.category;
+  categories.set(name,{name,count:(categories.get(name)?.count ?? 0)+1});
+  for(const tag of new Set(article.data.tags)) tags.set(tag,(tags.get(tag) ?? 0)+1);
+  if(article.data.series) series.set(article.data.series,(series.get(article.data.series) ?? 0)+1);
 }
-const ordered = [...categories.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'vi'));
-const topTags = [...tags].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'vi')).slice(0,12);
-const recent = articles.slice(0,6);
+const ordered = [...categories.values()].sort((a,b)=>b.count-a.count || a.name.localeCompare(b.name,'vi'));
+const graph = {
+  nodes: [
+    ...ordered.map(category=>({id:'c:'+category.name,label:category.name,type:'category',count:category.count,url:categoryUrl(category.name)})),
+    ...[...tags].map(([name,count])=>({id:'t:'+name,label:name,type:'tag',count,url:tagUrl(name)})),
+    ...[...series].map(([name,count])=>({id:'s:'+name,label:name,type:'series',count,url:seriesUrl(name)})),
+    ...articles.map(article=>({id:'a:'+article.id,label:article.data.title,type:'article',count:0,url:articleUrl(article)})),
+  ],
+  edges: articles.flatMap(article=>[
+    {source:'c:'+article.data.category,target:'a:'+article.id},
+    ...[...new Set(article.data.tags)].map(name=>({source:'a:'+article.id,target:'t:'+name})),
+    ...(article.data.series ? [{source:'a:'+article.id,target:'s:'+article.data.series}] : []),
+  ]),
+};
+const graphJson = JSON.stringify(graph).replace(/</g,'\\u003c');
 ---
-<BaseLayout title="Bản đồ tri thức" description="Khám phá mối liên hệ giữa chuyên mục, thẻ, series và bài viết của TechBlogTip. Dữ liệu tĩnh từ các bài đã xuất bản.">
-  <section class="container km-page" aria-labelledby="km-heading">
-    <nav class="breadcrumb" aria-label="Đường dẫn"><a href={withBase('/')}>Trang chủ</a><span>/</span><span aria-current="page">Bản đồ tri thức</span></nav>
-    <p class="section-kicker">KHÁM PHÁ KIẾN THỨC</p>
-    <h1 id="km-heading">Bản đồ tri thức</h1>
-    <p class="km-intro">Bắt đầu từ một chuyên mục, theo các thẻ liên quan và đi sâu vào series. Tất cả liên kết được tạo từ nội dung công khai lúc build, không cần tài khoản hay API phía trình duyệt.</p>
-    <div class="km-stats" aria-label="Tổng quan nội dung">
-      <div><strong>{articles.length}</strong><span>Bài viết</span></div>
-      <div><strong>{ordered.length}</strong><span>Chuyên mục</span></div>
-      <div><strong>{tags.size}</strong><span>Thẻ kiến thức</span></div>
-      <div><strong>{series.size}</strong><span>Series</span></div>
+<BaseLayout title="Bản đồ tri thức" description="Đồ thị tri thức tương tác của TechBlogTip: khám phá các bài viết, chuyên mục, thẻ và series có liên quan.">
+  <section class="km-page" aria-labelledby="km-heading">
+    <div class="container km-header">
+      <nav class="breadcrumb" aria-label="Đường dẫn"><a href={withBase('/')}>Trang chủ</a><span>/</span><span aria-current="page">Bản đồ tri thức</span></nav>
+      <div class="km-heading-line"><div><p class="section-kicker">KNOWLEDGE EXPLORER</p><h1 id="km-heading">Bản đồ tri thức</h1></div><p>Khám phá cách các bài viết kết nối với nhau. Chọn một chủ đề để tập trung, hoặc xem toàn cảnh.</p></div>
     </div>
-    {ordered.length === 0 ? <p>Chưa có bài viết đã xuất bản để dựng bản đồ.</p> : <>
-      <section aria-labelledby="km-clusters">
-        <div class="km-section-head"><h2 id="km-clusters">Khám phá theo cụm chủ đề</h2><span>Chuyên mục → Thẻ → Series</span></div>
-        <div class="km-grid">
-          {ordered.map((category,idx) => (
-            <article class="km-card">
-              <div class="km-card-top"><span class="km-number">{String(idx+1).padStart(2,'0')}</span><span>{category.count} bài</span></div>
-              <h3><a href={categoryUrl(category.name)}>{category.name}</a></h3>
-              <p>Thẻ liên quan</p>
-              <div class="km-pills">
-                {[...category.tags].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'vi')).slice(0,6).map(([name,count])=>
-                  <a href={tagUrl(name)} title={count+' bài trong chuyên mục này'}>{name} <small>{count}</small></a>)}
-                {category.tags.size===0&&<span class="km-empty">Chưa gắn thẻ</span>}
-              </div>
-              {category.series.size>0&&<div class="km-series"><span>Series</span>{[...category.series].sort((a,b)=>b[1]-a[1]).slice(0,3).map(([name])=><a href={seriesUrl(name)}>{name}</a>)}</div>}
-              <a class="km-open" href={categoryUrl(category.name)}>Xem toàn bộ chuyên mục <span aria-hidden="true">→</span></a>
-            </article>
-          ))}
+    {ordered.length === 0 ? <div class="container"><p>Chưa có bài viết đã xuất bản để dựng bản đồ.</p></div> : <>
+      <div class="km-app" id="km-app">
+        <aside class="km-sidebar" aria-label="Khám phá chủ đề">
+          <div class="km-panel-heading"><span class="km-dot" aria-hidden="true"></span><strong>Knowledge Explorer</strong></div>
+          <label class="km-label" for="km-filter">Tìm chủ đề</label>
+          <input id="km-filter" type="search" placeholder="Nhập tên chuyên mục..." autocomplete="off" />
+          <div class="km-sidebar-heading"><strong>CHUYÊN MỤC</strong><span>{ordered.length}</span></div>
+          <div class="km-category-list" id="km-category-list">
+            <button type="button" class="km-category" data-focus="all"><span class="km-bullet km-bullet-all"></span><span>Toàn cảnh</span><small>{articles.length}</small></button>
+            {ordered.map(category=><button type="button" class="km-category" data-focus={'c:'+category.name}><span class="km-bullet"></span><span>{category.name}</span><small>{category.count}</small></button>)}
+          </div>
+          <div class="km-help"><strong>Đọc bản đồ</strong><p>Đường nối thể hiện bài viết thuộc chuyên mục, gắn thẻ hoặc nằm trong series — không phải quan hệ suy đoán.</p><div><span class="km-key category"></span>Chuyên mục <span class="km-key article"></span>Bài viết</div><div><span class="km-key tag"></span>Thẻ <span class="km-key series"></span>Series</div></div>
+        </aside>
+        <div class="km-workspace">
+          <div class="km-toolbar">
+            <div class="km-toolbar-title"><strong id="km-current-title">Đang khám phá</strong><small id="km-current-subtitle">Chọn node để xem các kết nối</small></div>
+            <div class="km-actions">
+              <label class="km-search-label"><span class="sr-only">Tìm node trong đồ thị</span><input type="search" id="km-search" placeholder="Tìm node..." autocomplete="off" /></label>
+              <button type="button" id="km-overview" title="Xem toàn cảnh">Toàn cảnh</button>
+              <button type="button" id="km-reset" title="Đặt lại góc nhìn" aria-label="Đặt lại góc nhìn">↺</button>
+            </div>
+          </div>
+          <div class="km-graph-wrap" id="km-graph-wrap">
+            <svg id="km-graph" viewBox="0 0 1000 650" role="img" aria-label="Đồ thị tương tác với các node và đường kết nối" preserveAspectRatio="xMidYMid meet"></svg>
+            <div class="km-graph-hint">Chọn node để xem liên kết · Cuộn để phóng to · Kéo để di chuyển</div>
+            <div class="km-zoom"><button type="button" id="km-zoom-in" aria-label="Phóng to">+</button><button type="button" id="km-zoom-out" aria-label="Thu nhỏ">−</button></div>
+          </div>
+          <div class="km-detail" id="km-detail" aria-live="polite">
+            <div class="km-detail-copy"><span class="km-detail-eyebrow" id="km-detail-type">BẮT ĐẦU</span><strong id="km-detail-title">Chọn một node trên bản đồ</strong><p id="km-detail-info">Các đường nối cho thấy kiến thức liên quan đến nhau như thế nào.</p></div>
+            <a id="km-detail-link" href={withBase('/archieve/')} hidden>Khám phá nội dung ↗</a>
+          </div>
+          <div class="km-status"><span id="km-count">Đang tải sơ đồ...</span><span>TechBlogTip · Static knowledge graph</span></div>
         </div>
-      </section>
-      <section aria-labelledby="km-tags">
-        <div class="km-section-head"><h2 id="km-tags">Thẻ kết nối nhiều bài viết</h2><a href={withBase('/the/')}>Tất cả thẻ →</a></div>
-        <div class="km-tag-cloud">{topTags.map(([name,count])=><a href={tagUrl(name)}>{name}<span>{count}</span></a>)}</div>
-      </section>
-      <section aria-labelledby="km-new">
-        <div class="km-section-head"><h2 id="km-new">Điểm bắt đầu gần đây</h2><span>6 bài viết mới nhất</span></div>
-        <ol class="km-recent">{recent.map(article=><li><a href={articleUrl(article)}><strong>{article.data.title}</strong><span>{article.data.category}</span></a></li>)}</ol>
-      </section>
+      </div>
+      <noscript><div class="container"><p>Đồ thị tương tác cần JavaScript. Bạn vẫn có thể khám phá theo các chuyên mục bên dưới.</p></div></noscript>
+      <div class="container km-fallback" aria-label="Các chuyên mục">
+        <h2>Duyệt theo chuyên mục</h2>
+        <div class="km-fallback-links">{ordered.map(category=><a href={categoryUrl(category.name)}>{category.name} <small>{category.count} bài</small></a>)}</div>
+      </div>
     </>}
   </section>
+  <script id="km-data" type="application/json" set:html={graphJson} />
 </BaseLayout>
+<script>
+  const root = document.getElementById('km-app');
+  const raw = document.getElementById('km-data')?.textContent;
+  if(root && raw){
+    type Node = {id:string; label:string; type:string; count:number; url:string};
+    type Edge = {source:string; target:string};
+    const data: {nodes:Node[];edges:Edge[]} = JSON.parse(raw);
+    const byId = new Map(data.nodes.map(n=>[n.id,n]));
+    const neighbors = new Map<string,Set<string>>();
+    for(const edge of data.edges){
+      if(!neighbors.has(edge.source))neighbors.set(edge.source,new Set());
+      if(!neighbors.has(edge.target))neighbors.set(edge.target,new Set());
+      neighbors.get(edge.source)!.add(edge.target);
+      neighbors.get(edge.target)!.add(edge.source);
+    }
+    const svg = document.getElementById('km-graph') as unknown as SVGSVGElement;
+    const filter = document.getElementById('km-filter') as HTMLInputElement;
+    const search = document.getElementById('km-search') as HTMLInputElement;
+    const name = document.getElementById('km-current-title')!;
+    const subtitle = document.getElementById('km-current-subtitle')!;
+    const count = document.getElementById('km-count')!;
+    const detailType = document.getElementById('km-detail-type')!;
+    const detailTitle = document.getElementById('km-detail-title')!;
+    const detailInfo = document.getElementById('km-detail-info')!;
+    const detailLink = document.getElementById('km-detail-link') as HTMLAnchorElement;
+    const ns='http://www.w3.org/2000/svg';
+    let focus='all';
+    let selected='';
+    let scale=1, panX=0, panY=0;
+    let drag: {x:number;y:number;px:number;py:number}|null=null;
+    const make=(tag:string, attrs:Record<string,string>={})=>{
+      const el=document.createElementNS(ns,tag);
+      for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);
+      return el;
+    };
+    const label=(s:string,max:number)=>s.length>max?s.slice(0,max-1)+'…':s;
+    const types:Record<string,string>={category:'Chuyên mục',article:'Bài viết',tag:'Thẻ',series:'Series'};
+    function info(n:Node){
+      selected=n.id;
+      detailType.textContent=types[n.type] || 'Kiến thức';
+      detailTitle.textContent=n.label;
+      const connections=neighbors.get(n.id)?.size ?? 0;
+      detailInfo.textContent=n.type==='article'?'Bài viết kết nối tới '+connections+' chuyên mục, thẻ hoặc series.':connections+' kết nối trực tiếp · '+(n.count || 0)+' bài viết liên quan';
+      detailLink.href=n.url;
+      detailLink.hidden=false;
+      detailLink.textContent=n.type==='article'?'Đọc bài viết ↗':'Mở '+(types[n.type] || 'nội dung').toLowerCase()+' ↗';
+    }
+    function visible(){
+      if(focus==='all')return data.nodes.filter(n=>n.type==='category');
+      const center=byId.get(focus);
+      if(!center)return data.nodes.filter(n=>n.type==='category');
+      if(center.type==='category'){
+        const articleIds=[...(neighbors.get(center.id)||[])].filter(id=>byId.get(id)?.type==='article').slice(0,22);
+        const adjacent=new Map<string,Node>([[center.id,center],...articleIds.map(id=>[id,byId.get(id)!] as [string,Node])]);
+        for(const id of articleIds)for(const next of neighbors.get(id)||[]){
+          const node=byId.get(next);
+          if(node && node.type!=='category' && (node.type==='series'||[...adjacent.values()].filter(n=>n.type==='tag').length<15))adjacent.set(next,node);
+        }
+        return [...adjacent.values()];
+      }
+      const ids=new Set([center.id,...[...(neighbors.get(center.id)||[])].slice(0,30)]);
+      return [...ids].map(id=>byId.get(id)).filter((n):n is Node=>!!n);
+    }
+    function layout(nodes:Node[]){
+      const positions=new Map<string,{x:number;y:number}>();
+      if(focus==='all'){
+        nodes.forEach((n,i)=>{
+          const a=(i/nodes.length)*Math.PI*2-Math.PI/2;
+          positions.set(n.id,{x:500+Math.cos(a)*300,y:320+Math.sin(a)*230});
+        });
+        return positions;
+      }
+      const c=byId.get(focus)!;
+      positions.set(c.id,{x:500,y:325});
+      const groups=['article','series','tag','category'];
+      const visibleNodes=nodes.filter(n=>n.id!==c.id);
+      const sorted=visibleNodes.sort((a,b)=>groups.indexOf(a.type)-groups.indexOf(b.type)||a.label.localeCompare(b.label,'vi'));
+      sorted.forEach((n,i)=>{
+        const ring=i<12?0:i<29?1:2;
+        const start=ring===0?0:ring===1?12:29;
+        const size=ring===0?Math.min(12,sorted.length):ring===1?Math.min(17,sorted.length-12):Math.max(1,sorted.length-29);
+        const a=(i-start)/size*Math.PI*2-Math.PI/2+(ring===1?.22:0);
+        const rx=ring===0?190:ring===1?344:440;
+        const ry=ring===0?140:ring===1?248:290;
+        positions.set(n.id,{x:500+Math.cos(a)*rx,y:325+Math.sin(a)*ry});
+      });
+      return positions;
+    }
+    function applyViewport(layer:SVGGElement){
+      layer.setAttribute('transform','translate('+panX+' '+panY+') translate(500 325) scale('+scale+') translate(-500 -325)');
+    }
+    function render(){
+      const nodes=visible();
+      const ids=new Set(nodes.map(n=>n.id));
+      const pos=layout(nodes);
+      svg.replaceChildren();
+      const layer=make('g') as SVGGElement;
+      layer.id='km-layer';
+      applyViewport(layer);
+      svg.appendChild(layer);
+      if(focus==='all'){
+        // Shared content creates real links between category hubs; no invented semantic relationships.
+        const memberships=new Map<string,Set<string>>();
+        for(const e of data.edges){
+          if(e.source.startsWith('c:')){
+            const set=memberships.get(e.target)||new Set<string>();set.add(e.source);memberships.set(e.target,set);
+          }
+        }
+        // Categories do not share a single article in this content model; keep overview uncluttered.
+      }else{
+        for(const e of data.edges){
+          if(!ids.has(e.source)||!ids.has(e.target))continue;
+          const a=pos.get(e.source)!,b=pos.get(e.target)!;
+          layer.appendChild(make('line',{x1:String(a.x),y1:String(a.y),x2:String(b.x),y2:String(b.y),class:'km-edge'}));
+        }
+      }
+      for(const n of nodes){
+        const p=pos.get(n.id)!;
+        const g=make('g',{class:'km-node km-node-'+n.type+(n.id===focus?' is-center':'')+(n.id===selected?' is-selected':''),transform:'translate('+p.x+' '+p.y+')',tabindex:'0',role:'button','aria-label':types[n.type]+': '+n.label});
+        const r=n.id===focus?33:n.type==='category'?29:n.type==='article'?14:19;
+        g.appendChild(make('circle',{r:String(r),class:'km-node-shape'}));
+        const mark=make('text',{class:'km-node-mark','text-anchor':'middle',y:'5'});
+        mark.textContent=n.type==='category'?'◈':n.type==='article'?'•':n.type==='tag'?'#':'▤';
+        g.appendChild(mark);
+        const text=make('text',{class:'km-node-name','text-anchor':'middle',y:String(r+19)});
+        text.textContent=label(n.label,n.type==='article'?25:23);
+        g.appendChild(text);
+        g.addEventListener('click',()=>{
+          info(n);
+          if(n.type==='category'||n.type==='tag'||n.type==='series'){focus=n.id;selected=n.id;render();}
+          else render();
+        });
+        g.addEventListener('keydown',(e)=>{
+          if((e as KeyboardEvent).key==='Enter'||(e as KeyboardEvent).key===' '){e.preventDefault();g.dispatchEvent(new Event('click'));}
+        });
+        layer.appendChild(g);
+      }
+      name.textContent=focus==='all'?'Toàn cảnh tri thức':byId.get(focus)?.label||'Bản đồ tri thức';
+      subtitle.textContent=focus==='all'?'Chọn một chuyên mục để khám phá các bài liên quan':'Đồ thị kết nối bài viết, thẻ và series';
+      count.textContent=nodes.length+' nodes · '+(focus==='all'?0:data.edges.filter(e=>ids.has(e.source)&&ids.has(e.target)).length)+' liên kết';
+      root!.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(btn=>btn.classList.toggle('is-active',btn.dataset.focus===focus));
+    }
+    function choose(id:string){focus=id;selected=id==='all'?'':id;scale=1;panX=0;panY=0;if(id!=='all')info(byId.get(id)!);render();}
+    root.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(button=>button.addEventListener('click',()=>choose(button.dataset.focus!)));
+    filter.addEventListener('input',()=>root.querySelectorAll<HTMLButtonElement>('[data-focus]').forEach(btn=>btn.hidden=!btn.textContent?.toLocaleLowerCase('vi').includes(filter.value.toLocaleLowerCase('vi'))));
+    search.addEventListener('input',()=>{
+      const q=search.value.trim().toLocaleLowerCase('vi');
+      if(!q)return;
+      const match=data.nodes.find(n=>n.label.toLocaleLowerCase('vi').includes(q));
+      if(match){if(match.type==='article'){const parent=[...(neighbors.get(match.id)||[])].find(id=>id.startsWith('c:'));if(parent)choose(parent);info(match);render();}else choose(match.id);}
+    });
+    document.getElementById('km-overview')?.addEventListener('click',()=>choose('all'));
+    document.getElementById('km-reset')?.addEventListener('click',()=>{scale=1;panX=0;panY=0;render();});
+    function zoom(factor:number){scale=Math.max(.65,Math.min(2.4,scale*factor));const layer=svg.querySelector<SVGGElement>('#km-layer');if(layer)applyViewport(layer);}
+    document.getElementById('km-zoom-in')?.addEventListener('click',()=>zoom(1.2));
+    document.getElementById('km-zoom-out')?.addEventListener('click',()=>zoom(1/1.2));
+    svg.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.1:1/1.1);},{passive:false});
+    svg.addEventListener('pointerdown',e=>{if((e.target as Element).closest('.km-node'))return;drag={x:e.clientX,y:e.clientY,px:panX,py:panY};svg.setPointerCapture(e.pointerId);});
+    svg.addEventListener('pointermove',e=>{if(!drag)return;const b=svg.getBoundingClientRect();panX=drag.px+(e.clientX-drag.x)*1000/b.width;panY=drag.py+(e.clientY-drag.y)*650/b.height;const layer=svg.querySelector<SVGGElement>('#km-layer');if(layer)applyViewport(layer);});
+    svg.addEventListener('pointerup',()=>drag=null);
+    svg.addEventListener('pointercancel',()=>drag=null);
+    choose(data.nodes.find(n=>n.type==='category')?.id||'all');
+  }
+</script>
 <style>
-.km-page{padding-block:36px 88px}.km-page h1{max-width:none;text-wrap:balance;font-size:clamp(2rem,5vw,3.75rem)}.km-intro{max-width:850px;color:var(--muted);margin-top:14px;line-height:1.85;text-align:left}
-.km-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:34px 0 50px;gap:12px}
-.km-stats>div{display:flex;flex-direction:column;gap:4px;padding:20px 24px;background:white;border:1px solid var(--line);border-radius:15px}.km-stats strong{font-size:clamp(1.7rem,3vw,2.4rem);line-height:1.2;font-variant-numeric:tabular-nums}.km-stats span{color:var(--muted);font-size:.82rem}
-.km-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:38px 0 18px}.km-section-head h2{font-size:clamp(1.2rem,2vw,1.65rem)}.km-section-head>span,.km-section-head>a{font-size:.8rem;color:var(--muted)}
-.km-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.km-card{min-width:0;padding:25px;border:1px solid #dfdfeb;border-radius:19px;background:linear-gradient(145deg,#fff 0%,#faf9ff 100%);display:flex;flex-direction:column;gap:15px}
-.km-card:nth-child(3n+2){background:linear-gradient(145deg,#fff 0%,#f5fbf9 100%)}.km-card:nth-child(3n+3){background:linear-gradient(145deg,#fff 0%,#fff9f3 100%)}
-.km-card-top{display:flex;justify-content:space-between;color:#687184;font-size:.77rem}.km-number{font-variant-numeric:tabular-nums;letter-spacing:.09em;font-weight:800;color:#8464aa}.km-card h3{font-size:clamp(1.12rem,1.6vw,1.35rem);overflow-wrap:normal;word-break:normal}.km-card p{color:#667184;font-size:.76rem;margin-top:3px}
-.km-pills{display:flex;flex-wrap:wrap;gap:7px}.km-pills a,.km-tag-cloud a{display:inline-flex;align-items:center;gap:9px;background:white;border:1px solid #dfe5ed;border-radius:999px;padding:7px 11px;font-size:.76rem;line-height:1.4;max-width:100%;overflow-wrap:normal;word-break:normal}.km-pills small{color:#7d8494}.km-empty{color:var(--muted);font-size:.8rem}
-.km-series{display:flex;flex-wrap:wrap;gap:8px;border-top:1px solid #e5e8ef;padding-top:13px}.km-series>span{font-size:.75rem;color:var(--muted);width:100%}.km-series a{font-size:.78rem;font-weight:600;text-decoration:underline;text-decoration-color:#aeb9d4;text-underline-offset:3px}
-.km-open{margin-top:auto;border-top:1px solid #e5e8ef;padding-top:14px;font-weight:700;font-size:.8rem;display:flex;justify-content:space-between;gap:12px}
-.km-tag-cloud{display:flex;flex-wrap:wrap;gap:9px}.km-tag-cloud a{padding:10px 14px;font-weight:650;font-size:.85rem}.km-tag-cloud span{color:#886ba9;font-variant-numeric:tabular-nums}
-.km-recent{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.km-recent li{min-width:0}.km-recent a{display:flex;flex-direction:column;gap:9px;padding:17px 20px;border:1px solid var(--line);border-radius:13px;background:white;min-height:100%}.km-recent strong{font-size:.93rem;line-height:1.55;font-weight:700}.km-recent span{font-size:.75rem;color:var(--muted)}
-@media(max-width:900px){.km-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){.km-page{padding-block:24px 55px}.km-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:24px 0 34px}.km-stats>div{padding:15px}.km-grid,.km-recent{grid-template-columns:1fr}.km-card{padding:20px}.km-section-head{align-items:flex-start;flex-direction:column;gap:5px}}
-@media(prefers-reduced-motion:no-preference){.km-card,.km-recent a{transition:transform .15s ease,box-shadow .15s ease}.km-card:hover,.km-recent a:hover{transform:translateY(-2px);box-shadow:0 10px 22px #26334a0b}}
+.km-page{padding:20px 0 70px}.km-heading-line{display:flex;justify-content:space-between;align-items:end;gap:28px;margin:17px 0 25px}.km-heading-line h1{font-size:clamp(1.7rem,3.4vw,2.8rem);max-width:none;text-wrap:balance}.km-heading-line>p{font-size:.89rem;color:var(--muted);max-width:440px;line-height:1.7;text-align:left}.km-app{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1500px;margin:auto;border:1px solid #dbe5e8;border-radius:20px;overflow:hidden;background:#fff;box-shadow:0 15px 50px #26334a0b;min-height:650px}.km-sidebar{background:#fbfdfc;border-right:1px solid #e0e9e8;padding:23px 16px;display:flex;flex-direction:column;gap:15px}.km-panel-heading{display:flex;align-items:center;gap:10px;font-size:.96rem;color:#1d3538}.km-dot{width:12px;height:12px;background:#60cdb7;border-radius:50%;box-shadow:0 0 0 5px #d9f7ed}.km-label,.km-sidebar-heading{font-size:.75rem;font-weight:750;color:#637778}.km-sidebar input,.km-actions input{width:100%;border:1px solid #dbe6e9;border-radius:10px;background:#fff;padding:10px 12px;color:#243c44;font:inherit;font-size:.84rem}.km-sidebar-heading{display:flex;justify-content:space-between;margin-top:9px}.km-category-list{display:flex;flex-direction:column;gap:4px;max-height:390px;overflow:auto}.km-category{border:0;background:transparent;text-align:left;display:flex;align-items:center;gap:9px;border-radius:10px;padding:11px;color:#314249;cursor:pointer;font:inherit;font-size:.83rem;min-width:0}.km-category span:nth-child(2){flex:1;overflow-wrap:anywhere}.km-category small{color:#73878b}.km-category:hover,.km-category.is-active{background:#dcf7ed}.km-category.is-active{color:#116f60;font-weight:750}.km-bullet{width:9px;height:9px;border-radius:3px;background:#7bb2e7;flex:none}.km-bullet-all{background:#6ecfb9}.km-help{margin-top:auto;border-top:1px solid #ddeae7;padding-top:17px;color:#51676d;font-size:.73rem;line-height:1.7}.km-help strong{font-size:.8rem;color:#263c42}.km-help p{margin:7px 0 11px;text-align:left}.km-help>div{display:flex;align-items:center;gap:6px;margin:3px 0}.km-key{width:9px;height:9px;display:inline-block;border-radius:50%;margin-left:10px}.km-key.category{background:#73b3ef}.km-key.article{background:#f3aaaf}.km-key.tag{background:#72d0b0}.km-key.series{background:#cfb3eb}.km-workspace{min-width:0;display:flex;flex-direction:column}.km-toolbar{padding:17px 19px;border-bottom:1px solid #edf1f4;display:flex;align-items:center;justify-content:space-between;gap:16px}.km-toolbar-title{display:flex;flex-direction:column;gap:4px;min-width:0}.km-toolbar-title strong{font-size:.94rem;color:#263944}.km-toolbar-title small{font-size:.73rem;color:#72838b}.km-actions{display:flex;gap:8px;align-items:center}.km-actions input{width:170px}.km-actions button,.km-zoom button{border:1px solid #dbe5e8;background:#fff;border-radius:9px;color:#38565b;padding:9px 11px;cursor:pointer;font:inherit;font-size:.79rem;white-space:nowrap}.km-actions button:hover,.km-zoom button:hover{background:#e8f7f3}.km-graph-wrap{position:relative;min-height:520px;flex:1;background:#fdfefd;overflow:hidden}.km-graph-wrap svg{width:100%;height:100%;min-height:520px;display:block;touch-action:none;cursor:grab}.km-graph-wrap svg:active{cursor:grabbing}.km-graph-hint{position:absolute;top:15px;left:18px;background:#ffffffd9;border:1px solid #e7eeee;border-radius:8px;color:#63777f;padding:8px 11px;font-size:.71rem;pointer-events:none}.km-zoom{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:6px}.km-zoom button{font-size:1.25rem;width:38px;height:38px}.km-detail{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:15px 20px;border-top:1px solid #e3eeeb;background:#f6fbf9}.km-detail-copy{display:flex;flex-direction:column;gap:3px;min-width:0}.km-detail-eyebrow{letter-spacing:.09em;color:#528d7c;font-size:.64rem;font-weight:800}.km-detail strong{font-size:.87rem;color:#283c43}.km-detail p{color:#637780;font-size:.75rem;text-align:left}.km-detail a{color:#137767;font-size:.75rem;font-weight:750;white-space:nowrap}.km-status{display:flex;justify-content:space-between;gap:10px;padding:10px 20px;color:#74898d;font-size:.69rem;border-top:1px solid #edf1f0}.km-fallback{margin-top:30px}.km-fallback h2{font-size:1rem;margin-bottom:10px}.km-fallback-links{display:flex;flex-wrap:wrap;gap:8px}.km-fallback-links a{background:#f0f8f5;border:1px solid #d9eee6;border-radius:9px;padding:8px 11px;font-size:.78rem}.km-fallback-links small{color:#66847f}.km-node{cursor:pointer;outline:none}.km-node-shape{fill:#f6b1b9;stroke:#e78e9c;stroke-width:2}.km-node-category .km-node-shape{fill:#bcdcf9;stroke:#6baee9}.km-node-tag .km-node-shape{fill:#b6ecd8;stroke:#69caa6}.km-node-series .km-node-shape{fill:#e1cff5;stroke:#b69cdb}.km-node.is-center .km-node-shape{stroke-width:4}.km-node.is-selected .km-node-shape{stroke:#183e50;stroke-width:4}.km-node:focus-visible .km-node-shape{stroke:#172b45;stroke-width:5}.km-node-mark{font-size:18px;font-weight:800;fill:#264a55;pointer-events:none}.km-node-name{fill:#263942;font-size:12px;font-weight:650;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;pointer-events:none}.km-edge{stroke:#82cbb8;stroke-width:1.5;opacity:.78;pointer-events:none}.km-category[hidden]{display:none}
+@media(max-width:900px){.km-app{grid-template-columns:195px minmax(0,1fr)}.km-sidebar{padding:15px 10px}.km-heading-line{align-items:start;flex-direction:column}.km-actions input{width:130px}.km-toolbar-title small{display:none}}
+@media(max-width:600px){.km-page{padding:15px 0 48px}.km-app{display:block;border-radius:15px}.km-sidebar{border-right:0;border-bottom:1px solid #deebe7;gap:10px}.km-category-list{flex-direction:row;overflow:auto;max-height:none;padding-bottom:4px}.km-category{white-space:nowrap;flex:none}.km-sidebar-heading,.km-help,.km-label,#km-filter{display:none}.km-toolbar{padding:13px;align-items:start;flex-direction:column}.km-actions{width:100%}.km-search-label{flex:1}.km-actions input{width:100%}.km-graph-wrap,.km-graph-wrap svg{min-height:400px}.km-graph-hint{font-size:.64rem;left:9px;top:9px;max-width:66%}.km-detail{align-items:start;flex-direction:column;padding:14px}.km-status{padding:9px 12px}.km-status span:last-child{display:none}.km-heading-line>p{font-size:.82rem}}
+@media(prefers-reduced-motion:no-preference){.km-category,.km-actions button,.km-node-shape{transition:background .15s ease,stroke .15s ease}}
 </style>
