@@ -6,7 +6,7 @@
 
 ## Brand positioning
 - Name: **TechBlogTip**. Vietnamese technology learning, approachable technical guidance, factual engineering narratives.
-- Personality: editorial clarity, quiet confidence, helpfulness, precision, light visual playfulness. Avoid glossy SaaS dashboards, gratuitous gradients and neon. Decorative hero/banner sections are prohibited site-wide.
+- Personality: editorial clarity, quiet confidence, helpfulness, precision, light visual playfulness. Avoid glossy SaaS dashboards, gratuitous gradients, neon. Decorative hero/banner sections are prohibited site-wide.
 - Voice: Vietnamese, clear and specific, concise interface copy, concrete verbs, never claim an unverified production deployment.
 - Source of truth: `src/styles/global.css`, `src/layouts/BaseLayout.astro`, `src/components/SiteHeader.astro`, `src/components/SiteFooter.astro`, then this guideline. If a deviation is desired, update this document AND its visual page in the same PR.
 
@@ -52,6 +52,13 @@
 - Keep topic-specific article diagrams and visualizations within the substantive content they explain; these are not decorative page-opening heroes.
 - Check the first viewport at 320/375px mobile and desktop during UI review; reject PRs that recreate a hero. This requirement also applies to the public `/branding/` reference page.
 
+## Form-based tool UX (Korea CV Maker reference)
+- Follow the existing TechBlogTip tokens (`--ink`, `--muted`, `--paper`, `--white`, `--line`, `--accent`, `--soft`). Keep the ink primary CTA, restrained terracotta accent for active/emphasis, and the established Sunny/Lavender/Mint/Sky/Peach backgrounds; do not introduce an unrelated SaaS gradient or new primary hue.
+- Render essential controls in the Astro component instead of injecting their markup at runtime: Astro's scoped styles must apply on first paint, avoiding browser-default unstyled buttons.
+- For long forms, offer in-page shortcuts by human-readable section name, 44px controls, labels close to inputs and predictable save/return paths. At 320px, section links may scroll horizontally but inputs must not overflow.
+- A signed-out state is normal information, not an alarming banner. Show errors only for verified failures (missing public build config, denied OAuth, failed authenticated API read). Never claim Google Drive connected until an authenticated read succeeds; never say saved until the write is acknowledged.
+- User-facing previews must use labeled, human-readable fields rather than raw JSON; avoid emitting applicant data to logs or public artifacts.
+
 ## Components and imagery
 - Reuse `SiteHeader`, `SiteFooter`, `BaseLayout`, `ArticleCard`, `SmartToc` and available visual components before making new variants.
 - Icons: Lucide-style, consistent stroke (~1.8–2px), usually 18–24px; use accessible labels for icon-only actions. Prefer self-hosted/inline SVG over runtime icon libraries.
@@ -65,7 +72,7 @@
 3. Produce a user-visible responsive page with semantic landmarks, breadcrumbs where appropriate, accessible buttons/links, and no new runtime external dependencies without justification.
 4. Keep the public blog static-first and Zero GitHub API on the client. Respect Astro `withBase()`, trailing slashes and correct canonical URLs.
 5. Security: never place API keys, session cookies, OAuth tokens, GitHub PATs, private keys, Google service accounts, backups or user-uploaded private artifacts into source or `public/`. Public Google OAuth **client ID** is not a client secret; client secrets remain server-only.
-6. After implementation: run `npm run quality`, check mobile/desktop visual QA, inspect the generated route, and require exact-head-SHA green CI before undrafting or merging.
+6. After implementation: run `npm run quality`, check mobile/desktop visual QA, inspect the generated route, and require exact-head-SHA green CI before merging.
 7. Ship source changes through an **Open / Ready for review PR** (`draft: false`) and FIFO merge queue. Never claim production availability until the public `release.json` is verified.
 
 ## Do / Don't

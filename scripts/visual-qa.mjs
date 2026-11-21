@@ -181,6 +181,40 @@ try{
     }catch(e){record('search/navigation/keyboard',e);}
     assert.equal(errors.length,0,'Page JavaScript errors: '+errors.join('; '));
   }
+  // Korea CV Maker: test actual human-facing controls and readable preview.
+  // No Google credentials or applicant information is sent to a live API.
+  try{
+    const response=await page.goto(base+'/tools/korea-cv/',{waitUntil:'load'});
+    assert.equal(response.status(),200);
+    assert.equal(await page.locator('#kcv-connect').count(),1);
+    assert.equal(await page.locator('#kcv-save').count(),1);
+    const metrics=await page.evaluate(()=>{
+      const connect=document.querySelector('#kcv-connect');
+      const button=getComputedStyle(connect);
+      return {
+        scrollWidth:document.documentElement.scrollWidth,
+        connectHeight:connect.getBoundingClientRect().height,
+        connectBackground:button.backgroundColor,
+        font:getComputedStyle(document.body).fontFamily,
+      };
+    });
+    assert.ok(metrics.scrollWidth<=w+1,'Korea CV document overflows at '+w+'px ('+metrics.scrollWidth+')');
+    assert.ok(metrics.connectHeight>=43,'Google connect touch target too small '+metrics.connectHeight);
+    assert.notEqual(metrics.connectBackground,'rgba(0, 0, 0, 0)','Google connection button is unstyled');
+    assert.match(metrics.font,/Be Vietnam Pro/,'TechBlogTip typography must be reused');
+    assert.ok(await page.locator('.kcv-section-nav a').count()>=6,'Missing quick section navigation');
+    await page.locator('[name="targetCompany"]').fill('ABC Visual QA');
+    await page.locator('[name="personal.koreanName"]').fill('홍길동');
+    await page.locator('#review-input').click();
+    await page.locator('#temporary-preview').waitFor({state:'visible'});
+    const preview=await page.locator('#temporary-preview').innerText();
+    assert.ok(preview.includes('ABC Visual QA')&&preview.includes('홍길동'),'Readable CV preview lost user input');
+    assert.equal(await page.locator('#temporary-json').count(),0,'Developer JSON preview should be removed');
+    await page.locator('#input-tab').click();
+    assert.equal(await page.locator('[name="targetCompany"]').inputValue(),'ABC Visual QA','Returning to edit must preserve data');
+    await page.screenshot({path:join('artifacts/visual-qa','korea-cv-'+w+'.png'),animations:'disabled'});
+    console.log('PASS Korea CV human UX '+w+'px');
+  }catch(e){record('Korea CV UX '+w,e);}
   await context.close();
  }
  // Network resources from the built artifact must be reachable, without any live APIs.
