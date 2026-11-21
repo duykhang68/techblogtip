@@ -22,3 +22,13 @@ test('restricted CORS preflight',async()=>{
  assert.equal(r.status,204);
  assert.equal(r.headers.get('Access-Control-Allow-Origin'),'https://duykhang68.github.io');
 });
+
+test('DEV health returns exact source SHA without requiring Google auth',async()=>{
+ const sha='0123456789abcdef0123456789abcdef01234567';
+ const r=await call('/health',{}, {RELEASE_SHA:sha});
+ assert.equal(r.status,200);
+ const body=await r.json();
+ assert.equal(body.releaseSha,sha);
+ assert.equal(body.service,'korea-cv-drive-gateway');
+ assert.equal(r.headers.get('Cache-Control'),'private, no-store');
+});

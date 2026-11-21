@@ -29,6 +29,8 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.TBT_GOOGLE_OAUTH_CLIENT_ID }}
       ALLOWED_ORIGIN: https://duykhang68.github.io
+      RELEASE_SHA: ${{ github.sha }}
+      KOREA_CV_DEV_URL: https://techblogtip-korea-cv-dev.tamsudev-com.workers.dev
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -47,7 +49,20 @@ jobs:
       - name: Verify private Drive API security tests
         run: node --test tests/korea-cv-worker.test.mjs tests/korea-cv-model.test.mjs
       - name: Publish isolated Korea CV DEV Worker only
-        run: npx --yes wrangler@4.51.0 deploy --config workers/korea-cv/wrangler.toml --var GOOGLE_OAUTH_CLIENT_ID:"$GOOGLE_OAUTH_CLIENT_ID" --var ALLOWED_ORIGIN:"$ALLOWED_ORIGIN"
+        run: npx --yes wrangler@4.51.0 deploy --config workers/korea-cv/wrangler.toml --var GOOGLE_OAUTH_CLIENT_ID:"$GOOGLE_OAUTH_CLIENT_ID" --var ALLOWED_ORIGIN:"$ALLOWED_ORIGIN" --var RELEASE_SHA:"$RELEASE_SHA"
+      - name: Verify public DEV Worker exact SHA and anonymous denial
+        run: |
+          node --input-type=module -e '
+            const base=process.env.KOREA_CV_DEV_URL;
+            const res=await fetch(base+"/health",{cache:"no-store"});
+            if(!res.ok)throw new Error("Korea CV DEV health HTTP "+res.status);
+            const body=await res.json();
+            if(body.status!=="ok"||body.releaseSha!==process.env.RELEASE_SHA)
+              throw new Error("Korea CV DEV exact SHA mismatch");
+            const anonymous=await fetch(base+"/api/korea-cv",{headers:{Origin:"https://duykhang68.github.io"}});
+            if(anonymous.status!==401)throw new Error("Anonymous CV read was not rejected: "+anonymous.status);
+            console.log("Korea CV DEV exact source SHA verified, anonymous denied");
+          '
       - name: Explain live acceptance gate
         run: |
           echo '### Korea CV DEV Worker deployed' >> "$GITHUB_STEP_SUMMARY"
