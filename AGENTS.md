@@ -14,6 +14,8 @@
 - Minimize CI/Cloudflare operations. No polling or cron for ordinary delivery; avoid redundant API calls.
 - **Retired:** DO NOT re-enable article writing/publishing through Google Sheets/Excel, Visual Editor/Studio, Notion or Obsidian or recreate the dedicated Publisher DEV Worker unless explicitly requested again in a future task. Keep the explicitly approved PageSpeed and GitHub CLI safety articles (`src/content/articles/techblogtip-100-diem-google-pagespeed-insights.md` and `src/content/articles/xoa-nhieu-repository-github-cli-an-toan.md`) as published blog content; do not restore the removed older posts. Keep Korea CV Maker intact. Do not restore deleted posts without an explicit new request.
 - Do not reintroduce retired Publisher secrets, workflows, dependencies, source import APIs, Media Library or dashboard as an incidental change.
+- **G-CMS new explicit product (2026-11-22):** The new `/gcms/` admin app and isolated `apps/gcms/` API are allowed by a new user request and do not restore any retired Visual CMS files, routes, Workers or data. Keep G-CMS public admin route noindex, D1/R2 separated, and release through FIFO with exact SHA.
+- **Retired (2026-11-22):** Do not restore the old Visual CMS, its route `/tools/cms/`, footer link, Worker `techblogtip-visual-cms`, or `apps/visual-cms/` in future PRs. The user intends a new CMS architecture later. Keep legacy CMS D1/R2 data untouched unless separately requested for deletion.
 
 ## Branding contract (mandatory for all UI/UX changes)
 

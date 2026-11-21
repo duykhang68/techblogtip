@@ -97,4 +97,4 @@ Any material visual change must update this file and be tested against the exist
 - G-CMS is a separate Ghost-inspired administrative application under `/techblogtip/gcms/`, **not** a new homepage hero or a Ghost-branded clone.
 - Reuse TechBlogTip's current light tokens, typography, clear content-first navigation, compact controls and responsive layout. Use real Cloudflare data only; no misleading demo metrics, data or buttons.
 - Static GitHub Pages HTML contains no secrets, member lists, private drafts or media binaries. All private data lives in isolated Cloudflare D1/R2; Google sign-in permissions are verified by the Worker, not the browser.
-- The existing Visual CMS under `/techblogtip/tools/cms/` must remain independent and accessible.
+- The retired Visual CMS under `/techblogtip/tools/cms/` must stay removed; G-CMS is a separate product.

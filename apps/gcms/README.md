@@ -16,7 +16,7 @@ G-CMS is **not Ghost**, does not copy Ghost's brand, does not install Ghost or c
 | Google Drive/Sheets (optional later) | Explicit opt-in exports/backups or operational spreadsheets; never primary CMS datastore | No private documents synced into repo |
 | GitHub Actions FIFO | Deploy Astro blog through reviewed PR, CI, exact release SHA verification | Existing workflows reused |
 
-**Do not reintroduce the retired Google Sheets Publisher, Visual Editor 2.0, Notion, Obsidian or old Publisher DEV Worker.** G-CMS is independent of the existing Visual CMS. Do not migrate its D1 or R2 or alter its OAuth state as a side effect.
+**Do not reintroduce the retired Google Sheets Publisher, Visual Editor 2.0, Notion, Obsidian or old Publisher DEV Worker.** G-CMS is independent of the retired Visual CMS. Do not migrate its D1 or R2 or alter its OAuth state as a side effect.
 
 ## Capability matrix — reference target: Ghost Custom
 

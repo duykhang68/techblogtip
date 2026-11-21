@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Script} from 'node:vm';
 import handler from '../apps/gcms/src/index.mjs';
+import {auditGcmsAdminHtml} from '../scripts/seo-audit.mjs';
 
 const html=readFileSync(new URL('../public/gcms/index.html',import.meta.url),'utf8');
 const sql=readFileSync(new URL('../apps/gcms/migrations/0001_init.sql',import.meta.url),'utf8');
@@ -29,7 +30,7 @@ test('G-CMS schema covers private content, revision, audit and public projection
 
 test('G-CMS footer link and isolation',()=>{
  assert.match(footer,/withBase\('\/gcms\/'\)/);
- assert.match(footer,/withBase\('\/tools\/cms\/'\)/,'existing Visual CMS link preserved');
+ assert.doesNotMatch(footer,/withBase\('\/tools\/cms\/'\)/,'retired Visual CMS must remain removed');
  assert.doesNotMatch(html,/google\.com\/drive\/v3|sheets\.googleapis\.com/);
 });
 
@@ -69,3 +70,5 @@ test('worker rejects missing credentials without fabricating a session',async()=
  });
  assert.equal(response.status,401);
 });
+
+test('G-CMS admin remains noindex under the public SEO gate',()=>{assert.doesNotThrow(()=>auditGcmsAdminHtml(html));assert.throws(()=>auditGcmsAdminHtml(html.replace('name="robots" content="noindex,nofollow"','name="robots" content="index,follow"')),/noindex/);});
