@@ -16,6 +16,10 @@ function editableRow(row){
   if(values.slice(10,15).some(x=>String(x||'').trim()))
     fail(409,'draft_locked','A submitted or published article cannot be edited here');
 }
+function canOpenForWriting(row){
+  return !!row && editableStates.has(String(row.cells[8]||'').trim().toUpperCase()) &&
+    !row.cells.slice(10,15).some(value=>String(value||'').trim());
+}
 function draftData(row){
   return Object.fromEntries(fields.map((name,i)=>[name,row.cells[i<7?i+1:9]]));
 }
@@ -58,8 +62,10 @@ export async function loadEditableDraft(env,sourceId,fetcher=fetch){
     fail(400,'source_invalid','System-issued source ID required');
   const sheet=await readSheet(env,fetcher);
   const row=rowById(sheet.records,sourceId);
-  editableRow(row);
-  return {sourceId,status:row.cells[8],fields:draftData(row),snapshot:await draftSnapshot(row,env)};
+  if(!row)fail(404,'source_missing','Source row not found');
+  // Opening the visual workspace is not a write permission. The PUT guard remains strict.
+  return {sourceId,status:row.cells[8],editable:canOpenForWriting(row),
+    fields:draftData(row),snapshot:await draftSnapshot(row,env)};
 }
 export async function saveEditableDraft(env,request,fetcher=fetch){
   const {sourceId,expectedSnapshot,fields:input}=request||{};
