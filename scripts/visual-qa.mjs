@@ -65,7 +65,7 @@ try{
    assert.equal(await page.locator('.home-search-link').count(),0,'Removed homepage search hero must not return');
    assert.equal(await page.locator('[data-theme-toggle]').count(),1,'Lightbulb theme toggle must be available');
    const cards=await page.locator('.article-card').count();
-   assert.equal(cards,5,'Homepage should show the five explicitly approved articles');
+   assert.equal(cards,6,'Homepage should show the six explicitly approved articles');
    const metric=await page.evaluate(()=>{
     const rect=selector=>document.querySelector(selector)?.getBoundingClientRect();
     return {
@@ -159,6 +159,34 @@ try{
       await page.screenshot({path:join('artifacts/visual-qa','app-economics-'+w+'.png'),animations:'disabled',fullPage:true});
       console.log('PASS app economics interactive and visual QA '+w+'px');
     }catch(e){record('App economics visuals '+w,e);}
+  }
+  // ReleaseProof privacy-by-design: visual trust boundaries, permission matrix,
+  // keyboard-accessible connection modes and threat model.
+  if(w===390 || w===1440){
+    try{
+      const response=await page.goto(base+'/bai-viet/releaseproof-quyen-rieng-tu-github-app-privacy-first/',{waitUntil:'load'});
+      assert.equal(response.status(),200);
+      assert.equal(await page.locator('[data-auto-visualizer]').count(),1,'ReleaseProof story map missing');
+      assert.equal(await page.locator('[data-rpp-architecture] .rpp-lane').count(),5,'Trust boundary architecture incomplete');
+      assert.equal(await page.locator('.rpp-perms>div').count(),7,'Least privilege rights matrix incomplete');
+      assert.equal(await page.locator('[data-rpp-modes] details').count(),3,'Three privacy modes required');
+      assert.equal(await page.locator('[data-rpp-threats]>div').count(),6,'Six threat cards required');
+      assert.equal(await page.locator('[data-rpp-checklist]>div').count(),10,'Security acceptance checklist incomplete');
+      const privateMode=page.locator('[data-rpp-modes] details').nth(1);
+      await privateMode.locator('summary').click();
+      assert.equal(await privateMode.getAttribute('open'),'','Private mode must be keyboard/click accessible');
+      assert.equal(await privateMode.locator('p').isVisible(),true);
+      const metrics=await page.evaluate(()=>({
+        scrollWidth:document.documentElement.scrollWidth,
+        architectureRight:document.querySelector('[data-rpp-architecture]').getBoundingClientRect().right,
+        checklistRight:document.querySelector('[data-rpp-checklist]').getBoundingClientRect().right,
+      }));
+      assert.ok(metrics.scrollWidth<=w+1,'ReleaseProof privacy article horizontal overflow '+metrics.scrollWidth+' > '+w);
+      assert.ok(metrics.architectureRight<=w+1,'ReleaseProof architecture clipped at '+w+'px');
+      assert.ok(metrics.checklistRight<=w+1,'ReleaseProof checklist clipped at '+w+'px');
+      await page.screenshot({path:join('artifacts/visual-qa','releaseproof-privacy-'+w+'.png'),animations:'disabled',fullPage:true});
+      console.log('PASS ReleaseProof privacy diagram, modes and checklist '+w+'px');
+    }catch(e){record('ReleaseProof privacy visual '+w,e);}
   }
   // Full iOS roadmap: static flow + progressive checklist/schedule + responsive preview.
   if(w===390 || w===1440){
