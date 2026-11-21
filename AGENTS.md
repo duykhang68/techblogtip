@@ -12,7 +12,7 @@
 - Do not expose OAuth credentials, GitHub tokens, service account keys or API secrets in the repo.
 - Preserve trailing-slash paths and canonical URLs. Redirects are required before changing public URLs after launch.
 - Minimize CI/Cloudflare operations. No polling or cron for ordinary delivery; avoid redundant API calls.
-- **Retired:** DO NOT re-enable article writing/publishing through Google Sheets/Excel, Visual Editor/Studio, Notion or Obsidian or recreate the dedicated Publisher DEV Worker unless explicitly requested again in a future task. Keep only `src/content/articles/techblogtip-100-diem-google-pagespeed-insights.md` as published blog content, and keep Korea CV Maker intact. Do not restore deleted posts without an explicit new request.
+- **Retired:** DO NOT re-enable article writing/publishing through Google Sheets/Excel, Visual Editor/Studio, Notion or Obsidian or recreate the dedicated Publisher DEV Worker unless explicitly requested again in a future task. Keep the explicitly approved PageSpeed and GitHub CLI safety articles (`src/content/articles/techblogtip-100-diem-google-pagespeed-insights.md` and `src/content/articles/xoa-nhieu-repository-github-cli-an-toan.md`) as published blog content; do not restore the removed older posts. Keep Korea CV Maker intact. Do not restore deleted posts without an explicit new request.
 - Do not reintroduce retired Publisher secrets, workflows, dependencies, source import APIs, Media Library or dashboard as an incidental change.
 
 ## Branding contract (mandatory for all UI/UX changes)

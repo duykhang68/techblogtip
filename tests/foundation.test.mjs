@@ -37,9 +37,9 @@ test('retired Cloudflare staging cannot redeploy while production GitHub Pages s
  assert.doesNotMatch(pages,/cf deploy|CLOUDFLARE_API_TOKEN/);
 });
 
-test('only the explicitly retained PageSpeed article remains, with valid content assets',()=>{
+test('only the two explicitly authorized articles remain, with valid content assets',()=>{
  const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));
- assert.deepEqual(names, ['techblogtip-100-diem-google-pagespeed-insights.md']);
+ assert.deepEqual(names.sort(), ['techblogtip-100-diem-google-pagespeed-insights.md','xoa-nhieu-repository-github-cli-an-toan.md']);
  assert.equal(new Set(names).size,names.length);
  for(const name of names){
   const data=read('src/content/articles/'+name);
