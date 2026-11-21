@@ -6,7 +6,7 @@
 
 ## Brand positioning
 - Name: **TechBlogTip**. Vietnamese technology learning, approachable technical guidance, factual engineering narratives.
-- Personality: editorial clarity, quiet confidence, helpfulness, precision, light visual playfulness. Avoid glossy SaaS dashboards, gratuitous gradients, neon and excessive hero sections.
+- Personality: editorial clarity, quiet confidence, helpfulness, precision, light visual playfulness. Avoid glossy SaaS dashboards, gratuitous gradients and neon. Decorative hero/banner sections are prohibited site-wide.
 - Voice: Vietnamese, clear and specific, concise interface copy, concrete verbs, never claim an unverified production deployment.
 - Source of truth: `src/styles/global.css`, `src/layouts/BaseLayout.astro`, `src/components/SiteHeader.astro`, `src/components/SiteFooter.astro`, then this guideline. If a deviation is desired, update this document AND its visual page in the same PR.
 
@@ -39,12 +39,18 @@
 ## Layout, rhythm and responsive behavior
 - Shared site wrapper: `.container { width: min(100% - 32px, 1440px) }`.
 - Existing global radius: `--radius:12px`; cards use modest 8–12px corners.
-- Editorial rather than app-like. Respect the existing header/footer and content information hierarchy. Homepage prioritizes search and recent articles; don't add a large decorative hero without a new requirement.
+- Editorial rather than app-like. Respect the existing header/footer and content information hierarchy. Every route is content-first: decorative hero sections and oversized introductory banners are prohibited, including homepage, branding, archives, tools, search, categories, editor and article pages. Use compact page titles and functional content immediately.
 - Cards: square visual thumbnail `aspect-ratio:1`; use `object-fit:cover`; never stretch images.
 - Mobile-first: test 320, 375, 768, 1024 and 1440px; no horizontal overflow, clipped navigation, cramped text, or invisible affordances. Touch targets ~44px where practicable.
 - Sections may alternate subtle **distinct** pastel fills to aid scanning, but maintain contrast and generous whitespace. Avoid undifferentiated adjacent panels.
 - Breadcrumb: textual links. Desktop article TOC can float/stick; do not squeeze mobile prose with a permanent sidebar.
 - Interaction: visible hover, focus-visible and active states; keyboard access; ESC/outside-click to dismiss dialogs or dropdowns when applicable; never create a UI state with no obvious exit.
+
+## Site-wide no-hero rule (non-negotiable)
+- Do not add or reintroduce decorative hero banners, split-screen mastheads, giant display headlines, slogan artwork, oversized brand cards, or large empty introductory blocks on any blog route.
+- Start pages with a compact semantic H1 and only essential explanatory text followed immediately by navigation, actions or real content. Preserve functional controls when removing decorative headers.
+- Keep topic-specific article diagrams and visualizations within the substantive content they explain; these are not decorative page-opening heroes.
+- Check the first viewport at 320/375px mobile and desktop during UI review; reject PRs that recreate a hero. This requirement also applies to the public `/branding/` reference page.
 
 ## Components and imagery
 - Reuse `SiteHeader`, `SiteFooter`, `BaseLayout`, `ArticleCard`, `SmartToc` and available visual components before making new variants.
@@ -60,17 +66,17 @@
 4. Keep the public blog static-first and Zero GitHub API on the client. Respect Astro `withBase()`, trailing slashes and correct canonical URLs.
 5. Security: never place API keys, session cookies, OAuth tokens, GitHub PATs, private keys, Google service accounts, backups or user-uploaded private artifacts into source or `public/`. Public Google OAuth **client ID** is not a client secret; client secrets remain server-only.
 6. After implementation: run `npm run quality`, check mobile/desktop visual QA, inspect the generated route, and require exact-head-SHA green CI before undrafting or merging.
-7. Ship source changes through a **Draft PR** and FIFO merge queue. Never claim production availability until the public `release.json` is verified.
+7. Ship source changes through an **Open / Ready for review PR** (`draft: false`) and FIFO merge queue. Never claim production availability until the public `release.json` is verified.
 
 ## Do / Don't
 | Do | Don't |
 |---|---|
 | Muted paper canvas + restrained accent + pastel section differentiation | Saturated competing backgrounds or unreadable pastel labels |
-| Content-first responsive editorial layouts | Decorative hero that pushes search below fold |
+| Content-first responsive editorial layouts | Decorative hero/banner on any route |
 | Natural Vietnamese line breaking | Justify every label or split Vietnamese words |
 | Functional navigation, escape hatches and focus states | Dead-end interactions or hover-only controls |
 | Original explanatory SVG/diagrams | Huge images without alt text or layout dimensions |
-| Draft-first PR, CI and verified release | Direct source commits, optimistic release claims |
+| Open/Ready PR, FIFO, CI and verified release | Direct source commits, optimistic release claims |
 | Keep secrets in Cloudflare/GitHub secret stores | Commit .env, private exports, tokens or credentials |
 
 ## Security / ignore patterns
