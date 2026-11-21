@@ -70,7 +70,8 @@ async function api(req,url,env,user,space='default') {
         .bind(doc.slug,doc.locale,doc.title,doc.description,JSON.stringify(doc.blocks),now(),id,row.revision).run().catch(()=>null);
       if (!changed) return fail('slug_already_exists',409);
       if (!changed.meta?.changes) return fail('revision_conflict',409);
-      const fresh=await getPage(db,id,space);await record(db,fresh,user.email);await audit(db,space,user.email,'page.update',id,{revision:fresh.revision});
+      await db.prepare("UPDATE cms_page_stages SET stage='draft',updated_by=?,updated_at=? WHERE page_id=?").bind(user.email,now(),id).run();
+      const fresh=await getPage(db,id,space);await record(db,fresh,user.email);await audit(db,space,user.email,'page.update',id,{revision:fresh.revision,workflowReset:'draft'});
       return json({page:publicPage(fresh)});
     }
     if (parts.length===3 && method==='DELETE') {
@@ -103,7 +104,8 @@ async function api(req,url,env,user,space='default') {
       const change=await db.prepare('UPDATE cms_pages SET slug=?,locale=?,title=?,description=?,draft_json=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?')
         .bind(doc.slug,doc.locale,doc.title,doc.description,JSON.stringify(doc.blocks),now(),id,row.revision).run().catch(()=>null);
       if(!change?.meta?.changes)return fail('restore_conflict',409);
-      const fresh=await getPage(db,id,space);await record(db,fresh,user.email);await audit(db,space,user.email,'page.restore',id,{revision:version});
+      await db.prepare("UPDATE cms_page_stages SET stage='draft',updated_by=?,updated_at=? WHERE page_id=?").bind(user.email,now(),id).run();
+      const fresh=await getPage(db,id,space);await record(db,fresh,user.email);await audit(db,space,user.email,'page.restore',id,{revision:version,workflowReset:'draft'});
       return json({page:publicPage(fresh)});
     }
     if (parts[3]==='comments' && parts.length===4) {

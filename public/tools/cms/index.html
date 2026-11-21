@@ -297,7 +297,7 @@ async function advancedPanel(kind,area){
 }
 function publishedLink(){
  if(!s.page||s.page.status!=='published'){info('Trang vẫn ở trạng thái Draft; hãy Xuất bản trước.');return;}
- window.open(API_BASE+'/p/'+encodeURIComponent(s.page.publishedLocale||s.page.locale)+'/'+encodeURIComponent(s.page.publishedSlug||s.page.slug),'_blank','noopener');
+ window.open(API_BASE+'/p/'+encodeURIComponent(s.page.publishedLocale||s.page.locale)+'/'+encodeURIComponent(s.page.publishedSlug||s.page.slug)+'?space='+encodeURIComponent(s.space),'_blank','noopener');
 }
 function previewToggle(){s.preview=!s.preview;$('workspace').classList.toggle('preview-mode',s.preview);$('preview-toggle').textContent=s.preview?'Thoát xem trước':'Xem trước';}
 function showAuth(message){$('workspace').hidden=true;$('auth-panel').hidden=false;$('identity').textContent='Chưa đăng nhập';$('signout').hidden=true;$('auth-feedback').textContent=message||'Đăng nhập Google để tiếp tục.';}
