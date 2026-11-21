@@ -18,7 +18,7 @@ on:
 permissions:
   contents: read
   issues: write
-  pull-requests: read
+  pull-requests: write
 
 concurrency:
   group: techblogtip-pastel-labels-${{ github.event.pull_request.number || 'backfill' }}

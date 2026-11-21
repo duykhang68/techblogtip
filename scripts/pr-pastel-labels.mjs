@@ -28,6 +28,8 @@ const palette = {
   "area: security": ["FFCFDA", "Authentication and security"],
   "area: dependencies": ["E0E5EF", "Dependency updates and Dependabot"],
   "area: ci": ["D8E5FB", "Automation and CI infrastructure"],
+  "dependencies": ["D9E5FA", "Dependency updates (legacy Dependabot label)"],
+  "javascript": ["D8EFD5", "JavaScript updates (legacy Dependabot label)"],
 };
 
 async function api(method, path, payload) {
@@ -109,7 +111,18 @@ async function labelPR(pr) {
   if (area && ![...current].some((label) => label.startsWith("area: ")) && !current.has(area)) add.push(area);
 
   if (add.length > 0) {
-    await api("POST", "/repos/" + repo + "/issues/" + pr.number + "/labels", { labels: add });
+    try {
+      await api("POST", "/repos/" + repo + "/issues/" + pr.number + "/labels", { labels: add });
+    } catch (error) {
+      // GitHub's Actions token may be barred from writing labels to some historical
+      // bot-authored PRs. Preserve the remaining backfill instead of failing early.
+      if (String(error).includes('HTTP 403') &&
+          String(error).includes('Resource not accessible by integration')) {
+        console.warn("::warning::PR #" + pr.number + " labels unchanged: GitHub denied the integration token");
+        return;
+      }
+      throw error;
+    }
   }
   console.log("PR #" + pr.number + ": " + (add.length ? add.join(", ") : "already labeled"));
 }
