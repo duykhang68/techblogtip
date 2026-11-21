@@ -1,5 +1,15 @@
 import {fail} from './auth.mjs';
 export function notionId(id){const s=String(id||'').replace(/-/g,'');if(!/^[a-f0-9]{32}$/i.test(s))fail(400,'notion_id_invalid','Invalid page ID');return s;}
+export function notionNeedsReview(blocks){
+ return blocks.some(b=>{
+  const part=b[b.type]||{};
+  const supported=['heading_1','heading_2','heading_3','paragraph','bulleted_list_item','numbered_list_item','quote','code','divider'];
+  return b.has_children || !supported.includes(b.type) || (part.rich_text||[]).some(t=>{
+   const ann=t.annotations||{};
+   return Boolean(t.href||t.text?.link||t.mention||t.equation||Object.entries(ann).some(([key,value])=>key!=='color' && Boolean(value))|| (ann.color && ann.color!=='default'));
+  });
+ });
+}
 export function notionMarkdown(blocks){
  const output=[];
  for(const b of blocks){
@@ -29,5 +39,5 @@ export async function notionPagePreview({id,token,fetcher=fetch}){
   cursor=batch.has_more?batch.next_cursor:null;
  }while(cursor);
  const title=Object.values(info.properties||{}).filter(v=>v.type==='title').flatMap(v=>v.title||[]).map(v=>v.plain_text||'').join('')||'Notion import';
- return {sourceType:'notion',sourceId:page,title,body:notionMarkdown(blocks),lastEditedTime:info.last_edited_time,requiresReview:blocks.some(b=>b.has_children||!['heading_2','heading_3','paragraph','bulleted_list_item','numbered_list_item'].includes(b.type))};
+ return {sourceType:'notion',sourceId:page,title,body:notionMarkdown(blocks),lastEditedTime:info.last_edited_time,requiresReview:notionNeedsReview(blocks)};
 }
