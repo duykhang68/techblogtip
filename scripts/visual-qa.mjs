@@ -178,6 +178,9 @@ try{
       const footerLinks=await page.locator('.site-footer nav a').allTextContents();
       assert.deepEqual(footerLinks.map(s=>s.trim()),['Archive','Sitemap','Visual CMS'],'Footer must link Archive, Sitemap and Visual CMS');
       assert.equal(await page.locator('.site-footer nav a').last().getAttribute('href'),'/techblogtip/tools/cms/','Visual CMS footer link must preserve the GitHub Pages base path');
+      const cmsResponse=await page.goto(base+'/tools/cms/',{waitUntil:'load'});
+      assert.equal(cmsResponse?.status(),200,'Visual CMS static entry page must load successfully');
+      assert.match(await page.title(),/Visual CMS/,'Visual CMS entry page title must be present');
       const sitemapResponse=await page.goto(base+'/sitemap/',{waitUntil:'load'});
       assert.equal(sitemapResponse?.status(),200,'HTML sitemap must load successfully');
       assert.equal((await page.locator('#sitemap-title').textContent())?.trim(),'Sitemap');
