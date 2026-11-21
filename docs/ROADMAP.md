@@ -1,82 +1,67 @@
-# TechBlogTip delivery roadmap
+# TechBlogTip — roadmap và cổng nghiệm thu
 
-| Milestone | Scope | Gate |
-|---|---|---|
-| A (P0–P4) | Astro, responsive editorial UI, content collection, tags/categories/series, static search, RSS, SEO, CI, Cloudflare staging | Build and checks pass on exact PR SHA; manual review; staging URL returns matching release SHA |
-| B · P5a | Sheets Publisher source schema, normalization, fingerprinting, unit tests | Draft PR CI and security PASS; no live writes |
-| B · P5b | Authorized Google Sheets API + Worker + Draft PR + verified production writeback | Full end-to-end with pinned new TechBlogTip sheet |
-| B · P5c | Visual editorial workflow: on-demand PR/CI feedback, WYSIWYG, Drive→WebP, conflict protection, and verified production release writeback | Review each P5c sub-phase on exact SHA; never claim published based on PR merge alone |
-| B · P6–P8 | Notion editorial adapter, Obsidian selected-note importer, Drive media import | Source identity, replay protection, draft PR, no private data exposure |
-| C | Knowledge graph and editorial dashboard | Accessible, low-JS, event-driven |
-| D | Brand, domain, SEO launch, Search Console | Indexability/canonical verified with domain |
+Cập nhật 21/11/2026. Đây là bảng trạng thái triển khai hiện hành; các tài liệu
+`docs/PUBLISHER-P5C3-RELEASE.md`, `docs/P8-MEDIA-ACCEPTANCE.md` và
+`docs/SEO-SEARCH-CONSOLE-LAUNCH.md` là tài liệu giao thức/kiểm thử chi tiết.
+**Luôn phân biệt code merged, DEV deployed, public production và nghiệm thu do chủ
+dự án xác nhận.** Một PR merged không đồng nghĩa chức năng đã lên production.
 
-Milestone A **accepted on staging** on 20/11/2026. PR #15 merged at `d907346041cb4d74cdc69541e765805288e23eca`, and [Cloudflare deploy #44770658345](https://github.com/duykhang68/techblogtip/actions/runs/44770658345) verified the public SHA. Browser tests at 360/390/430/768/1440px all passed; [ops issue #5](https://github.com/duykhang68/techblogtip/issues/5) closed.
+## Ưu tiên theo rủi ro và giá trị
 
-Current focus: B/P5b live READY→Draft PR→Sheet K:L acceptance (Issue #19) and B/P5c Editorial Studio. P5a is merged; OAuth, dedicated service account, and Publisher DEV are configured. The real Google Sheets/GitHub **read-only** integration passed, but the actual Github PR write path has not been verified. P0 product/keyword research remains an open editorial activity; do not present keyword traffic without a trusted source.
+| Ưu tiên | Hạng mục | Trạng thái có bằng chứng | Việc còn lại / điều kiện đóng |
+| --- | --- | --- | --- |
+| P0 | FIFO, CI, bảo mật | PR #111 (TOC) merged `4f973e03`; PR #115 (ổn định bố cục/lazy image) Quality + Gitleaks PASS trên `cc6c63e5`, merged `ee70f571` | Xác minh public `release.json` khớp commit đã deploy; không merge trước CI/exact head SHA |
+| P0 | Publisher DEV mới | C3 được merge qua PR #95; Worker công khai vẫn trả `73d4cf5e21ce17f9e111f37f2e1804baed90d80b` ở checkpoint này | Dispatch workflow `deploy-publisher-dev.yml` trên main, `confirm=deploy-dev-only`, xác minh /health exact SHA trước khi nói C3 đang chạy trên DEV |
+| P0 | P8 Media Library | PR #79 merged `73d4cf5e`; DEV deployment #44907894608 PASS; chủ dự án xác nhận nghiệm thu PASS ngày 21/11/2026 | Ghi nhận nghiệm thu của chủ dự án; không tự tạo ảnh/media mới hoặc sửa bài READY đã gửi PR |
+| P1 | P5b/P5c end-to-end | READY → Draft PR/K:L đã có bằng chứng ở PR #35; workflow production GitHub Pages + release M:O có code gate; chủ dự án xác nhận các nghiệm thu PASS | Khi phát hành bài mới phải kiểm tra riêng live URL HTTP 200, exact release SHA và M:O; không suy đoán từ trạng thái Sheet hoặc PR merged |
+| P1 | Google Search Console/SEO | Google property đã được chủ dự án xác minh; sitemap #110 merged `8afcea8c`, public `release.json` khớp, 71 URL đọc được | Theo dõi tình trạng Google Sitemaps/Indexing qua Search Console; URL fetch được không đảm bảo Google đã index |
+| P1 | C3 Operations | PR #95 merged, code snapshot Sheets + Actions chỉ đọc, bấm làm mới; token server-only | Deploy Publisher DEV mới, thử live on-demand snapshot (không polling/cron); không hiển thị là dữ liệu trực tiếp nếu API unavailable |
+| P2 | P6 Notion | Đã có endpoint xác thực `POST /api/import/notion`, preview/read-only, giới hạn 500 blocks; phần không biểu diễn lossless bắt buộc Review | Kiểm tra Notion Integration token và chia sẻ page theo nguồn thực; chưa tuyên bố hỗ trợ mọi block/asset |
+| P2 | P7 Obsidian | Đã có `POST /api/import/obsidian`, preview .md, kiểm tra path/traversal, frontmatter, attachment; Editor chỉ nhập nội dung có thể chỉnh sửa an toàn | Bài có Wikilink/media/Markdown nâng cao cần review hoặc nâng cấp trình chuyển đổi lossless trước khi ghi Sheets |
+| P2 | C1/C2, Astro, branding | Bản đồ tri thức, Editorial Dashboard, Archive, SEO/robots/RSS và giao diện mobile đã phát hành ở các PR trước | Duy trì accessibility, Lighthouse, bẻ dòng tiếng Việt tự nhiên, data snapshot tĩnh |
 
-## A acceptance
-- [x] Astro build, strict TypeScript, Node 24 CI green
-- [x] Homepage and article route; category/tag/series filtering
-- [x] Search generated at build, RSS, sitemap, robots, release marker
-- [x] Responsive 360/390/430px, tablet and desktop visual acceptance
-- [x] Content + output tests; WebP policy
-- [x] Dependabot and Draft PR review process
-- [x] Cloudflare staging deployed, publicly verified for exact SHA
-- [ ] Production domain, brand and secrets finalized before SEO launch
+## Bản nghiệm thu do chủ dự án xác nhận
 
-## Verified 21/11/2026 checkpoint
+Trong cuộc trao đổi ngày 21/11/2026, chủ dự án xác nhận **các nghiệm thu đã PASS**.
+Ghi nhận đây là **owner acceptance**, không tự chuyển thành bằng chứng kỹ thuật
+mới của từng lượt tải ảnh/Google OAuth/Google Indexing. Không yêu cầu người dùng
+thử lại P8 khi không có regression cụ thể.
 
-- Milestone A verified on Cloudflare staging. PR #23 / main `a3c44a015d980d56d5a2c2210b3243c78d948793` passed Quality, Workflow Security Audit and staging exact-SHA deployment.
-- Milestone B P5a is complete. P5b Worker DEV deployed at `2446cb94e38175ef61de55c5fbc8575eb44d88ce` (PR #20–#22), including seven-day session, readonly preflight and duplicate-click prevention.
-- [Live integration check #44830236907](https://github.com/duykhang68/techblogtip/actions/runs/44830236907) passed against the dedicated Sheet VN, Github read-only main and Publisher DEV. It does **not** test Github PR write permissions.
-- **Pending P5b:** authorized editor submits a real READY article → exactly one Draft PR → verify Sheet K:L. Keep [Issue #19](https://github.com/duykhang68/techblogtip/issues/19) open until verified.
-- **P5c.1:** on-demand PR/CI tracker using authenticated Worker; CI checks always pinned to PR head SHA, optional GitHub Checks:Read; failed/unavailable check data is never treated as PASS. Manual separate Publisher DEV deployment required after merge.
-- **P5c.2 (phased):** First visual editor for IDEA/DRAFT/REVIEW (simple headings, lists, emphasis, metadata; Sheets B:H + J only) is being implemented, with 409 conflict detection and locked READY/PR rows. Advanced Markdown and Drive→WebP, multi-editor transactional locking and recovery are still not implemented.
-- **P5c.3:** verified production release writeback M:O requires a production domain, deployed public URL and exact release SHA; not implemented.
-- **P6–P8/C/D:** Notion, Obsidian, Drive adapter, knowledge graph and public SEO launch remain planned.
+## Chính sách phát hành
 
-## P5c.2 — Visual editor (first slice)
+1. **Draft-first + FIFO**: mọi thay đổi không thuộc ngoại lệ README/AGENTS phải qua
+   PR; chỉ Ready và merge khi không có PR đứng trước đủ điều kiện, head SHA được kiểm
+   và Quality/Security/required checks đều PASS. Không bypass branch rules.
+2. **Exact SHA**: GitHub Pages chỉ là production khi public `release.json` khớp
+   deploy release, không dựa vào merged status.
+3. **Publisher DEV độc lập**: merge vào main không tự cập nhật Cloudflare Worker.
+   Triển khai theo workflow manual + secret gate; `/health` phải báo SHA mới.
+4. **Zero client GitHub API**: dữ liệu vận hành từ Worker có xác thực hoặc snapshot
+   tĩnh; không cron hoặc polling không cần thiết.
+5. **Fail closed**: thất bại Google Sheets/Notion/Drive/CI không được coi là PASS;
+   source lock/Durable Object và bảo vệ READY/PUBLISHED không bị bỏ qua.
+6. **No false completion**: ngày triển khai, ngày Google xử lý sitemap, mốc owner
+   acceptance, CI SHA và M:O production proof là các dấu mốc độc lập.
 
-- Only authorized editors with active Google sessions may open and save a draft by stable source ID. The server re-reads the source and compares SHA-256 snapshot of all A:O fields before saving.
-- The visual editor supports basic headings, lists, bold/italic, paragraphs and metadata. Advanced Markdown (code blocks, tables, images, links) is display-only and must be edited in Google Sheets until lossless conversion is available.
-- Atomic Google Sheets values:batchUpdate modifies only B:H and J. Column I status and A/K:O system fields are never written by this editor. READY, PR-submitted or published rows are locked.
-- Note the Google Sheets API does not provide a transaction-level compare-and-swap. Keep single-editor use until per-source locking is implemented; a concurrent edit between compare and write remains a known limitation.
-- No auto-publish, auto-merge, browser GitHub API, cron, or secret exposure.
+## Tài liệu và trang tham chiếu
 
-- **P5c.2 write coordination:** a Durable Object lease is required for Writer APIs (allocate source ID, save draft, create Draft PR). The Worker fails closed without the binding; this feature needs a separate manual Publisher DEV deployment and exact SHA verification. Google Sheets direct editing outside the Worker is not serialized.
+- [Publisher DEV](https://techblogtip-publisher-dev.tamsudev-com.workers.dev/admin/)
+- [GitHub Pages](https://duykhang68.github.io/techblogtip/)
+- [Sitemap](https://duykhang68.github.io/techblogtip/sitemap.xml)
+- [GitHub Actions](https://github.com/duykhang68/techblogtip/actions)
+- [Open PRs](https://github.com/duykhang68/techblogtip/pulls)
+- [Production writeback](PUBLISHER-P5C3-RELEASE.md)
+- [Drive Media Acceptance](P8-MEDIA-ACCEPTANCE.md)
+- [Search Console Launch](SEO-SEARCH-CONSOLE-LAUNCH.md)
 
+## Lịch sử triển khai cốt lõi
 
-## P5b live E2E checkpoint — 21/11/2026
-
-An authorized editor approved a dedicated test row (VN row 3, source ID
-\`TBT-ed3fa834-d43c-4852-ad7b-1128cd4486c0\`). Publisher DEV generated
-[Draft PR #35](https://github.com/duykhang68/techblogtip/pull/35),
-recorded the independently matching SHA-256 source fingerprint in K and the PR
-URL in L. Release columns M:O stayed blank. The Quality workflow
-[#44837806420](https://github.com/duykhang68/techblogtip/actions/runs/44837806420)
-passed on exact PR head \`b3f9712ac482d7df88bbe408f96e951178bbfe32\`.
-PR #35 was then **closed unmerged** to prevent a test article with
-\`draft: false\` from entering main. Core READY → Draft PR → K:L is verified;
-live replay of an identical POST and failure injection have not been tested.
-The optional read-only audit can now recheck the cross-system result by source ID.
-
-
-## P5c.3 — Code gate implemented, production configuration pending
-
-Verified release workflow and M:O writeback code, tests and runbooks are described in docs/PUBLISHER-P5C3-RELEASE.md. Public production hostname and protected credentials are **not yet provisioned**; staging/Publisher DEV cannot count as a production release. Until a real release is successfully verified, the Editor must not show 100%.
-
-
-## GitHub Pages selected as production — 21/11/2026
-
-Production target is **https://duykhang68.github.io/techblogtip/**, not a Cloudflare custom domain or seomoney.org. Astro pages must use base `/techblogtip`; P5c.3 release proof and M:O writeback must fetch this project URL. Publisher DEV stays on Cloudflare and staging remains separate. See docs/PUBLISHER-P5C3-RELEASE.md. The Actions source must be enabled in GitHub Settings → Pages, and the same protected sync secret must be available to github-pages and techblogtip-publisher-dev environments. A merged PR is never by itself a published article.
-
-
-## P5e — Xem trước bài an toàn (slice 1, 21/11/2026)
-
-- Thêm nút **Xem trước bài** trong Editorial Studio cho bản nháp chưa gửi, hiển thị bảng, code fence, blockquote, danh sách, heading, liên kết và WebP nội bộ trong một vùng đọc responsive.
-- Yêu cầu **Google session / same-origin** qua `POST /api/preview`. Parser trả cấu trúc token có giới hạn kích thước, **không trả HTML**, không gọi GitHub và không ghi Google Sheets; browser dựng DOM bằng `createElement` và `textContent` (không `innerHTML`).
-- Chỉ cho phép URL ảnh WebP trên chính GitHub Pages `/techblogtip/`; ảnh Drive, ảnh remote hoặc định dạng không phải WebP hiển thị cảnh báo thay vì tải vào Editor.
-- Những bản nháp Markdown nâng cao tiếp tục **chỉ đọc trong WYSIWYG** để không làm mất nội dung; xem trước không có nghĩa chỉnh sửa lossless và **không phải bản dựng Astro 100% pixel-perfect**. Hệ thống không thay đổi READY/PR/M:O.
-- Test bảo mật cover script/unsafe links, raw HTML literal, URL allowlist, giới hạn 100k ký tự và 600 khối; test xác thực Google và chống request cross-origin.
-- Để kích hoạt ở môi trường admin cần deploy lại Publisher DEV thủ công theo workflow `deploy-publisher-dev.yml`, confirmation `deploy-dev-only`, rồi xác minh `/health` exact SHA. Không tự mở quyền/secret, không cron.
-- **Vẫn còn**: chọn file Drive, import server-side, chuyển WebP, commit asset lên Draft PR và hỗ trợ chỉnh sửa Markdown nâng cao không mất dữ liệu; không coi những phần này là đã triển khai.
+- A/P0–P4: Astro SSG, editorial responsive, taxonomy, search, RSS, SEO, CI,
+  Cloudflare staging đã được nghiệm thu từ 20/11/2026.
+- P5b: Google Sheets VN row 3, source ID
+  `TBT-ed3fa834-d43c-4852-ad7b-1128cd4486c0`, PR #35 và Quality
+  #44837806420 chứng minh READY → Draft PR → K:L; PR test đóng không merge.
+- P8: PR #79, deploy #44907894608, DEV SHA `73d4cf5e`.
+- C1/C2/C3: static Knowledge Map, Editorial Dashboard; C3 PR #95 merged.
+- D: Search Console property + verification meta, XML sitemap PR #110; 71 URL
+  xuất hiện trên GitHub Pages ở SHA `8afcea8c`.
