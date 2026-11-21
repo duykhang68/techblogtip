@@ -17,15 +17,15 @@ test('Notion pagination cannot silently stop or loop when cursor is malformed',a
 });
 test('Obsidian complex syntax remains in review until lossless support exists',()=>{
  const previews=[
-  {path:'notes/frontmatter.md',markdown:'---\\ntitle: X\\n  nested: YAML\\n---\\nPlain'},
+  {path:'notes/frontmatter.md',markdown:'---\ntitle: X\n  nested: YAML\n---\nPlain'},
   {path:'notes/link.md',markdown:'Read [reference](https://example.com)'},
-  {path:'notes/code.md',markdown:'~~~js\\nconst x = 1\\n~~~'},
-  {path:'notes/table.md',markdown:'| A | B |\\n|---|---|\\n| 1 | 2 |'},
+  {path:'notes/code.md',markdown:'~~~js\nconst x = 1\n~~~'},
+  {path:'notes/table.md',markdown:'| A | B |\n|---|---|\n| 1 | 2 |'},
   {path:'notes/html.md',markdown:'<aside>Example</aside>'},
   {path:'notes/wiki.md',markdown:'Broken [[link'}
  ];
  for(const input of previews)assert.equal(obsidianPreview(input).requiresReview,true,input.path);
- const safe=obsidianPreview({path:'notes/simple.md',markdown:'---\\ntitle: Ví dụ tiếng Việt\\n---\\nĐoạn văn không mất dữ liệu'});
+ const safe=obsidianPreview({path:'notes/simple.md',markdown:'---\ntitle: Ví dụ tiếng Việt\n---\nĐoạn văn không mất dữ liệu'});
  assert.equal(safe.requiresReview,false);
  assert.match(safe.body,/Đoạn văn không mất dữ liệu/);
 });
