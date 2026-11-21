@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ArticleList from '../../components/ArticleList.astro';
-import { getArticles, slugify } from '../../lib/content';
+import { getArticles, slugify, withBase } from '../../lib/content';
 export async function getStaticPaths(){
  const all=await getArticles(); const series=[...new Set(all.map(a=>a.data.series).filter((v): v is string => !!v))];
  return series.map(name=>({params:{slug:slugify(name)},props:{name}}));
@@ -9,4 +9,4 @@ export async function getStaticPaths(){
 const {name}=Astro.props;
 const articles=(await getArticles()).filter(a=>a.data.series===name).reverse();
 ---
-<BaseLayout title={name} description={'Chuỗi bài '+name+' của TechBlogTip.'}><section class="container list-page"><nav class="breadcrumb"><a href="/">Trang chủ</a><span>/</span><a href="/chu-de/">Chủ đề</a></nav><p class="section-kicker">HỌC CÓ HỆ THỐNG</p><h1>{name}</h1><p class="directory-summary">{articles.length} bài viết · Học từng bước, từ cơ bản đến nâng cao.</p><ArticleList articles={articles}/></section></BaseLayout>
+<BaseLayout title={name} description={'Chuỗi bài '+name+' của TechBlogTip.'}><section class="container list-page"><nav class="breadcrumb"><a href={withBase('/')}>Trang chủ</a><span>/</span><a href={withBase('/chu-de/')}>Chủ đề</a></nav><p class="section-kicker">HỌC CÓ HỆ THỐNG</p><h1>{name}</h1><p class="directory-summary">{articles.length} bài viết · Học từng bước, từ cơ bản đến nâng cao.</p><ArticleList articles={articles}/></section></BaseLayout>
