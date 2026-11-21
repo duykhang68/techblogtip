@@ -268,3 +268,15 @@ merging test content is not: the generated article frontmatter defaults to
 \`draft: false\`. This audit never merges, creates PRs, writes Sheets, or marks
 anything published. It cannot prove an additional live duplicate POST occurred;
 the server-side idempotency path remains covered by mock integration tests.
+
+## P5d · Source submission replay & K:L write confirmation
+
+A live article (Google Sheets VN row 4, source `TBT-ab577196-3e16-42a6-9185-60fbc4cbb534`) was published on 21/11/2026 by [PR #54](https://github.com/duykhang68/techblogtip/pull/54). [GitHub Pages run #44857149957](https://github.com/duykhang68/techblogtip/actions/runs/44857149957) verified the production release SHA, and the production callback automatically wrote **M4:O4**. Its log recorded `verified 1, pending 1`; the pending article is the closed-unmerged test PR #35. The positive production proof is accepted in completed [Issue #42](https://github.com/duykhang68/techblogtip/issues/42).
+
+The next reliability slice hardens `POST /api/submit`:
+- After creating/reusing a Draft PR and requesting the system K:L update, reread the Sheet and **require** exact saved fingerprint and PR URL before returning success.
+- If K:L already points to a PR, validate GitHub PR number, URL, branch, base, repository and **full source-ID/revision body lines**. An unchanged repeated submit returns the existing Draft, ready or merged PR; it cannot create a duplicate.
+- If Sheets returns 5xx or acknowledges a K:L write that did not persist, return an error; an explicit retry may recover the original open Draft PR and finish K:L without duplicating GitHub content.
+- A changed revision, foreign source PR, unavailable Google Sheets or unknown state still **fails closed**. K:L confirmation never touches M:O, doesn't imply publication, and requires authenticated same-origin editor plus Durable Object source lock.
+
+Regression tests simulate a second submit after merge, forged body markers, a false write acknowledgment, and one-time Google Sheets write failures. This covers deterministic backend replays but **does not claim** a fresh browser-driven Google OAuth end-to-end test; keep [Issue #19](https://github.com/duykhang68/techblogtip/issues/19) available for that final UI acceptance.

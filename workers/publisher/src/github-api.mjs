@@ -37,6 +37,33 @@ export async function branchFor(prepared){
   const tag=[...digest].slice(0,10).map(v=>v.toString(16).padStart(2,'0')).join('');
   return 'sheets/tbt-'+tag;
 }
+// Verify an already-registered PR without creating another branch or PR.
+// Source ID/revision are compared as full metadata lines, not string prefixes.
+function validSourcePR(pr,prepared,branch,url){
+  const lines=String(pr?.body||'').split(/\r?\n/);
+  return pr?.html_url===url&&
+    pr?.base?.ref==='main'&&pr?.head?.ref===branch&&
+    pr?.head?.repo?.full_name==='duykhang68/techblogtip'&&
+    lines.includes('source-id: '+prepared.sourceId)&&
+    lines.includes('source-revision: '+prepared.sourceRevision);
+}
+
+export async function inspectSubmittedSourcePR(env,prepared,storedUrl,fetcher=fetch){
+  const match=/^https:\/\/github\.com\/duykhang68\/techblogtip\/pull\/([1-9][0-9]*)$/.exec(String(storedUrl||''));
+  if(!match)fail(409,'pr_conflict','Stored PR is not a trusted TechBlogTip link');
+  const number=Number(match[1]);
+  if(!Number.isSafeInteger(number)||number>100000000)
+    fail(409,'pr_conflict','Stored PR number is invalid');
+  const branch=await branchFor(prepared);
+  const pr=await githubRequest(env,'/pulls/'+number,{fetcher});
+  if(pr?.number!==number||!validSourcePR(pr,prepared,branch,storedUrl))
+    fail(409,'pr_conflict','Stored PR no longer matches the submitted source');
+  const stage=pr.state==='closed'?(pr.merged_at?'merged':'closed'):(pr.draft?'draft':'ready');
+  if(!['open','closed'].includes(pr.state))
+    fail(409,'pr_conflict','Stored PR has unknown state');
+  return {created:false,number,url:storedUrl,branch,stage};
+}
+
 export async function createDraftPR(env,prepared,fetcher=fetch){
   const branch=await branchFor(prepared);
   const sourceMarker='source-id: '+prepared.sourceId;
@@ -46,10 +73,8 @@ export async function createDraftPR(env,prepared,fetcher=fetch){
   if(!Array.isArray(existing))fail(502,'github_api','Unexpected GitHub pull request response');
   if(existing.length){
     const pr=existing[0];
-    if(pr.base?.ref!=='main'||!pr.draft||!pr.body?.includes(sourceMarker))
-      fail(409,'branch_conflict','An unrelated/ready PR occupies this source branch');
-    if(!pr.body.includes(revisionMarker))
-      fail(409,'revision_conflict','An existing source PR has another revision; review it first');
+    if(!pr.draft||pr.state!=='open'||!validSourcePR(pr,prepared,branch,pr.html_url))
+      fail(409,'branch_conflict','An unrelated, changed or ready PR occupies this source branch');
     return {created:false,number:pr.number,url:pr.html_url,branch};
   }
   if(await request('/git/ref/heads/'+branch,{missingOk:true}))

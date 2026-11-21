@@ -2,7 +2,7 @@ import { PublisherError,fail,requireSameOrigin,verifyGoogleIdToken } from './aut
 import { issueSessionCookie,verifySession,expiredSessionCookie,SESSION_TTL_SECONDS } from './session.mjs';
 import { readSheet,putSystemCells,rowById,sheetConfig } from './google-api.mjs';
 import { deletionPreview,deleteQueuedArticle } from './article-delete.mjs';
-import { createDraftPR,githubRequest } from './github-api.mjs';
+import { createDraftPR,inspectSubmittedSourcePR,githubRequest } from './github-api.mjs';
 import { inspectPublisherPR } from './pr-status.mjs';
 import { finalizeVerifiedArticle,requireProductionSync,reconcileProductionBatch } from './release-writeback.mjs';
 import { readProductionStatus } from './production-status.mjs';
@@ -270,9 +270,22 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
           fail(409,'source_hash_conflict','System source revision is different; manual review required');
         if(row.cells[11]&&!/^https:\/\/github\.com\/duykhang68\/techblogtip\/pull\/\d+$/.test(row.cells[11]))
           fail(409,'pr_conflict','Stored PR link is not a TechBlogTip pull request');
+        // A second click after review/merge must not try to recreate an
+        // orphaned branch. Revalidate the actual source-bound PR, then read
+        // back the same Sheet revision before returning an idempotent result.
+        if(row.cells[11]){
+          if(row.cells[10]!==prepared.sourceRevision)
+            fail(409,'source_hash_conflict','Submitted source hash is incomplete or stale');
+          const previous=await inspectSubmittedSourcePR(env,prepared,row.cells[11],fetcher);
+          const reread=await readSheet(env,fetcher);
+          const existing=rowById(reread.records,sourceId);
+          sameRevision(row,existing,context);
+          if(existing.cells[10]!==prepared.sourceRevision||existing.cells[11]!==previous.url)
+            fail(409,'writeback_conflict','Registered PR changed during replay');
+          return respond({sourceId,sourceRevision:prepared.sourceRevision,
+            prUrl:previous.url,created:false,review:previous.stage,published:false},200);
+        }
         const pr=await createDraftPR(env,prepared,fetcher);
-        if(row.cells[11]&&row.cells[11]!==pr.url)
-          fail(409,'pr_conflict','Another Draft PR is already registered for this source');
         const reread=await readSheet(env,fetcher);
         const fresh=rowById(reread.records,sourceId);
         sameRevision(row,fresh,context);
@@ -281,7 +294,15 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
           fail(409,'writeback_conflict','System-owned fields changed during request');
         if(fresh.cells[10]!==prepared.sourceRevision||fresh.cells[11]!==pr.url)
           await putSystemCells(env,reread.token,fresh.rowNumber,'K:L',[prepared.sourceRevision,pr.url],fetcher);
-        return respond({sourceId,sourceRevision:prepared.sourceRevision,prUrl:pr.url,created:pr.created,review:'draft',published:false},pr.created?201:200);
+        // A successful Google API response is not proof that K:L persisted.
+        // Fail closed on a stale/reordered row or a no-op write acknowledgment.
+        const afterWrite=await readSheet(env,fetcher);
+        const committed=rowById(afterWrite.records,sourceId);
+        sameRevision(row,committed,context);
+        if(committed.cells[10]!==prepared.sourceRevision||committed.cells[11]!==pr.url)
+          fail(409,'writeback_unverified','Draft PR exists, but Sheet K:L did not persist; retry safely');
+        return respond({sourceId,sourceRevision:prepared.sourceRevision,
+          prUrl:pr.url,created:pr.created,review:'draft',published:false},pr.created?201:200);
         });
       }
       fail(405,'method_not_allowed','Unsupported API method or route');
