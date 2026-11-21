@@ -15,9 +15,9 @@ export function obsidianPreview({path,markdown,attachments=[]}){
   for(const line of body.slice(4,end).split('\n')){const m=/^([a-zA-Z][\w-]*):\s*(.*)$/.exec(line);if(m)metadata[m[1]]=m[2];}
   body=body.slice(end+5);
  }
- const assets=[];const known=new Set(attachments.map(safeVaultPath));
+ const assets=[];const unresolvedLinks=[];const known=new Set(attachments.map(safeVaultPath));
  body=body.replace(/!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,(_,src,alt)=>{const file=safeVaultPath(src);assets.push(file);return '[Media import required: '+(alt||file)+']';});
- body=body.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,(_,target,label)=>label||target);
+ body=body.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,(_,target,label)=>{unresolvedLinks.push(target);return label||target;});
  if(/<\s*script\b|\]\(\s*(javascript|data):/i.test(body))fail(422,'unsafe_note','Unsafe note content');
- return {sourceType:'obsidian',sourceId,title:metadata.title||sourceId.split('/').at(-1).replace(/\.md$/i,''),body,metadata,attachments:assets,missingAttachments:assets.filter(a=>!known.has(a)),requiresReview:assets.length>0};
+ return {sourceType:'obsidian',sourceId,title:metadata.title||sourceId.split('/').at(-1).replace(/\.md$/i,''),body,metadata,attachments:assets,missingAttachments:assets.filter(a=>!known.has(a)),unresolvedLinks,requiresReview:assets.length>0||unresolvedLinks.length>0};
 }
