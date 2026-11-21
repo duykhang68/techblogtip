@@ -4,7 +4,7 @@
 After the existing exact-SHA release proof, `deploy-production.yml` runs `scripts/verify-live-sitemap.mjs`. It fetches live `/techblogtip/sitemap.xml` (HTTP 200, XML format, schema namespace, nonempty and unique canonical URLs), checks `robots.txt`, and fetches homepage plus up to five article URLs to confirm HTTP 200, canonical and `index,follow`. Failure marks the deploy workflow red **after publication**; it does not roll back the Pages artifact. Inspect Actions job summary. Build-time `seo:audit` remains unchanged.
 
 ## Google Search Console (optional, read-only)
-`seo-index-monitor.yml` is **event-driven**: it runs following a successful production workflow on `main`, or via manual dispatch. It does not use a daily cron and never calls Google's Indexing API or submits URLs.
+The trusted `deploy-production.yml` job performs read-only URL inspection immediately after live sitemap verification succeeds. `seo-index-monitor.yml` is manual-dispatch only; no privileged `workflow_run` trigger is used. Neither workflow uses a daily cron or submits URLs to Google's Indexing API.
 
 The Google URL Inspection API requires an authorized identity. To enable:
 1. In Google Cloud, enable **Search Console API** and create a dedicated service account. Create its JSON key and store the entire JSON in GitHub Actions secret `GSC_SERVICE_ACCOUNT_JSON`. Do not commit the key, print it or use it in frontend code.
