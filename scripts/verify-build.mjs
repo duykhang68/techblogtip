@@ -32,3 +32,22 @@ const release=JSON.parse(readFileSync('dist/release.json','utf8'));
 const sha=process.env.SOURCE_SHA || process.env.GITHUB_SHA;
 if(process.env.GITHUB_ACTIONS==='true' && release.sha!==sha)throw new Error('Built release SHA mismatch');
 console.log('Verified HTML, RSS, sitemap, noindex, search index and exact SHA marker');
+
+
+// Visualizer publication gate: every article with 2+ H2 sections must render its story map.
+import { readdirSync } from 'node:fs';
+const articlesDir=resolve('src/content/articles');
+for(const name of readdirSync(articlesDir).filter(n=>n.endsWith('.md'))){
+ const source=readFileSync(resolve(articlesDir,name),'utf8');
+ if(/^draft:\\s*true\\s*$/m.test(source))continue;
+ const sections=[...source.matchAll(/^##\\s+.+$/gm)].length;
+ const slug=name.replace(/\\.md$/,'');
+ const built=resolve('dist/bai-viet',slug,'index.html');
+ if(!existsSync(built))throw new Error('Visualizer gate: missing built article '+slug);
+ const markup=readFileSync(built,'utf8');
+ if(sections>=2 && !markup.includes('data-auto-visualizer'))
+  throw new Error('Visualizer gate: missing auto-generated story map for '+slug);
+ if(slug==='techblogtip-engineering-rules' && (!markup.includes('ENGINEERING CONTRACT') || !markup.includes('RELEASE TRUST CHAIN')))
+  throw new Error('Visualizer gate: engineering rules diagrams not rendered');
+}
+console.log('Verified auto-generated visual story maps on all eligible public articles');
