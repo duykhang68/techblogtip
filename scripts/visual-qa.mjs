@@ -65,7 +65,7 @@ try{
    assert.equal(await page.locator('.home-search-link').count(),0,'Removed homepage search hero must not return');
    assert.equal(await page.locator('[data-theme-toggle]').count(),1,'Lightbulb theme toggle must be available');
    const cards=await page.locator('.article-card').count();
-   assert.equal(cards,1,'Only the retained PageSpeed article should appear on the homepage');
+   assert.equal(cards,2,'Homepage should show the two explicitly approved articles');
    const metric=await page.evaluate(()=>{
     const rect=selector=>document.querySelector(selector)?.getBoundingClientRect();
     return {
@@ -114,6 +114,23 @@ try{
       await page.screenshot({path:join('artifacts/visual-qa','pagespeed-100-'+w+'.png'),animations:'disabled'});
       console.log('PASS PageSpeed story visual QA '+w+'px');
     }catch(e){record('PageSpeed visual '+w,e);}
+  }
+  // New editorial article: original safety-flow diagram must render without horizontal overflow.
+  if(w===390 || w===1440){
+    try{
+      const response=await page.goto(base+'/bai-viet/xoa-nhieu-repository-github-cli-an-toan/',{waitUntil:'load'});
+      assert.equal(response.status(),200);
+      assert.equal(await page.locator('[data-auto-visualizer]').count(),1,'GitHub CLI article story map missing');
+      assert.equal(await page.locator('[data-repo-deletion-flow] .steps li').count(),5,'Five safety checkpoints are required');
+      const metrics=await page.evaluate(()=>({
+        scrollWidth:document.documentElement.scrollWidth,
+        flowRight:document.querySelector('[data-repo-deletion-flow]').getBoundingClientRect().right
+      }));
+      assert.ok(metrics.scrollWidth<=w+1,'GitHub CLI article horizontal overflow '+metrics.scrollWidth+' > '+w);
+      assert.ok(metrics.flowRight<=w+1,'GitHub CLI illustration clipped on '+w+'px viewport');
+      await page.screenshot({path:join('artifacts/visual-qa','github-cli-'+w+'.png'),animations:'disabled'});
+      console.log('PASS GitHub CLI safety diagram '+w+'px');
+    }catch(e){record('GitHub CLI visual '+w,e);}
   }
   if(w===1440){
     try{
