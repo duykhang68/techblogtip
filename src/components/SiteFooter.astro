@@ -1,4 +1,19 @@
 ---
 import { withBase } from '../lib/content';
 ---
-<footer class="site-footer"><div class="container footer-layout"><div><a class="footer-brand" href={withBase('/')}>TECHBLOGTIP<span class="accent">.</span></a><p>Thủ thuật dễ làm, kiến thức dễ hiểu, công nghệ cho mọi người.</p></div><nav aria-label="Điều hướng cuối trang"><a href={withBase('/archieve/')}>Archive</a></nav></div><div class="container footer-bottom"><span>© {new Date().getFullYear()} TechBlogTip</span><span>Astro · GitHub · Cloudflare</span></div></footer>
+<footer class="site-footer">
+  <div class="container footer-layout">
+    <div>
+      <a class="footer-brand" href={withBase('/')}>TECHBLOGTIP<span class="accent">.</span></a>
+      <p>Thủ thuật dễ làm, kiến thức dễ hiểu, công nghệ cho mọi người.</p>
+    </div>
+    <nav aria-label="Điều hướng cuối trang">
+      <a href={withBase('/archieve/')}>Archive</a>
+      <a href={withBase('/sitemap/')}>Sitemap</a>
+    </nav>
+  </div>
+  <div class="container footer-bottom">
+    <span>© {new Date().getFullYear()} TechBlogTip</span>
+    <span>Astro · GitHub · Cloudflare</span>
+  </div>
+</footer>
