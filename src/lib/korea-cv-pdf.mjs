@@ -38,7 +38,7 @@ export function createKoreanA4Html(cv) {
     '@page{size:A4 portrait;margin:13mm 12mm}*{box-sizing:border-box}body{margin:0;color:#111;font:10.5pt/1.45 "Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif}'+
     '.page{page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}header{border-bottom:3px solid #123f68;margin-bottom:16px;padding-bottom:6px;display:flex;flex-direction:column;gap:2px}header span{color:#88accb;letter-spacing:2px;font-size:19pt}header strong{color:#09659c;font-size:17pt}header small{font-size:9pt;text-align:right}'+
     'h1{text-align:center;font-size:17pt;margin:12px 0 18px;text-decoration:underline;text-underline-offset:5px}h2{font-size:10pt;margin:14px 0 0;background:#d8e8ef;padding:6px 8px;break-after:avoid}h2.dark{background:#102640;color:white;max-width:45%}'+
-    'section{break-inside:auto;margin:12px 0}table{border-collapse:collapse;table-layout:fixed;width:100%;font-size:9pt}th,td{border:1px solid #333;padding:6px;overflow-wrap:break-word;vertical-align:top}th{background:#e2e2e2}td{white-space:pre-wrap}.info th{background:#102640;color:white;width:19%}.info td{width:31%}.essay{border:1px solid #333;min-height:24mm;padding:8px;white-space:pre-wrap;overflow-wrap:break-word}.project{break-inside:avoid;margin-bottom:8mm}.project h2{background:#d8e8ef;margin:0}.project th{width:24%;background:#f3f3f3}li{margin:5px 0}footer{margin-top:16px;border-top:1px solid #ddd;font-size:7pt;color:#777}'+
+    'section{break-inside:auto;margin:12px 0}thead{display:table-header-group}tr{break-inside:avoid}table{border-collapse:collapse;table-layout:fixed;width:100%;font-size:9pt}th,td{border:1px solid #333;padding:6px;overflow-wrap:break-word;vertical-align:top}th{background:#e2e2e2}td{white-space:pre-wrap}.info th{background:#102640;color:white;width:19%}.info td{width:31%}.essay{border:1px solid #333;min-height:24mm;padding:8px;white-space:pre-wrap;overflow-wrap:break-word}.project{break-inside:avoid;margin-bottom:8mm}.project h2{background:#d8e8ef;margin:0}.project th{width:24%;background:#f3f3f3}li{margin:5px 0}footer{margin-top:16px;border-top:1px solid #ddd;font-size:7pt;color:#777}'+
     '@media screen{body{background:#e8eaed;padding:15px}.page{background:white;width:210mm;min-height:297mm;margin:0 auto 15px;padding:13mm 12mm;box-shadow:0 1px 7px #aaa}}'+
     '</style></head><body>'+html+'</body></html>';
 }
@@ -47,6 +47,11 @@ export function exportSavedCVasA4(cv,win) {
   win.document.open();
   win.document.write(createKoreanA4Html(cv));
   win.document.close();
-  win.focus();
-  win.print();
+  // Wait until layout and Korean-capable installed fonts are ready before invoking print.
+  const afterReady=() => {
+    const done=win.document.fonts?.ready || Promise.resolve();
+    done.then(()=>{win.focus();win.print();}).catch(()=>{win.focus();win.print();});
+  };
+  if(win.document.readyState==='complete') afterReady();
+  else win.addEventListener('load',afterReady,{once:true});
 }
