@@ -4,8 +4,8 @@ const element = (id:string) => document.getElementById(id) as HTMLElement;
 const status = (value:string, tone:'neutral'|'info'|'success'|'error'='info') => {
   const node=element('service-status');
   node.dataset.state=tone;
-  const dot=document.createElement('span');dot.className='kcv-status-dot';dot.setAttribute('aria-hidden','true');
-  node.replaceChildren(dot,document.createTextNode(value));
+  const dot=node.querySelector('.kcv-status-dot');
+  node.replaceChildren(...(dot?[dot]:[]),document.createTextNode(value));
 };
 const clientId=import.meta.env.PUBLIC_KOREA_CV_GOOGLE_CLIENT_ID || '';
 const api=import.meta.env.PUBLIC_KOREA_CV_API_URL || '';
