@@ -31,7 +31,7 @@ const orderedTags=[...tagCounts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],
 const months=[...monthlyCounts].sort((a,b)=>a[0].localeCompare(b[0])).slice(-6);
 const maxMonth=Math.max(1,...months.map(([,n])=>n));
 const percentage=(n:number,d:number)=>d===0?0:Math.round(n/d*100);
-const freshness=articles.length?articles[0].data.published.toISOString().slice(0,10):'—';
+const freshness=articles[0]?.data.published.toISOString().slice(0,10) ?? '—';
 const sourceLabel=(key:string)=>({'google-sheets':'Google Sheets',notion:'Notion',obsidian:'Obsidian',manual:'Thủ công'} as Record<string,string>)[key]||key;
 ---
 <BaseLayout title="Editorial Dashboard" description="Bảng điều khiển biên tập tĩnh TechBlogTip: kiểm kê bài đã xuất bản, chuyên mục, nguồn, series và mức độ hoàn thiện metadata. Không thu thập dữ liệu người đọc.">
