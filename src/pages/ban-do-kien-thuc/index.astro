@@ -1,6 +1,6 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { getArticles, articleUrl, categoryUrl, tagUrl, seriesUrl, withBase } from '../lib/content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getArticles, articleUrl, categoryUrl, tagUrl, seriesUrl, withBase } from '../../lib/content';
 
 const articles = await getArticles();
 const categories = new Map<string, { name:string; count:number; tags: Map<string,number>; series:Map<string,number> }>();
