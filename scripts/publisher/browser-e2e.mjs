@@ -29,9 +29,9 @@ const sampleBody=[
   '| Google Sheets | READY |',
   '| Draft PR | Chờ duyệt |',
   '',
-  '~~~',
+  '```js',
   'const proof = "public SHA";',
-  '~~~',
+  '```',
   '',
   '<script>window.__publisherInjected = true</script>'
 ].join('\n');
@@ -118,7 +118,8 @@ const server=createServer(async(req,res)=>{
     return json(res,{valid:true,sourceId:url.searchParams.get('sourceId')});
    if(req.method==='GET'&&route==='/api/preflight')
     return json(res,{sheet:{ok:true,rows:2},github:{ok:true}});
-   metrics.unexpected.push(req.method+' '+route);
+   if(route==='/favicon.ico'){res.writeHead(204);return res.end();}
+   if(route.startsWith('/api/'))metrics.unexpected.push(req.method+' '+route);
    return json(res,{message:'Fixture endpoint not available'},404);
   }catch(error){return json(res,{message:error.message},500);}
 });
