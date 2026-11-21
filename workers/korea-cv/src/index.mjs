@@ -88,7 +88,7 @@ export default {
     if (request.method==='OPTIONS') return origin===allowed ? new Response(null,{status:204,headers:cors}) : respond({error:'origin_not_allowed'},403);
     if (origin && origin!==allowed) return respond({error:'origin_not_allowed'},403);
     const url=new URL(request.url);
-    if (url.pathname==='/health' && request.method==='GET') return respond({status:'ok',service:'korea-cv-drive-gateway'});
+    if (url.pathname==='/health' && request.method==='GET') return respond({status:'ok',service:'korea-cv-drive-gateway',releaseSha:env.RELEASE_SHA||null});
     const match=url.pathname.match(/^\/api\/korea-cv(?:\/([\w-]+))?\/?$/);
     if (!match) return respond({error:'not_found'},404);
     if (!env.GOOGLE_OAUTH_CLIENT_ID) return respond({error:'not_configured'},503);
