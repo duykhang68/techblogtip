@@ -4,9 +4,10 @@ export function safeFilename(value) {return String(value||'image').replace(/[^a-
 export function normalizePage(input={}) {
   const src=input&&typeof input==='object'&&!Array.isArray(input)?input:{};
   const blocks=Array.isArray(src.blocks)?src.blocks.slice(0,101).map(b=>{
-    const p=b&&typeof b.props==='object'&&!Array.isArray(b.props)?b.props:{};
+    const block=b&&typeof b==='object'&&!Array.isArray(b)?b:{};
+    const p=block.props&&typeof block.props==='object'&&!Array.isArray(block.props)?block.props:{};
     const props={};for(const f of fields)if(typeof p[f]==='string')props[f]=p[f].slice(0,10000);
-    return {id:typeof b.id==='string'?b.id:crypto.randomUUID(),type:String(b.type||''),props};
+    return {id:typeof block.id==='string'?block.id:crypto.randomUUID(),type:String(block.type||''),props};
   }):[];
   return {title:String(src.title||'').trim(),slug:String(src.slug||'').trim().toLowerCase(),locale:String(src.locale||'vi'),description:String(src.description||'').trim(),blocks};
 }

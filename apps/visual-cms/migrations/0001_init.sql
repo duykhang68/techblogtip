@@ -2,7 +2,7 @@ PRAGMA foreign_keys=ON;
 CREATE TABLE IF NOT EXISTS cms_pages (
  id TEXT PRIMARY KEY, slug TEXT NOT NULL, locale TEXT NOT NULL, title TEXT NOT NULL,
  description TEXT NOT NULL DEFAULT '', draft_json TEXT NOT NULL,
- published_json TEXT, status TEXT NOT NULL DEFAULT 'draft',
+ published_json TEXT, published_slug TEXT, published_locale TEXT, status TEXT NOT NULL DEFAULT 'draft',
  revision INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL,
  updated_at TEXT NOT NULL, published_at TEXT,
  UNIQUE(slug,locale)
@@ -23,3 +23,5 @@ CREATE TABLE IF NOT EXISTS cms_comments (
  author TEXT NOT NULL, body TEXT NOT NULL, created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_cms_comments_page ON cms_comments(page_id,created_at);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cms_published_slug ON cms_pages(published_slug,published_locale) WHERE status='published';

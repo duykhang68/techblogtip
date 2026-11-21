@@ -110,13 +110,16 @@ async function api(req,url,env,user) {
     }
     if (parts[3]==='publish' && parts.length===4 && method==='POST') {
       if(user.role!=='admin')return fail('forbidden',403);
-      const changed=await db.prepare("UPDATE cms_pages SET published_json=draft_json,published_at=?,status='published',updated_at=? WHERE id=?")
-        .bind(now(),now(),id).run();
+      const publishedDoc={slug:row.slug,locale:row.locale,title:row.title,description:row.description,blocks:JSON.parse(row.draft_json)};
+      const stamp=now();
+      const changed=await db.prepare("UPDATE cms_pages SET published_json=?,published_slug=?,published_locale=?,published_at=?,status='published',updated_at=? WHERE id=?")
+        .bind(JSON.stringify(publishedDoc),row.slug,row.locale,stamp,stamp,id).run().catch(()=>null);
+      if(!changed)return fail('published_slug_conflict',409);
       return json({ok:!!changed.meta?.changes});
     }
     if (parts[3]==='unpublish' && parts.length===4 && method==='POST') {
       if(user.role!=='admin')return fail('forbidden',403);
-      await db.prepare("UPDATE cms_pages SET published_json=NULL,published_at=NULL,status='draft',updated_at=? WHERE id=?").bind(now(),id).run();
+      await db.prepare("UPDATE cms_pages SET published_json=NULL,published_slug=NULL,published_locale=NULL,published_at=NULL,status='draft',updated_at=? WHERE id=?").bind(now(),id).run();
       return json({ok:true});
     }
     if (parts[3]==='revisions' && parts.length===4 && method==='GET') {
@@ -185,10 +188,10 @@ async function published(url,env) {
   if(!env.CMS_DB)return fail('database_not_bound',503);
   const p=url.pathname.split('/').filter(Boolean),locale=p[2],slug=p[3];
   if(!/^[a-z]{2}(?:-[A-Z]{2})?$/.test(locale||'')||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug||''))return fail('not_found',404);
-  const row=await env.CMS_DB.prepare("SELECT title,description,slug,locale,published_at,published_json FROM cms_pages WHERE slug=? AND locale=? AND status='published'")
+  const row=await env.CMS_DB.prepare("SELECT published_at,published_json FROM cms_pages WHERE published_slug=? AND published_locale=? AND status='published'")
     .bind(slug,locale).first();
   if(!row?.published_json)return fail('not_found',404);
-  return json({title:row.title,description:row.description,slug:row.slug,locale:row.locale,publishedAt:row.published_at,blocks:JSON.parse(row.published_json)},200,{'Access-Control-Allow-Origin':'*','Cache-Control':'public,max-age=60'});
+  return json({...JSON.parse(row.published_json),publishedAt:row.published_at},200,{'Access-Control-Allow-Origin':'*','Cache-Control':'public,max-age=60'});
 }
 export default {
   async fetch(req,env) {

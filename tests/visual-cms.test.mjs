@@ -16,3 +16,8 @@ test('CMS cannot accept missing title or unsafe slugs',()=>{
   assert.ok(validatePage(normalizePage({title:'',slug:'hello world'})).includes('title'));
   assert.ok(validatePage(normalizePage({title:'ok',slug:'../../x'})).includes('slug'));
 });
+
+test('CMS validates null blocks without throwing and rejects block with missing type',()=>{
+  const p=normalizePage({title:'Safe',slug:'safe',blocks:[null]});
+  assert.ok(validatePage(p).includes('block_type'));
+});
