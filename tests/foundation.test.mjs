@@ -12,12 +12,9 @@ test('content and staging policy',()=>{
  assert.ok(read('src/pages/robots.txt.ts').includes('Disallow: /'));
  assert.ok(read('astro.config.mjs').includes("output: 'static'"));
 });
-test('staging stays Cloudflare while production is protected GitHub Pages',()=>{
- assert.ok(existsSync('.github/workflows/deploy-staging.yml'));
- const staging=read('.github/workflows/deploy-staging.yml');
+test('retired Cloudflare staging cannot redeploy while production GitHub Pages stays protected',()=>{
+ assert.equal(existsSync('.github/workflows/deploy-staging.yml'),false,'retired staging workflow must stay absent');
  const pages=read('.github/workflows/deploy-production.yml');
- assert.match(staging,/cf deploy/);
- assert.match(staging,/verify-deploy/);
  assert.match(pages,/name: Deploy · GitHub Pages production/);
  assert.match(pages,/environment:/);
  assert.match(pages,/name: github-pages/);
@@ -61,10 +58,23 @@ test('retired footer features stay removed',()=>{
  assert.doesNotMatch(read('src/pages/sitemap.xml.ts'),/ban-do-kien-thuc|tim-kiem/);
 });
 
-test('Cloudflare deploy has a verified nonsecret account fallback', () => {
-  const workflow=read('.github/workflows/deploy-staging.yml');
-  assert.ok(workflow.includes('secrets.CLOUDFLARE_API_TOKEN'));
-  assert.ok(workflow.includes('vars.CLOUDFLARE_ACCOUNT_ID'));
-  assert.ok(workflow.includes('d2228e3f75bc47eff64442ad8a225f85'));
-  assert.ok(!workflow.includes('secrets.CLOUDFLARE_ACCOUNT_ID'));
+test('retired deployment cleanup is tightly scoped and cannot delete production',()=>{
+ for (const path of [
+  '.github/workflows/deploy-staging.yml',
+  '.github/workflows/deploy-korea-cv-dev.yml',
+  '.github/workflows/deploy-publisher-dev.yml',
+ ]) assert.equal(existsSync(path),false,path+' must stay retired');
+ const cleanup=read('.github/workflows/cleanup-retired-deployments.yml');
+ const environmentBlock=cleanup.match(/const environments = \[([\s\S]*?)\];/);
+ assert.ok(environmentBlock,'cleanup must have an explicit environment allowlist');
+ const names=[...environmentBlock[1].matchAll(/'([^']+)'/g)].map(match=>match[1]);
+ assert.deepEqual(names,['techblogtip-publisher-dev','techblogtip-korea-cv-dev','techblogtip-staging']);
+ assert.match(cleanup,/deployments: write/);
+ assert.match(cleanup,/workflow_dispatch:/);
+ assert.ok(cleanup.includes("      - '.github/workflows/cleanup-retired-deployments.yml'"),'run on file addition to main');
+ assert.doesNotMatch(cleanup,/github\.event\.head_commit\.message/,'cleanup must not depend on merge message');
+ assert.match(cleanup,/process\.env\.GITHUB_REF !== 'refs\/heads\/main'/);
+ assert.match(cleanup,/deployment\.environment !== environment/);
+ assert.match(cleanup,/deployment\.production_environment === true/);
+ assert.doesNotMatch(cleanup,/CLOUDFLARE_API_TOKEN|cf deploy|wrangler\s+deploy/);
 });
