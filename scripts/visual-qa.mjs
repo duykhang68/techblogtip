@@ -98,6 +98,37 @@ try{
    await page.screenshot({path:join('artifacts/visual-qa','article-'+w+'.png'),animations:'disabled'});
    console.log('PASS article '+w+'px');
   }catch(e){record('article '+w,e);}
+  if(w===1440){
+    try{
+      const response=await page.goto(base+'/bai-viet/hanh-trinh-xay-dung-google-sheets-publisher-techblogtip/',{waitUntil:'load'});
+      assert.equal(response.status(),200);
+      assert.equal(await page.locator('[data-toc-link]').count(),13,'Publisher article must expose all 13 TOC headings');
+      const readProgress=()=>page.locator('[data-reading-progress]').evaluate(node=>Number(node.value));
+      const start=await readProgress();
+      await page.locator('#article-body h2').nth(5).evaluate(node=>{
+        window.scrollTo(0,node.getBoundingClientRect().top+window.scrollY-140);
+      });
+      await page.waitForFunction(start=>{
+        const meter=document.querySelector('[data-reading-progress]');
+        return meter&&Number(meter.value)>start&&document.querySelectorAll('[data-toc-link][aria-current="location"]').length===1;
+      },start);
+      const middle=await readProgress();
+      assert.ok(middle>start&&middle<100,'TOC percentage must increase while reading');
+      await page.evaluate(()=>{
+        const bottom=document.getElementById('article-body').getBoundingClientRect().bottom+window.scrollY;
+        window.scrollTo(0,bottom-120);
+      });
+      await page.waitForFunction(middle=>{
+        const meter=document.querySelector('[data-reading-progress]');
+        return meter&&Number(meter.value)>middle;
+      },middle);
+      const end=await readProgress();
+      assert.equal(end,100,'Article completion should reach 100%');
+      assert.equal(await page.locator('[data-toc-link][aria-current="location"]').getAttribute('href'),await page.locator('[data-toc-link]').last().getAttribute('href'),'Final heading must be active at completion');
+      assert.equal(await page.locator('[data-reading-percent]').textContent(),'100%');
+      console.log('PASS Smart TOC active section and progress from '+start+'% to '+end+'%');
+    }catch(e){record('Smart TOC interaction',e);}
+  }
   if(w===390){
     try{
       await page.goto(base+'/tim-kiem/',{waitUntil:'load'});
