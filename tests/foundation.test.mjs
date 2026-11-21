@@ -26,6 +26,16 @@ test('staging stays Cloudflare while production is protected GitHub Pages',()=>{
  assert.match(pages,/actions\/upload-pages-artifact@/);
  assert.match(pages,/actions\/deploy-pages@/);
  assert.match(pages,/verify-production-deploy/);
+ // Build and deploy are separate runners. Deploy must checkout trusted main
+ // before executing the script that verifies public release evidence.
+ const deployJob=pages.split('\n  deploy:\n')[1];
+ assert.ok(deployJob,'missing deploy job');
+ assert.match(deployJob,/uses: actions\/checkout@[0-9a-f]{40}/);
+ assert.match(deployJob,/ref: \$\{\{ github\.sha \}\}/);
+ assert.match(deployJob,/persist-credentials: false/);
+ assert.match(deployJob,/git rev-parse HEAD/);
+ assert.ok(deployJob.indexOf('actions/checkout@')<deployJob.indexOf('verify-production-deploy.mjs'));
+ assert.match(deployJob,/reconcile-from-actions\.mjs/);
  assert.match(pages,/branches: \[main\]/);
  assert.doesNotMatch(pages,/cf deploy|CLOUDFLARE_API_TOKEN/);
 });
