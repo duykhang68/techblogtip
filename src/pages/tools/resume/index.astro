@@ -3,9 +3,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 ---
 <BaseLayout title="Resume Studio" description="Tạo CV và quản lý hồ sơ trực tiếp trên Google Drive.">
 <section class="rs container">
-  <header class="rs-top"><div><p class="rs-kicker">TECHBLOGTIP / CAREER WORKSPACE</p><h1>Resume Studio <span>Beta · Local-first</span></h1><p>Tạo CV, quản lý phiên bản, so khớp tin tuyển dụng và theo dõi ứng tuyển — không cần thuê bao.</p></div><div class="rs-actions"><button id="new-resume">+ Tạo CV</button><button id="export-data" class="secondary">Xuất dữ liệu</button><label class="rs-import">Nhập bản sao<input id="import-data" type="file" accept="application/json,.json" hidden /></label></div></header>
+  <header class="rs-top"><div><p class="rs-kicker">TECHBLOGTIP / CAREER WORKSPACE</p><h1>Resume Studio <span>Beta · Drive-first</span></h1><p>Tạo CV, quản lý phiên bản, so khớp tin tuyển dụng và theo dõi ứng tuyển — không cần thuê bao.</p></div><div class="rs-actions"><button id="new-resume">+ Tạo CV</button><button id="export-data" class="secondary">Xuất dữ liệu</button><label class="rs-import">Nhập bản sao<input id="import-data" type="file" accept="application/json,.json" hidden /></label></div></header>
   <p id="privacy-note" role="note">🔒 Dữ liệu CV được lưu trên thư mục Google Drive cá nhân, không lưu vào localStorage hoặc đưa lên GitHub. Ứng dụng yêu cầu quyền Drive để lưu tập tin; chỉ dùng tài khoản Google đáng tin cậy.</p>
-  <div class="rs-auth"><button id="connect-drive" type="button">Kết nối Google Drive</button><button id="disconnect-drive" type="button" class="secondary" hidden>Ngắt kết nối</button><span id="drive-status">Chưa kết nối Google Drive</span></div>
+  <div class="rs-auth"><button id="connect-drive" type="button">Kết nối Google Drive</button><button id="disconnect-drive" type="button" class="secondary" hidden>Ngắt kết nối</button><span id="drive-status" role="status" aria-live="polite">Chưa đăng nhập Google</span></div>
   <nav class="rs-tabs" aria-label="Resume Studio"><button data-tab="library" aria-current="page">Thư viện CV</button><button data-tab="editor">Trình soạn thảo</button><button data-tab="match">Job Match</button><button data-tab="jobs">Ứng tuyển</button></nav>
   <p id="status" role="status" aria-live="polite"></p>
   <section id="library" class="rs-panel"><div class="rs-title"><h2>CV của tôi</h2><span id="count"></span></div><div id="resume-list" class="rs-cards"></div></section>
@@ -24,7 +24,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       <label>Kỹ năng (phân tách bằng dấu phẩy)<textarea name="skills" rows="3" maxlength="3000" placeholder="TypeScript, Astro, SQL"></textarea></label>
       <label>Dự án nổi bật<textarea name="projects" rows="4" maxlength="5000"></textarea></label>
       <label>Chứng chỉ<textarea name="certificates" rows="3" maxlength="3000"></textarea></label>
-      <div class="rs-actions"><button type="submit">Lưu CV</button><button id="delete-resume" type="button" class="danger">Xóa CV</button></div><small>Thay đổi được tự lưu trên thiết bị sau khi bạn dừng gõ. Chọn Lưu CV để lưu ngay.</small>
+      <div class="rs-actions"><button type="submit">Lưu CV</button><button id="delete-resume" type="button" class="danger">Xóa CV</button></div><small>Thay đổi được tự lưu lên Google Drive sau khi bạn dừng gõ. Chọn Lưu CV để lưu ngay.</small>
     </form><aside><h3>Xem trước A4</h3><div id="preview" class="rs-paper" aria-live="polite"></div></aside></div>
   </section>
   <section id="match" class="rs-panel" hidden><h2>Job Match · Đối chiếu theo JD</h2><p>So sánh các từ khóa kỹ năng từ hồ sơ với mô tả tuyển dụng. Đây không phải điểm ATS hay xếp hạng ứng viên của LinkedIn.</p><label>CV để so sánh<select id="match-resume"></select></label><label>Mô tả công việc<textarea id="job-description" rows="10" maxlength="30000" placeholder="Dán nội dung JD vào đây. Dữ liệu không gửi đến máy chủ."></textarea></label><button id="analyze">Phân tích kỹ năng</button><div id="match-result" class="rs-result" aria-live="polite"></div></section>
@@ -38,9 +38,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   type Resume = { id:string;title:string;name:string;role:string;email:string;phone:string;location:string;website:string;summary:string;experience:string;education:string;skills:string;projects:string;certificates:string;updatedAt:string };
   type Job = {id:string;company:string;position:string;url:string;stage:string;resumeId:string;notes:string;createdAt:string};
   const FOLDER_ID='1y0QzF2onlUrVdaQv8I-pu3L8T2d0CE19';
-  const CLIENT_ID=import.meta.env.PUBLIC_RESUME_GOOGLE_CLIENT_ID || '';
+  const CLIENT_ID=String(import.meta.env.PUBLIC_RESUME_GOOGLE_CLIENT_ID || '').trim();
   const DRIVE_SCOPE='https://www.googleapis.com/auth/drive';
-  let accessToken='';let expires=0;let fileId='';let version='';let connected=false;let busy=false;let pending=false;let snapshot='';
+  let accessToken='';let expires=0;let fileId='';let version='';let connected=false;let busy=false;let pending=false;let snapshot='';let opening=false;
   type TokenClient={requestAccessToken:(v:{prompt:string})=>void};
   declare const google:{accounts:{oauth2:{initTokenClient:(o:{client_id:string;scope:string;callback:(r:{access_token?:string;expires_in?:number;error?:string})=>void})=>TokenClient;revoke:(token:string,fn:()=>void)=>void}}};
   let tokenClient:TokenClient|null=null;
@@ -48,11 +48,21 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     if(!accessToken||Date.now()>=expires)throw Error('Phiên Drive đã hết hạn, vui lòng đăng nhập lại');
     const headers=new Headers(init.headers);headers.set('Authorization','Bearer '+accessToken);
     const res=await fetch(url,{...init,headers,cache:'no-store'});
-    if(!res.ok)throw Error('Drive HTTP '+res.status);
+    if(!res.ok){
+      let code='';try{const data=await res.json();code=String(data?.error?.status||data?.error?.errors?.[0]?.reason||'');}catch{}
+      if(res.status===401)throw Error('DRIVE_401: Phiên Google đã hết hạn hoặc không được Drive chấp nhận.');
+      if(res.status===403)throw Error('DRIVE_403: Google Drive từ chối quyền truy cập. Kiểm tra Drive API đã bật và OAuth được cấp đúng quyền ('+code+').');
+      if(res.status===404)throw Error('DRIVE_404: Không tìm thấy thư mục Resume Studio trong tài khoản Google vừa đăng nhập.');
+      throw Error('DRIVE_HTTP_'+res.status+(code?' ('+code+')':''));
+    }
     return res.json();
   }
   const state=()=>({version:1,resumes,jobs});
   async function loadDrive(){
+    // First verify that this signed-in Google account can access the target folder.
+    // A valid OAuth token does not imply the folder belongs to that account.
+    const folder=await requestDrive('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(FOLDER_ID)+'?fields=id,name,mimeType,trashed');
+    if(folder.mimeType!=='application/vnd.google-apps.folder'||folder.trashed)throw Error('Thư mục Resume Studio không hợp lệ hoặc đã bị xóa.');
     const params=new URLSearchParams({q:"'"+FOLDER_ID+"' in parents and name = 'resume-studio-state.json' and trashed = false",fields:'nextPageToken,files(id,version)',pageSize:'10'});
     const result=await requestDrive('https://www.googleapis.com/drive/v3/files?'+params);
     if(result.nextPageToken||result.files?.length>1)throw Error('Nhiều bản sao dữ liệu trên Drive, cần kiểm tra thủ công');
@@ -90,14 +100,44 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     }catch(e){status('Không thể lưu trên Drive: '+String(e));}finally{busy=false;}
   }
   function requireDrive(){if(connected)return true;status('Vui lòng kết nối Google Drive trước.');return false;}
+  function renderDriveState(label:string){el('drive-status').textContent=label;}
+  async function finishDriveConnection(){
+    if(opening)return;opening=true;connected=false;
+    renderDriveState('Đã đăng nhập Google · đang kiểm tra quyền Google Drive…');
+    (el('connect-drive') as HTMLButtonElement).disabled=true;
+    try{
+      await loadDrive();
+      connected=true;
+      el('connect-drive').hidden=true;
+      el('disconnect-drive').hidden=false;
+      renderDriveState('Đã đăng nhập Google · Drive sẵn sàng');
+      render();
+      status('Google Drive đã xác minh quyền truy cập thư mục và tải dữ liệu thành công.');
+    }catch(e){
+      connected=false;
+      // Keep the successfully granted OAuth token in tab memory for retry.
+      // The user must see that Google sign-in succeeded but Drive access failed.
+      el('connect-drive').hidden=false;
+      el('disconnect-drive').hidden=false;
+      (el('connect-drive') as HTMLButtonElement).textContent='Thử lại kết nối Drive';
+      renderDriveState('Đã đăng nhập Google · không thể mở Drive');
+      status('Google đã đăng nhập thành công nhưng Drive chưa sẵn sàng: '+String(e)+'. Kiểm tra tài khoản Google có quyền truy cập thư mục Resume Studio, rồi bấm Thử lại kết nối Drive.');
+    }finally{opening=false;(el('connect-drive') as HTMLButtonElement).disabled=false;}
+  }
   function loginDrive(){
+    if(opening)return;
+    if(accessToken&&Date.now()<expires){void finishDriveConnection();return;}
     if(!CLIENT_ID){status('Chưa cấu hình PUBLIC_RESUME_GOOGLE_CLIENT_ID cho Google OAuth.');return;}
     if(typeof google==='undefined'){status('Không tải được Google Identity Services.');return;}
-    tokenClient ||= google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:DRIVE_SCOPE,callback:async r=>{
-      if(!r.access_token){status('Google không cấp quyền: '+(r.error||'unknown'));return;}
-      accessToken=r.access_token;expires=Date.now()+(r.expires_in||3500)*1000-60000;
-      try{await loadDrive();connected=true;el('connect-drive').hidden=true;el('disconnect-drive').hidden=false;el('drive-status').textContent='Đã kết nối Google Drive';render();status('Đã tải CV từ Google Drive.');}
-      catch(e){accessToken='';connected=false;status('Không đọc được dữ liệu Drive: '+String(e));}
+    tokenClient ||= google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:DRIVE_SCOPE,callback:r=>{
+      if(!r.access_token){
+        renderDriveState('Chưa được cấp quyền Google Drive');
+        status('Không nhận được access token từ Google: '+(r.error||'unknown'));return;
+      }
+      accessToken=r.access_token;
+      expires=Date.now()+(r.expires_in||3500)*1000-60000;
+      renderDriveState('Đã đăng nhập Google · chờ xác minh Drive');
+      void finishDriveConnection();
     }});
     tokenClient.requestAccessToken({prompt:'consent'});
   }
@@ -124,7 +164,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   el('print').addEventListener('click',()=>{inputValues();preview();window.print();});
   form.addEventListener('input',()=>{if(!requireDrive())return;inputValues();preview();clearTimeout(timer);timer=setTimeout(()=>{persist();render();},1400);});
   form.addEventListener('submit',e=>{e.preventDefault();if(!requireDrive())return;clearTimeout(timer);inputValues();persist();render();});
-  el('delete-resume').addEventListener('click',()=>{if(!requireDrive()||!selected||!confirm('Xóa vĩnh viễn CV này khỏi thiết bị?'))return;resumes=resumes.filter(r=>r.id!==selected);selected='';persist();render();tab('library');});
+  el('delete-resume').addEventListener('click',()=>{if(!requireDrive()||!selected||!confirm('Xóa CV này khỏi Google Drive?'))return;resumes=resumes.filter(r=>r.id!==selected);selected='';persist();render();tab('library');});
   el('analyze').addEventListener('click',()=>{const r=resumes.find(r=>r.id===(el('match-resume') as HTMLSelectElement).value);const jd=(el('job-description') as HTMLTextAreaElement).value.toLocaleLowerCase();const skills=[...new Set((r?.skills||'').split(/[,;\n]/).map(s=>s.trim()).filter(Boolean))];const result=el('match-result');result.replaceChildren();if(!r||!jd.trim()||!skills.length){addText(result,'p','Chọn CV có kỹ năng và dán JD để phân tích.');return;}const hits=skills.filter(s=>jd.includes(s.toLocaleLowerCase()));addText(result,'h3',hits.length+'/'+skills.length+' kỹ năng trong CV xuất hiện trong JD ('+Math.round(hits.length/skills.length*100)+'%)');addText(result,'p','Đã tìm thấy:');for(const s of hits){const chip=document.createElement('span');chip.className='chip';chip.textContent=s;result.append(chip);}addText(result,'p','Không tìm thấy trong JD: '+skills.filter(s=>!hits.includes(s)).join(', '));addText(result,'small','Chỉ so sánh chuỗi văn bản, không phản ánh cơ hội tuyển dụng thực tế.');});
   el('job-form').addEventListener('submit',e=>{e.preventDefault();if(!requireDrive())return;const f=e.currentTarget as HTMLFormElement;const d=new FormData(f);const job={id:crypto.randomUUID(),company:String(d.get('company')||''),position:String(d.get('position')||''),url:String(d.get('url')||''),stage:String(d.get('stage')||'Saved'),resumeId:String(d.get('resumeId')||''),notes:String(d.get('notes')||''),createdAt:new Date().toISOString()};jobs.unshift(job);persist();f.reset();renderJobs();});
   el('export-data').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({version:1,resumes,jobs},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='techblogtip-resume-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status('Bản sao đã xuất. File JSON chứa dữ liệu cá nhân, hãy giữ kín.');});
@@ -133,7 +173,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   el('disconnect-drive').addEventListener('click',()=>{
     if(accessToken&&typeof google!=='undefined')google.accounts.oauth2.revoke(accessToken,()=>{});
     accessToken='';connected=false;resumes=[];jobs=[];fileId='';version='';snapshot='';
-    el('connect-drive').hidden=false;el('disconnect-drive').hidden=true;el('drive-status').textContent='Chưa kết nối Google Drive';
+    el('connect-drive').hidden=false;el('disconnect-drive').hidden=true;(el('connect-drive') as HTMLButtonElement).textContent='Kết nối Google Drive';renderDriveState('Chưa đăng nhập Google');
     render();tab('library');status('Đã ngắt kết nối. Không lưu CV trên trình duyệt.');
   });
   render();
