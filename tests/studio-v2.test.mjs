@@ -52,4 +52,5 @@ test('Studio v2 waits for actual protected DRAFT load and never infers success f
  assert.match(STUDIO_EDITOR_JS,/if\(!loaded\)\{blocked=true/);
  assert.doesNotMatch(STUDIO_EDITOR_JS,/availability\.observe\(root/);
  assert.doesNotMatch(STUDIO_EDITOR_JS,/setInterval\(/);
+ assert.match(STUDIO_EDITOR_JS,/queueMicrotask\(\(\)=>\{loaded=true/);
 });
