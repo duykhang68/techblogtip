@@ -73,7 +73,8 @@ export async function requireProductionSync(request,env,payload,fetcher=fetch){
   const run=await githubRequest(env,'/actions/runs/'+payload.runId,{fetcher});
   if(run?.name!=='Deploy · Cloudflare production'||
      run?.path!=='.github/workflows/deploy-production.yml'||
-     run?.status!=='completed'||run?.conclusion!=='success'||
+     !((run?.status==='in_progress'&&run?.conclusion==null)||
+       (run?.status==='completed'&&run?.conclusion==='success'))||
      run?.head_branch!=='main'||run?.head_sha!==payload.releaseSha||
      run?.repository?.full_name!=='duykhang68/techblogtip'||
      !['push','workflow_dispatch'].includes(run?.event))
