@@ -1,0 +1,8 @@
+name = "techblogtip-korea-cv-dev"
+main = "src/index.mjs"
+compatibility_date = "2026-11-21"
+
+# Never commit private CV files, bearer tokens, refresh tokens or service account keys.
+# Configure GOOGLE_OAUTH_CLIENT_ID and ALLOWED_ORIGIN via Cloudflare Worker variables.
+# Use a distinct Google OAuth client consent scope: drive.appdata (only application data).
+# This Worker is not wired into production until authenticated tests and owner approval.
