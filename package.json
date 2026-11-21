@@ -14,10 +14,11 @@
     "lint:content": "node scripts/validate-content.mjs",
     "test": "node --test tests/*.test.mjs",
     "verify:build": "node scripts/verify-build.mjs",
-    "quality": "npm run check && npm run lint:content && npm test && npm run build && npm run verify:build",
+    "quality": "npm run check && npm run lint:content && npm test && npm run build && npm run verify:build && npm run seo:audit",
     "qa:visual": "node scripts/visual-qa.mjs",
     "publisher:test": "node --test tests/publisher-worker.test.mjs tests/publisher-progress.test.mjs tests/publisher-production-status.test.mjs tests/publisher-live-readonly-canary.test.mjs tests/publisher-release-proof.test.mjs",
-    "qa:publisher": "node scripts/publisher/browser-e2e.mjs"
+    "qa:publisher": "node scripts/publisher/browser-e2e.mjs",
+    "seo:audit": "node scripts/seo-audit.mjs"
   },
   "dependencies": {
     "astro": "^7.4.13"
