@@ -134,10 +134,9 @@ try{
       },start);
       const middle=await readProgress();
       assert.ok(middle>start&&middle<100,'TOC percentage must increase while reading');
-      await page.evaluate(()=>{
-        const bottom=document.getElementById('article-body').getBoundingClientRect().bottom+window.scrollY;
-        window.scrollTo(0,bottom-120);
-      });
+      // Media/layout can grow after load: the article's bottom - 120px
+      // is not a stable "100% read" position. Scroll to the actual document end.
+      await page.evaluate(()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'}));
       await page.waitForFunction(middle=>{
         const meter=document.querySelector('[data-reading-progress]');
         return meter&&Number(meter.value)>middle;
@@ -147,7 +146,11 @@ try{
       assert.equal(await page.locator('[data-toc-link][aria-current="location"]').getAttribute('href'),await page.locator('[data-toc-link]').last().getAttribute('href'),'Final heading must be active at completion');
       // The meter and text are updated by separate DOM assignments during scroll.
       // Wait until the user-facing label catches up rather than sampling mid-render.
-      await page.waitForFunction(() => document.querySelector('[data-reading-percent]')?.textContent === '100%', null, { timeout: 5000 });
+      await page.waitForFunction(() => {
+        const meter=document.querySelector('[data-reading-progress]');
+        const label=document.querySelector('[data-reading-percent]');
+        return meter && label && Number(meter.value)===100 && label.textContent==='100%';
+      }, null, {timeout:5000});
       assert.equal(await page.locator('[data-reading-percent]').textContent(),'100%');
       console.log('PASS Smart TOC active section and progress from '+start+'% to '+end+'%');
     }catch(e){record('Smart TOC interaction',e);}
