@@ -13,7 +13,8 @@ if(!robots.includes(production?'Allow: /':'Disallow: /'))
 const sitemap=readFileSync('dist/sitemap.xml','utf8');
 if(!sitemap.includes('<urlset'))throw new Error('Sitemap malformed');
 const index=JSON.parse(readFileSync('dist/search-index.json','utf8'));
-if(!Array.isArray(index)||index.length<8)throw new Error('Search index empty or malformed');
+if(!Array.isArray(index)||index.length!==1)throw new Error('Search index must contain exactly one retained article');
+if(!index[0].url.endsWith('/bai-viet/techblogtip-100-diem-google-pagespeed-insights/'))throw new Error('Search index contains an unexpected article');
 if(!index.every(x=>x.title&&x.url&&x.category))throw new Error('Search index entries invalid');
 if(process.env.DEPLOY_TARGET==='github-pages'){
   const prefix='/techblogtip/';
@@ -39,6 +40,11 @@ console.log('Verified HTML, RSS, sitemap, noindex, search index and exact SHA ma
 // Visualizer publication gate: every article with 2+ H2 sections must render its story map.
 import { readdirSync } from 'node:fs';
 const articlesDir=resolve('src/content/articles');
+const retained='techblogtip-100-diem-google-pagespeed-insights.md';
+const authored=readdirSync(articlesDir).filter(n=>n.endsWith('.md'));
+if(authored.length!==1 || authored[0]!==retained)throw new Error('Published sources must contain only '+retained);
+const builtSlugs=readdirSync(resolve('dist/bai-viet'),{withFileTypes:true}).filter(entry=>entry.isDirectory()).map(entry=>entry.name);
+if(builtSlugs.length!==1 || builtSlugs[0]!==retained.replace(/\.md$/,''))throw new Error('Built article routes contain removed posts');
 for(const name of readdirSync(articlesDir).filter(n=>n.endsWith('.md'))){
  const source=readFileSync(resolve(articlesDir,name),'utf8');
  if(/^draft:\s*true\s*$/m.test(source))continue;
