@@ -212,6 +212,18 @@ try{
     assert.equal(await page.locator('#temporary-json').count(),0,'Developer JSON preview should be removed');
     await page.locator('#input-tab').click();
     assert.equal(await page.locator('[name="targetCompany"]').inputValue(),'ABC Visual QA','Returning to edit must preserve data');
+    await page.locator('#saved-tab').click();
+    assert.equal(await page.locator('#kcv-export-source').inputValue(),'draft','Draft should be default export source');
+    const downloadPromise=page.waitForEvent('download');
+    await page.locator('#kcv-export-xlsx').click();
+    const download=await downloadPromise;
+    assert.match(download.suggestedFilename(),/\.xlsx$/,'Unsaved draft Excel download missing');
+    assert.match(await page.locator('#kcv-export-status').innerText(),/chưa lưu/,'Draft download status must not imply Google Drive save');
+    await page.locator('#kcv-export-source').selectOption('saved');
+    await page.locator('#kcv-export-xlsx').click();
+    assert.match(await page.locator('#kcv-export-status').innerText(),/chọn một CV/,'Saved export without selection needs actionable inline error');
+    await page.locator('#kcv-export-source').selectOption('draft');
+    assert.equal(await page.locator('#kcv-export-xlsx').isEnabled(),true);
     await page.screenshot({path:join('artifacts/visual-qa','korea-cv-'+w+'.png'),animations:'disabled'});
     console.log('PASS Korea CV human UX '+w+'px');
   }catch(e){record('Korea CV UX '+w,e);}
