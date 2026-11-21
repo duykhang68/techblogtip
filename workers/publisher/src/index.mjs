@@ -8,6 +8,7 @@ import { finalizeVerifiedArticle,requireProductionSync,reconcileProductionBatch 
 import { readProductionStatus } from './production-status.mjs';
 import { readEditorialOperations } from './editorial-operations.mjs';
 import { loadEditableDraft,saveEditableDraft,forkEditableRevision } from './editorial.mjs';
+import {createBlankArticle,approveArticleForReview} from './editor-studio-api.mjs';
 import { parsePublisherPreview } from './markdown-preview.mjs';
 import { notionPagePreview } from './notion-import.mjs';
 import { obsidianPreview } from './obsidian-import.mjs';
@@ -16,6 +17,7 @@ import { mediaScope,listDriveFiles,driveThumbnail,libraryItems,importDriveFiles,
 import { getSheetsToken } from './google-api.mjs';
 import { withSourceWriteLock,withRowWriteLock } from './source-lock.mjs';
 import { EDITOR_HTML,EDITOR_JS,EDITOR_CSS,EDITOR_IMPORT_CSS,EDITOR_WORKSPACE_CSS } from './editor-ui.mjs';
+import {STUDIO_CSS,STUDIO_EDITOR_JS,STUDIO_ADMIN_JS} from './studio-v2.mjs';
 import { prepareSheetArticle } from '../../../scripts/publisher/sheets.mjs';
 import { ADMIN_HTML, ADMIN_JS, ADMIN_CSS } from './ui.mjs';
 import { PRODUCTION_HTML, PRODUCTION_JS, PRODUCTION_CSS } from './production-ui.mjs';
@@ -111,11 +113,11 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
       });
     }
     if(request.method==='GET'&&path==='/admin.js')
-      return staticResponse(ADMIN_JS,'application/javascript; charset=utf-8');
+      return staticResponse(ADMIN_JS+STUDIO_ADMIN_JS,'application/javascript; charset=utf-8');
     if(request.method==='GET'&&path==='/admin.css')
-      return staticResponse(ADMIN_CSS+EDITOR_CSS+EDITOR_IMPORT_CSS+EDITOR_WORKSPACE_CSS+PRODUCTION_CSS,'text/css; charset=utf-8');
+      return staticResponse(ADMIN_CSS+EDITOR_CSS+EDITOR_IMPORT_CSS+EDITOR_WORKSPACE_CSS+PRODUCTION_CSS+STUDIO_CSS,'text/css; charset=utf-8');
     if(request.method==='GET'&&path==='/editor.js')
-      return staticResponse(EDITOR_JS,'application/javascript; charset=utf-8');
+      return staticResponse(EDITOR_JS+STUDIO_EDITOR_JS,'application/javascript; charset=utf-8');
     if(request.method==='GET'&&path==='/production-status.js')
       return staticResponse(PRODUCTION_JS,'application/javascript; charset=utf-8');
     if(path.startsWith('/api/')){
@@ -251,6 +253,14 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         if(!free)fail(409,'sheet_full','No free editorial row within A1:O200');
         return respond(await withRowWriteLock(env,free,()=>
           forkEditableRevision(env,data.sourceId,data.expectedSnapshot,free,fetcher)),201);
+      }
+      if(path==='/api/articles'&&request.method==='POST'){
+        await jsonRequest(request,128);
+        return respond(await createBlankArticle(env,fetcher),201);
+      }
+      if(path==='/api/approve'&&request.method==='POST'){
+        const data=await jsonRequest(request,512);
+        return respond(await approveArticleForReview(env,data,fetcher));
       }
       if(path==='/api/draft'){
         if(request.method==='GET'){
