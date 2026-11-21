@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {importLocalFiles} from '../workers/publisher/src/media-library.mjs';
-import {EDITOR_HTML,EDITOR_JS} from '../workers/publisher/src/editor-ui.mjs';
+import {EDITOR_HTML,EDITOR_JS,EDITOR_IMPORT_CSS} from '../workers/publisher/src/editor-ui.mjs';
 
 const scope={sourceId:'TBT-test-local-upload-1234',tag:'a'.repeat(16),branch:'media/tbt-'+'a'.repeat(16)};
 
@@ -75,4 +75,13 @@ test('P8 keeps advanced Markdown intact when appending an image',()=>{
  assert.match(EDITOR_JS,/active\?\.complex\?\(active\.sourceBody/);
  assert.match(EDITOR_JS,/active\.appendedMedia\.push/);
  assert.match(EDITOR_JS,/active\.appendedMedia=\[\]/);
+});
+
+test('P8 Media Library is a bounded thumbnail grid even with a single image',()=>{
+ assert.match(EDITOR_IMPORT_CSS,/#media-library-grid\s*\{[^}]*grid-template-columns:repeat\(auto-fill,/);
+ assert.match(EDITOR_IMPORT_CSS,/#media-library-grid \.drive-tile\s*\{[^}]*max-width:210px/);
+ assert.match(EDITOR_IMPORT_CSS,/#media-library-grid \.drive-tile img\s*\{[^}]*max-height:155px/);
+ assert.match(EDITOR_JS,/image\.loading='lazy'/);
+ assert.match(EDITOR_JS,/image\.decoding='async'/);
+ assert.match(EDITOR_JS,/card\.append\(insert\);mediaGrid\.append\(card\)/);
 });
