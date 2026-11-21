@@ -56,7 +56,7 @@ test('P8 local PNG converts to WebP, stages on media branch and deduplicates re-
 
 
 test('P8 locked editor disables file selection instead of silently clearing a chosen file',()=>{
- assert.match(EDITOR_JS,/imageInput\.disabled=locked\|\|complex/);
+ assert.match(EDITOR_JS,/imageInput\.disabled=locked;/);
  assert.match(EDITOR_JS,/Đã chọn '\+files\.length\+' ảnh:/);
  assert.doesNotMatch(EDITOR_JS,/status\.textContent='Bài READY hoặc chỉ đọc: hãy mở một bản DRAFT để tải ảnh\.';input\.value=''/);
  assert.match(EDITOR_JS,/finally\{input\.disabled=false;\}/);
