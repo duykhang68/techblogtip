@@ -235,11 +235,8 @@ try{
   if(w===390){
     try{
       const footerLinks=await page.locator('.site-footer nav a').allTextContents();
-      assert.deepEqual(footerLinks.map(s=>s.trim()),['Archive','Sitemap','G-CMS'],'Footer must include the approved G-CMS link');
-      assert.equal(await page.locator('.site-footer nav a[href$="/gcms/"]').count(),1,'G-CMS footer link must target the new route');
-      const gcmsResponse=await fetch(base+'/gcms/');
-      assert.equal(gcmsResponse.status,200,'G-CMS admin shell must be included in the build');
-      assert.match(await gcmsResponse.text(),/<meta name="robots" content="noindex,nofollow">/,'G-CMS admin route must stay noindex');
+      assert.deepEqual(footerLinks.map(s=>s.trim()),['Archive','Sitemap'],'Footer must contain only current public links');
+      assert.equal(await page.locator('.site-footer nav a[href$="/gcms/"]').count(),0,'Retired G-CMS link must be absent');
       assert.equal(await page.locator('.site-footer nav a[href*="/tools/cms/"]').count(),0,'Retired CMS must not reappear in footer');
       const sitemapResponse=await page.goto(base+'/sitemap/',{waitUntil:'load'});
       assert.equal(sitemapResponse?.status(),200,'HTML sitemap must load successfully');

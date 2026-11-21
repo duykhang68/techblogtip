@@ -26,14 +26,6 @@ export function auditHtml(html,canonical,production){
  const titles=[...html.matchAll(/<title>([^<]+)<\/title>/g)];
  assert(titles.length===1 && titles[0][1].trim().length>0,'missing or duplicated title');
 }
-export function auditGcmsAdminHtml(html){
- assert(/<html[^>]+lang="vi"/.test(html),'G-CMS admin missing Vietnamese lang');
- assert(html.includes('name="robots" content="noindex,nofollow"'),'G-CMS admin must always be noindex');
- assert(html.includes('id="signin"'),'G-CMS admin Google Sign-In missing');
- assert(!html.includes('name="google-site-verification"'),'G-CMS admin must not contain Search Console verification');
- const titles=[...html.matchAll(/<title>([^<]+)<\/title>/g)];
- assert(titles.length===1 && titles[0][1].trim().length>0,'G-CMS admin missing or duplicated title');
-}
 export function auditSitemap(xml,origin,paths){
  const entries=[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(x=>x[1].replaceAll('&amp;','&'));
  assert(entries.length>0,'empty sitemap');
@@ -57,8 +49,7 @@ function main(){
   // bypassing checks or being treated as public indexable blog articles.
   try{
    const html=readFileSync(path,'utf8');
-   if(rel==='gcms/index.html')auditGcmsAdminHtml(html);
-   else auditHtml(html,new URL(route,origin).toString(),pages);
+   auditHtml(html,new URL(route,origin).toString(),pages);
   }catch(error){
    throw Error(rel+': '+error.message);
   }
@@ -67,7 +58,8 @@ function main(){
  const count=auditSitemap(sitemap,origin,keyRoutes);
  assert(!existsSync(join(dist,'tools','cms','index.html')),'Retired Visual CMS must not be present in deployed output');
  assert(!sitemap.includes('<loc>'+new URL('tools/cms/',origin).toString()+'</loc>'),'Retired CMS must not reappear in sitemap');
- assert(!sitemap.includes('<loc>'+new URL('gcms/',origin).toString()+'</loc>'),'G-CMS admin must not appear in sitemap');
+ assert(!existsSync(join(dist,'gcms','index.html')),'Retired G-CMS must not be deployed');
+ assert(!sitemap.includes('<loc>'+new URL('gcms/',origin).toString()+'</loc>'),'Retired G-CMS must not appear in sitemap');
  // A sitemap can be syntactically valid but contain 404 pages. Verify each
  // declared absolute URL against the actual generated static HTML output.
  assert(sitemap.startsWith('<?xml version="1.0" encoding="UTF-8"?>'),'missing XML prolog');

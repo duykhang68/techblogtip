@@ -3,17 +3,13 @@ import { resolve } from 'node:path';
 const expect=['index.html','robots.txt','sitemap.xml','release.json','chuyen-muc/index.html','chu-de/index.html','the/index.html','sitemap/index.html','404.html'];
 for(const path of expect)if(!existsSync(resolve('dist',path)))throw new Error('Missing dist/'+path);
 const html=readFileSync('dist/index.html','utf8');
-const gcmsHtmlPath=resolve('dist/gcms/index.html');
-if(!existsSync(gcmsHtmlPath))throw new Error('G-CMS static admin route missing');
-const gcmsHtml=readFileSync(gcmsHtmlPath,'utf8');
-if(!gcmsHtml.includes('noindex,nofollow')||!gcmsHtml.includes('techblogtip-gcms.tamsudev-com.workers.dev'))
-  throw new Error('G-CMS must be a private-admin shell backed by its isolated Worker');
+if(existsSync(resolve('dist/gcms/index.html')))throw new Error('Retired G-CMS route must not be published');
 
 const production=process.env.PUBLIC_INDEXABLE==='true';
 const sitemapHtml=readFileSync('dist/sitemap/index.html','utf8');
 const publicPathPrefix=process.env.DEPLOY_TARGET==='github-pages'?'/techblogtip':'';
-if(!html.includes('href="'+publicPathPrefix+'/gcms/"'))
-  throw new Error('Global footer is missing the G-CMS link');
+if(html.includes('href="'+publicPathPrefix+'/gcms/"'))
+  throw new Error('Retired G-CMS must not appear in the footer');
 if(!html.includes('href="'+publicPathPrefix+'/sitemap/"'))
   throw new Error('Global footer is missing the public HTML sitemap link');
 if(!sitemapHtml.includes('href="'+publicPathPrefix+'/sitemap.xml"'))
