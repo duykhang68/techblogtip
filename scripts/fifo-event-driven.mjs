@@ -50,13 +50,13 @@ if (first.base.ref !== 'main') { notice('BLOCKED: oldest PR targets a feature br
 const main = await get('/branches/main');
 const mainSha = main.commit.sha;
 // Never start a new merge before the last main commit is verified in production.
-const releases = await get('/actions/workflows/deploy-production.yml/runs?branch=main&event=push&per_page=20');
-const release = releases.workflow_runs.find(run => run.head_sha === mainSha);
+const releases = await get('/actions/workflows/deploy-production.yml/runs?branch=main&per_page=30');
+const release = releases.workflow_runs.find(run => run.head_sha === mainSha && ['push', 'workflow_dispatch'].includes(run.event));
 if (!release || release.status !== 'completed' || release.conclusion !== 'success') {
   notice('WAIT: production workflow is not successful at main=' + mainSha); process.exit(0);
 }
-const qualityMain = await get('/actions/workflows/quality.yml/runs?branch=main&event=push&per_page=20');
-if (!qualityMain.workflow_runs.some(run => run.head_sha === mainSha && run.status === 'completed' && run.conclusion === 'success')) {
+const qualityMain = await get('/actions/workflows/quality.yml/runs?branch=main&per_page=30');
+if (!qualityMain.workflow_runs.some(run => run.head_sha === mainSha && ['push', 'workflow_dispatch'].includes(run.event) && run.status === 'completed' && run.conclusion === 'success')) {
   notice('WAIT: main Quality has not passed at ' + mainSha); process.exit(0);
 }
 const live = await fetch('https://duykhang68.github.io/techblogtip/release.json', { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
@@ -103,4 +103,18 @@ if (refreshed.mergeable !== true || refreshed.mergeable_state !== 'clean') {
 }
 const result = await merge(refreshed);
 if (!result.merged) throw new Error('GitHub did not confirm merged=true');
-notice('MERGED #' + first.number + ' ' + result.sha + ' — wait for next production completion event');
+notice('MERGED #' + first.number + ' ' + result.sha + ' — dispatching exact-main checks and release');
+// A merge performed with GITHUB_TOKEN does not emit new push-triggered Actions runs.
+// workflow_dispatch is the supported exception. Without this, FIFO stalls at a
+// new main SHA and never reaches production after a successful token merge.
+for (const workflow of ['quality.yml', 'deploy-production.yml']) {
+  const dispatch = await fetch(api + '/actions/workflows/' + workflow + '/dispatches', {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: 'main' }),
+  });
+  if (dispatch.status !== 204) {
+    throw new Error('Merged SHA ' + result.sha + ' but failed dispatch of ' + workflow + ': HTTP ' + dispatch.status);
+  }
+  notice('DISPATCHED ' + workflow + ' for main SHA ' + result.sha);
+}

@@ -12,7 +12,7 @@ on:
     types: [opened, reopened, ready_for_review, synchronize, edited]
   workflow_dispatch:
 permissions:
-  actions: read
+  actions: write # workflow_dispatch release recovery after GITHUB_TOKEN merges
   checks: read
   contents: write
   pull-requests: write
