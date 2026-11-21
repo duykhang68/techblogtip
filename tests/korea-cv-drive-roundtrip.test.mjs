@@ -21,7 +21,7 @@ function fakeGoogleFetch(url,init={}){
       const match=[...records.entries()].filter(([name])=>{
         const q=uri.searchParams.get('q')||'';
         return q.includes('name contains') ? name.startsWith('korea-cv-') : q.includes(name);
-      }).map(([name,record])=>({name,id:record.googleId,modifiedTime:'2026-11-21T00:00:00Z'}));
+      }).map(([name,record])=>({name,id:record.googleId,modifiedTime:'2026-11-21T00:00:00Z',appProperties:record.meta?.appProperties||{}}));
       return Promise.resolve(json({files:match}));
     }
     if(uri.pathname==='/upload/drive/v3/files' && method==='POST'){
@@ -29,14 +29,17 @@ function fakeGoogleFetch(url,init={}){
       const parts=raw.split('\r\n\r\n');
       const metadata=JSON.parse(parts[1].split('\r\n--')[0]);
       const cv=JSON.parse(parts[2].split('\r\n--')[0]);
-      records.set(metadata.name,{googleId:'google-'+cv.id,data:cv});
+      records.set(metadata.name,{googleId:'google-'+cv.id,data:cv,meta:metadata});
       return Promise.resolve(json({id:'google-'+cv.id,name:metadata.name}));
     }
     const id=decodeURIComponent(uri.pathname.split('/').at(-1));
     const record=[...records.entries()].find(([,value])=>value.googleId===id);
     if(uri.pathname.startsWith('/upload/drive/v3/files/')&&method==='PATCH'){
       if(!record)return Promise.resolve(json({error:'missing'},404));
-      record[1].data=JSON.parse(init.body);return Promise.resolve(json({id,modifiedTime:'2026-11-21T00:00:00Z'}));
+      const parts=String(init.body).split('\\r\\n\\r\\n');
+      record[1].meta=JSON.parse(parts[1].split('\\r\\n--')[0]);
+      record[1].data=JSON.parse(parts[2].split('\\r\\n--')[0]);
+      return Promise.resolve(json({id,modifiedTime:'2026-11-21T00:00:00Z'}));
     }
     if(uri.pathname.startsWith('/drive/v3/files/')&&method==='GET'&&uri.searchParams.get('alt')==='media'){
       return Promise.resolve(record?json(record[1].data):json({error:'missing'},404));
@@ -63,11 +66,12 @@ test('private simulated Google Drive full create/list/read/edit/revision-conflic
  globalThis.fetch=fakeGoogleFetch;records.clear();
  try{
   let r=await request('/api/korea-cv/'+UUID,'PUT',cv(0));assert.equal(r.status,200);assert.equal(r.payload.saved,true);
-  r=await request('/api/korea-cv');assert.equal(r.status,200);assert.equal(r.payload.items.length,1);
+  r=await request('/api/korea-cv');assert.equal(r.status,200);assert.equal(r.payload.items.length,1);assert.equal(r.payload.items[0].targetCompany,'ABC');
   r=await request('/api/korea-cv/'+UUID);assert.equal(r.payload.cv.targetCompany,'ABC');
   r=await request('/api/korea-cv/'+UUID,'PUT',cv(0,'XYZ'));assert.equal(r.status,409);
   r=await request('/api/korea-cv/'+UUID,'PUT',cv(1,'XYZ'));assert.equal(r.status,200);
   r=await request('/api/korea-cv/'+UUID);assert.equal(r.payload.cv.targetCompany,'XYZ');
+  r=await request('/api/korea-cv');assert.equal(r.payload.items[0].targetCompany,'XYZ');
   assert.equal(r.headers.get('cache-control'),'private, no-store');
   r=await request('/api/korea-cv/'+UUID,'DELETE');assert.equal(r.status,200);assert.equal(r.payload.deleted,true);
   r=await request('/api/korea-cv/'+UUID);assert.equal(r.status,404);
