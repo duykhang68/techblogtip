@@ -1,15 +1,16 @@
-name: SEO · Post-deploy public canary
-run-name: SEO · Public sitemap, SHA and route availability
+name: SEO · Public release canary
+run-name: SEO · Manual public sitemap and deployed SHA verification
 on:
-  workflow_run:
-    workflows: ["Deploy · GitHub Pages production"]
-    types: [completed]
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact expected production commit SHA (optional)
+        required: false
+        type: string
 permissions:
   contents: read
 jobs:
   public-seo:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -21,5 +22,5 @@ jobs:
           node-version: '24'
       - name: Verify public SEO, routes and deployed SHA
         env:
-          EXPECTED_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || '' }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: node scripts/public-seo-canary.mjs
