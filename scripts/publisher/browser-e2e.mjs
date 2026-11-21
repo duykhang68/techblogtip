@@ -269,7 +269,7 @@ try{
  await mediaPage.locator('#import-drive').click();
  await mediaPage.locator('#drive-file-grid input[type="checkbox"]').first().waitFor();
  assert.equal(await mediaPage.locator('#drive-file-grid input[type="checkbox"]').count(),3);
- await mediaPage.locator('#drive-file-grid input[type="checkbox"]').check();
+ for(const choice of await mediaPage.locator('#drive-file-grid input[type="checkbox"]').all())await choice.check();
  await mediaPage.locator('#drive-import-selected').click();
  await mediaPage.locator('#media-library-grid button').first().waitFor();
  await mediaPage.locator('#media-library-grid button').first().click();
