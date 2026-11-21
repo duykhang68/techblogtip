@@ -1,0 +1,32 @@
+---
+interface Props { headings: {depth:number;slug:string;text:string}[] }
+const {headings}=Astro.props;
+const outline=headings.filter(h=>h.depth===2).slice(0,8);
+const swatches=['#efe7ff','#e1efff','#def7ec','#ffe9de','#fff2d2','#ffe6ee','#e6edff','#e7f6ef'];
+---
+{outline.length>1 && <section class="visual-map" aria-label="Bản đồ trực quan tự động của bài viết" data-auto-visualizer>
+  <div class="map-label"><span class="mark">✳</span> AUTO STORY MAP <span class="map-count">{String(outline.length).padStart(2,'0')} CHẶNG</span></div>
+  <h2 class="map-heading">Bản đồ bài viết</h2>
+  <p class="map-note">Tự tạo từ các đề mục của bài; chọn một chặng để đọc phần tương ứng.</p>
+  <ol class="map-grid">{outline.map((h,i)=><li style={`--tile:${swatches[i%swatches.length]}`}>
+    <a href={`#${h.slug}`}><span class="map-icon"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span class="map-number">{String(i+1).padStart(2,'0')}</span><strong>{h.text.replace(/^\d{1,2}\.\s*/,'')}</strong></a>
+  </li>)}</ol>
+  {headings.filter(h=>h.depth===2).length>8&&<p class="map-note map-extra">Các chặng tiếp theo nằm trong mục lục bài đọc.</p>}
+  <small class="visual-credit">TechBlogTip · Tự động tạo từ heading · Static Astro / không tải thư viện icon ngoài</small>
+</section>}
+<style>
+.visual-map{--ink:#253454;margin:1.3rem 0 2.1rem;padding:1.3rem;border:1px solid #e7e8f1;border-radius:20px;background:linear-gradient(135deg,#fcfaff,#f5faff 75%,#fff9f2);color:var(--ink)}
+.map-label{display:flex;gap:.5rem;align-items:center;letter-spacing:.14em;color:#8067a6;font-size:.67rem;font-weight:800}.mark{font-size:1.1rem}.map-count{margin-left:auto;font-size:.6rem;color:#69758c}
+.map-heading{font-size:clamp(1.2rem,2.5vw,1.6rem);letter-spacing:-.03em;line-height:1.3;margin:.4rem 0 .3rem!important;color:var(--ink)}
+.map-note{color:#69758c;font-size:.83rem;line-height:1.55;margin:0 0 1rem!important;text-align:left!important}
+.map-grid{list-style:none!important;padding:0!important;margin:0!important;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
+.map-grid li{min-width:0;list-style:none;margin:0;text-align:start!important}
+.map-grid a{min-height:91px;display:grid;grid-template-columns:38px 1fr;grid-template-rows:auto 1fr;gap:.2rem .6rem;align-items:start;border-radius:14px;border:1px solid #e8eaf0;padding:.7rem;background:#fff;text-decoration:none!important;color:#26344f!important}
+.map-grid a:hover,.map-grid a:focus-visible{border-color:#b8acd8;box-shadow:0 4px 12px #8d80b31a}
+.map-icon{grid-row:1/3;display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--tile);color:#52647f}
+.map-number{font-size:.62rem;font-weight:800;letter-spacing:.1em;color:#8a95a8}
+.map-grid strong{font-size:.81rem;line-height:1.5;word-break:normal;overflow-wrap:normal;hyphens:none}
+.visual-credit{display:block;color:#8591a1;text-align:right;margin-top:.8rem;font-size:.61rem}
+.map-extra{margin-top:.8rem!important}
+@media(max-width:520px){.visual-map{padding:.9rem;border-radius:16px}.map-grid{grid-template-columns:1fr}.map-grid a{min-height:70px}}
+</style>
