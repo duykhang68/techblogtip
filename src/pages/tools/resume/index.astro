@@ -72,7 +72,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       do{
         pending=false;const data=JSON.stringify(state());
         if(data===snapshot)break;
-        if(data.length>250000)throw Error('Hồ sơ vượt giới hạn 250 KB');
+        if(data.length>5000000)throw Error('Hồ sơ vượt giới hạn 5 MB; vui lòng xuất bản sao và tinh gọn dữ liệu');
         if(!fileId){
           const form=new FormData();
           form.append('metadata',new Blob([JSON.stringify({name:'resume-studio-state.json',parents:[FOLDER_ID],mimeType:'application/json'})],{type:'application/json'}));
@@ -122,7 +122,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   el('new-resume').addEventListener('click',create);
   el('duplicate').addEventListener('click',duplicate);
   el('print').addEventListener('click',()=>{inputValues();preview();window.print();});
-  form.addEventListener('input',()=>{if(!requireDrive())return;inputValues();preview();clearTimeout(timer);timer=setTimeout(()=>{persist();render();},500);});
+  form.addEventListener('input',()=>{if(!requireDrive())return;inputValues();preview();clearTimeout(timer);timer=setTimeout(()=>{persist();render();},1400);});
   form.addEventListener('submit',e=>{e.preventDefault();if(!requireDrive())return;clearTimeout(timer);inputValues();persist();render();});
   el('delete-resume').addEventListener('click',()=>{if(!requireDrive()||!selected||!confirm('Xóa vĩnh viễn CV này khỏi thiết bị?'))return;resumes=resumes.filter(r=>r.id!==selected);selected='';persist();render();tab('library');});
   el('analyze').addEventListener('click',()=>{const r=resumes.find(r=>r.id===(el('match-resume') as HTMLSelectElement).value);const jd=(el('job-description') as HTMLTextAreaElement).value.toLocaleLowerCase();const skills=[...new Set((r?.skills||'').split(/[,;\n]/).map(s=>s.trim()).filter(Boolean))];const result=el('match-result');result.replaceChildren();if(!r||!jd.trim()||!skills.length){addText(result,'p','Chọn CV có kỹ năng và dán JD để phân tích.');return;}const hits=skills.filter(s=>jd.includes(s.toLocaleLowerCase()));addText(result,'h3',hits.length+'/'+skills.length+' kỹ năng trong CV xuất hiện trong JD ('+Math.round(hits.length/skills.length*100)+'%)');addText(result,'p','Đã tìm thấy:');for(const s of hits){const chip=document.createElement('span');chip.className='chip';chip.textContent=s;result.append(chip);}addText(result,'p','Không tìm thấy trong JD: '+skills.filter(s=>!hits.includes(s)).join(', '));addText(result,'small','Chỉ so sánh chuỗi văn bản, không phản ánh cơ hội tuyển dụng thực tế.');});
