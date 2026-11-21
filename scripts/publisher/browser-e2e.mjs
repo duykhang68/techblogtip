@@ -229,8 +229,11 @@ try{
   await editor.waitForFunction(()=>document.querySelector('#editor-preview-toggle')?.disabled===false);
   assert.equal(await editor.locator('#editor-body').getAttribute('contenteditable'),'false');
   // Studio 2.0 intentionally hides the legacy close control; use its visible admin breadcrumb.
+  const unexpectedLeaveDialogs=[];
+  editor.on('dialog',async dialog=>{unexpectedLeaveDialogs.push(dialog.message());await dialog.accept();});
   await editor.locator('.editor-workspace-header a[href="/admin"]').click();
   await editor.waitForURL('**/admin');
+  assert.deepEqual(unexpectedLeaveDialogs,[], 'Pristine Editor must not claim unsaved changes when navigating back');
   await editor.close();
   if(width===390){
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
