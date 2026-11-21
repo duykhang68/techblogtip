@@ -1,0 +1,90 @@
+name: Cleanup retired GitHub Deployments (one-shot)
+
+# Runs once for the retirement PR merge. Manual rerun remains available if
+# GitHub's deployment API temporarily fails. It never deploys an application.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  delete-retired-deployments:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'retire Cloudflare staging and Korea CV DEV deployment workflows') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: cleanup-retired-techblogtip-deployments
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Delete only specifically retired GitHub deployment records
+        run: |
+          node --input-type=module <<'NODE'
+          const environments = [
+            'techblogtip-publisher-dev',
+            'techblogtip-korea-cv-dev',
+            'techblogtip-staging',
+          ];
+          const origin = 'https://api.github.com';
+          const repo = process.env.GITHUB_REPOSITORY;
+          if (repo !== 'duykhang68/techblogtip') throw new Error('Refusing to operate on wrong repository');
+          if (process.env.GITHUB_REF !== 'refs/heads/main') throw new Error('Refusing to operate off main');
+          async function github(method, path, body) {
+            const response = await fetch(origin + '/repos/' + repo + path, {
+              method,
+              headers: {
+                Accept: 'application/vnd.github+json',
+                Authorization: 'Bearer ' + process.env.GH_TOKEN,
+                'X-GitHub-Api-Version': '2022-11-28',
+                ...(body ? {'Content-Type': 'application/json'} : {}),
+              },
+              ...(body ? {body: JSON.stringify(body)} : {}),
+            });
+            const raw = await response.text();
+            const parsed = raw ? JSON.parse(raw) : null;
+            return {status: response.status, ok: response.ok, data: parsed};
+          }
+          async function requireOk(result, context) {
+            if (!result.ok) throw new Error(context + ': HTTP ' + result.status + ' ' + JSON.stringify(result.data));
+            return result.data;
+          }
+          for (const environment of environments) {
+            let removed = 0;
+            // Always request page 1, since deleting items shifts subsequent pages.
+            for (let batch = 0; batch < 50; batch++) {
+              const list = await requireOk(
+                await github('GET', '/deployments?environment=' + encodeURIComponent(environment) + '&per_page=100'),
+                'List ' + environment
+              );
+              if (!Array.isArray(list)) throw new Error('Unexpected deployments response');
+              if (list.length === 0) break;
+              for (const deployment of list) {
+                if (deployment.environment !== environment || deployment.production_environment === true) {
+                  throw new Error('Refusing to delete unexpected or production deployment ' + deployment.id);
+                }
+                const endpoint = '/deployments/' + deployment.id;
+                let result = await github('DELETE', endpoint);
+                if (result.status === 422) {
+                  await requireOk(
+                    await github('POST', endpoint + '/statuses', {
+                      state: 'inactive',
+                      description: 'Retired GitHub deployment environment (requested cleanup)',
+                    }),
+                    'Deactivate deployment ' + deployment.id
+                  );
+                  result = await github('DELETE', endpoint);
+                }
+                await requireOk(result, 'Delete deployment ' + deployment.id);
+                removed++;
+              }
+              if (batch === 49) throw new Error('Safety cap: too many ' + environment + ' deployments');
+            }
+            console.log(environment + ': deleted ' + removed + ' GitHub deployment records');
+          }
+          console.log('Retired deployment history cleaned. Production github-pages untouched.');
+          NODE
