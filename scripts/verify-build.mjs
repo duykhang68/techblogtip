@@ -56,7 +56,7 @@ const approved=[
 ].sort();
 const authored=readdirSync(articlesDir).filter(n=>n.endsWith('.md')).sort();
 if(JSON.stringify(authored)!==JSON.stringify(approved))
-  throw new Error('Published sources must match the two explicitly approved articles');
+  throw new Error('Published sources must match the three explicitly approved articles');
 const builtSlugs=readdirSync(resolve('dist/bai-viet'),{withFileTypes:true})
   .filter(entry=>entry.isDirectory()).map(entry=>entry.name).sort();
 const expectedSlugs=approved.map(name=>name.replace(/\.md$/,'')).sort();
