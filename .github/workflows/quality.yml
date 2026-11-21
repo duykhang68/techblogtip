@@ -22,6 +22,9 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '24'
+      - name: Verify Resume OAuth configuration (never print Client ID)
+        run: |
+          node -e "const id=process.env.PUBLIC_RESUME_GOOGLE_CLIENT_ID||''; if(!/^[A-Za-z0-9._-]+\\.apps\\.googleusercontent\\.com$/.test(id)){console.error('::error title=Resume OAuth missing::Add a Google Web OAuth Client ID in Actions repository variable PUBLIC_RESUME_GOOGLE_CLIENT_ID.');process.exit(1)}console.log('Resume OAuth configured: yes (value hidden).')"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Validate, test and build
