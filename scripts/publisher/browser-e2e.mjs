@@ -94,6 +94,7 @@ const server=createServer(async(req,res)=>{
    if(!auth&&route.startsWith('/api/'))return json(res,{message:'Not authenticated'},401);
    if(req.method==='GET'&&route==='/api/rows')
     return json(res,{editor:'synthetic@example.test',rows});
+   if(req.method==='GET'&&route==='/api/media-library')return json(res,{sourceId:url.searchParams.get('sourceId'),items:[]});
    if(req.method==='GET'&&route==='/api/draft'){
     const row=rows.find(r=>r.sourceId===url.searchParams.get('sourceId'));
     if(!row||row.status!=='DRAFT')return json(res,{message:'Draft unavailable'},409);
