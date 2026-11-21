@@ -37,15 +37,25 @@ test('retired Cloudflare staging cannot redeploy while production GitHub Pages s
  assert.doesNotMatch(pages,/cf deploy|CLOUDFLARE_API_TOKEN/);
 });
 
-test('only the two explicitly authorized articles remain, with valid content assets',()=>{
+test('only the three explicitly authorized articles remain, with valid content assets',()=>{
  const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));
- assert.deepEqual(names.sort(), ['techblogtip-100-diem-google-pagespeed-insights.md','xoa-nhieu-repository-github-cli-an-toan.md']);
+ assert.deepEqual(names.sort(), ['lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md','techblogtip-100-diem-google-pagespeed-insights.md','xoa-nhieu-repository-github-cli-an-toan.md']);
  assert.equal(new Set(names).size,names.length);
  for(const name of names){
   const data=read('src/content/articles/'+name);
   assert.ok(data.startsWith('---\n'));
   assert.doesNotMatch(data,/!\[[^\]]*\]\([^)]*\.(png|jpg|jpeg)(?:\?|\))/i);
  }
+});
+test('new iOS roadmap article provides the full visual interactive learning plan',()=>{
+ const article=read('src/content/articles/lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md');
+ const component=read('src/components/IOSRoadmapEnhancer.astro');
+ const route=read('src/pages/bai-viet/[slug].astro');
+ assert.equal((article.match(/class="iosr-number"/g)||[]).length,9);
+ assert.equal((article.match(/data-ios-task=/g)||[]).length,9);
+ for(const token of ['iosr-previews','data-ios-roadmap-schedule','The Swift Programming Language','99 USD','Hello, SwiftUI','TestFlight']) assert.ok(article.includes(token),token);
+ assert.ok(component.includes('localStorage'));
+ assert.ok(route.includes('IOSRoadmapEnhancer'));
 });
 test('retired footer features stay removed',()=>{
  for(const p of ['src/pages/ban-do-kien-thuc/index.astro','src/pages/tim-kiem/index.astro','src/pages/branding/index.astro','src/pages/rss.xml.ts','src/pages/search-index.json.ts'])
