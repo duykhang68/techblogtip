@@ -27,7 +27,7 @@ export function validatePage(page) {
       if(!fields.includes(key)||typeof val!=='string'||val.length>10000)errors.push('block_field');
     }
     if(block.type==='global'&&!/^[a-f0-9-]{36}$/i.test(block.props.componentId||''))errors.push('global_component_id');
-    if(block.props.src&&/^\/media\/[a-f0-9-]{36}$/i.test(block.props.src))errors.push('image_source');
+    if(block.props.src&&!/^\/media\/[a-f0-9-]{36}$/i.test(block.props.src))errors.push('image_source');
     if(block.props.url&&!(/^\/(?!\/)[^<>]*$/.test(block.props.url)||/^https:\/\/[^<>\s]+$/i.test(block.props.url)))errors.push('button_url');
   }
   return [...new Set(errors)];
