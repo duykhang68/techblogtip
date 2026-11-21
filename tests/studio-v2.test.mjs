@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {STUDIO_CSS,STUDIO_EDITOR_JS,STUDIO_ADMIN_JS} from '../workers/publisher/src/studio-v2.mjs';\nimport {EDITOR_JS} from '../workers/publisher/src/editor-ui.mjs';
+import {STUDIO_CSS,STUDIO_EDITOR_JS,STUDIO_ADMIN_JS} from '../workers/publisher/src/studio-v2.mjs';
+import {EDITOR_JS} from '../workers/publisher/src/editor-ui.mjs';
 import {handleRequest} from '../workers/publisher/src/index.mjs';
 
 test('Studio v2 scripts are standalone JavaScript without external UI dependencies',()=>{
