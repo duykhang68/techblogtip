@@ -4,7 +4,7 @@
 
 ## 0. Những gì đã có sẵn trong code (không cần cấu hình để CI chạy)
 
-- **P6 Notion:** authenticated `POST /api/import/notion` trả preview, không ghi Sheets. Có kiểm tra ID, giới hạn 500 block, phân trang không lặp, giới hạn định dạng an toàn. Block lồng nhau, H1, numbered list, code, quote, rich formatting hoặc media yêu cầu review. Nếu thiếu token, API trả lỗi rõ ràng thay vì báo thành công.
+- **P6 Notion:** authenticated `GET /api/import/notion/pages` liệt kê tối đa 50 trang được chia sẻ (chỉ ID và tiêu đề); `POST /api/import/notion` trả preview, không ghi Sheets. Có kiểm tra ID, giới hạn 500 block, phân trang không lặp, giới hạn định dạng an toàn. Block lồng nhau, H1, numbered list, code, quote, rich formatting hoặc media yêu cầu review. Nếu thiếu token, API trả lỗi rõ ràng thay vì báo thành công.
 - **P7 Obsidian:** authenticated `POST /api/import/obsidian` nhận một tệp .md ≤150 KB, kiểm tra path traversal, frontmatter, wikilink, embed, Markdown phức tạp. Các trường hợp dễ mất dữ liệu yêu cầu review.
 - **Editor:** chỉ cho nhập vào DRAFT đang mở; không ghi Sheet khi preview; có xác nhận trước khi thay nội dung bản nháp. Người dùng bấm **Lưu vào Sheets** riêng. READY/PUBLISHED, K:O và quy tắc Draft PR/FIFO không bị thay đổi.
 - **SEO:** deploy production chạy exact SHA, kiểm tra sitemap/robots/canonical và số trang mẫu; GSC URL Inspection chỉ đọc, báo SKIP khi thiếu cấu hình. Không submit URL hàng loạt và không cron.
@@ -19,7 +19,7 @@
    - **Value:** Internal Integration Secret ở bước 1.
 4. Không cần sửa code hoặc `workers/publisher/.env.example`. Workflow `.github/workflows/deploy-publisher-dev.yml` chuyển secret được bảo vệ sang binding `NOTION_INTEGRATION_TOKEN` khi deploy. Nếu không cấu hình, deploy vẫn PASS cho Publisher/P7 nhưng Notion P6 báo `notion_token_missing`.
 5. Sau khi PR chứa tích hợp này merge và Quality/Security PASS, vào [Actions → Deploy Publisher DEV](https://github.com/duykhang68/techblogtip/actions/workflows/deploy-publisher-dev.yml) → **Run workflow** → branch `main`, confirm `deploy-dev-only`. Chỉ deploy theo quy trình chính thức. Mở [Publisher DEV /health](https://techblogtip-publisher-dev.tamsudev-com.workers.dev/health) và đối chiếu `releaseSha` với commit `main` đã deploy. **Không cần xóa các secret đã được cấu hình trước đây.**
-6. Trong [Publisher DEV Editor](https://techblogtip-publisher-dev.tamsudev-com.workers.dev/admin/), đăng nhập bằng tài khoản editor được phép. Mở một bản **DRAFT có quyền chỉnh sửa**, nhập Notion Page ID (32 ký tự hex, có thể có dấu gạch ngang), bấm **Nhập Notion**.
+6. Trong [Publisher DEV Editor](https://techblogtip-publisher-dev.tamsudev-com.workers.dev/admin/), đăng nhập bằng tài khoản editor được phép. Mở một bản **DRAFT có quyền chỉnh sửa**, bấm **Duyệt trang Notion** để chọn một trang đã được chia sẻ (tối đa 50 kết quả), hoặc dán Notion Page ID (32 ký tự hex, có thể có dấu gạch ngang), rồi bấm **Nhập Notion**. Dropdown chỉ trả tiêu đề và Page ID, không trả token.
 7. Với trang nội dung đơn giản và được hỗ trợ: kiểm tra WYSIWYG → bấm **Lưu vào Sheets** → tải lại cùng DRAFT để đối chiếu title/body/source ID. Với trang có block/định dạng chưa hỗ trợ: hệ thống phải báo **Review required** và **không thay thế bản nháp**.
 8. Chỉ sau khi chủ dự án chấp nhận nội dung mới cho phép chuyển READY → Draft PR → Quality/Security/FIFO → merge → production → M:O. **Không publish tự động chỉ vì đã import thành công.**
 
