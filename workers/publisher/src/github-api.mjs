@@ -1,3 +1,4 @@
+import { stageArticleMedia } from './media-library.mjs';
 import { fail } from './auth.mjs';
 
 const ROOT='https://api.github.com/repos/duykhang68/techblogtip';
@@ -91,6 +92,7 @@ export async function createDraftPR(env,prepared,fetcher=fetch){
       content:encodeContent(prepared.markdown),branch,
     }
   });
+  await stageArticleMedia(env,prepared,branch,fetcher);
   const pr=await request('/pulls',{
     method:'POST',body:{
       title:'content(sheets): '+prepared.sourceId,
