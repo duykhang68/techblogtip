@@ -7,6 +7,7 @@ import { inspectPublisherPR } from './pr-status.mjs';
 import { finalizeVerifiedArticle,requireProductionSync,reconcileProductionBatch } from './release-writeback.mjs';
 import { readProductionStatus } from './production-status.mjs';
 import { loadEditableDraft,saveEditableDraft } from './editorial.mjs';
+import { parsePublisherPreview } from './markdown-preview.mjs';
 import { withSourceWriteLock,withRowWriteLock } from './source-lock.mjs';
 import { EDITOR_HTML,EDITOR_JS,EDITOR_CSS } from './editor-ui.mjs';
 import { prepareSheetArticle } from '../../../scripts/publisher/sheets.mjs';
@@ -166,6 +167,12 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         return respond(await (payload.sourceId?
           withSourceWriteLock(env,payload.sourceId,task):
           withRowWriteLock(env,payload.rowNumber,task)));
+      }
+      if(path==='/api/preview'&&request.method==='POST'){
+        // Authenticated and same-origin; parse locally in the Worker. Never
+        // write Sheets, call GitHub, or return untrusted HTML to the browser.
+        const payload=await jsonRequest(request,110000);
+        return respond(parsePublisherPreview(payload.body));
       }
       if(path==='/api/draft'){
         if(request.method==='GET'){
