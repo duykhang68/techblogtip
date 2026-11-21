@@ -18,10 +18,12 @@ test('web font is optional to avoid late visual reflow', () => {
   assert.match(layout, /media="print" onload="this\.media='all'"/);
 });
 
-test('image deferral retains lazy scheduling with an observer', () => {
+test('native thumbnail loading retains article-only IntersectionObserver', () => {
   const cards = readFileSync(new URL('../src/components/ArticleCard.astro', import.meta.url), 'utf8');
   const runtime = readFileSync(new URL('../src/scripts/deferred-media.ts', import.meta.url), 'utf8');
   assert.match(cards, /width="640" height="640"/);
-  assert.match(cards, /data-defer-src/);
+  assert.match(cards, /src=\{coverSrc\}/);
+  assert.match(cards, /loading=\{eagerCover \? 'eager' : 'lazy'\}/);
+  assert.doesNotMatch(cards, /data-defer-src/);
   assert.match(runtime, /IntersectionObserver/);
 });
