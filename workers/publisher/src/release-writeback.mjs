@@ -71,7 +71,7 @@ export async function requireProductionSync(request,env,payload,fetcher=fetch){
     fail(400,'release_sync_invalid','Expected trusted deploy runId, SHA and Sheet cursor');
   productionOrigin(env);
   const run=await githubRequest(env,'/actions/runs/'+payload.runId,{fetcher});
-  if(run?.name!=='Deploy · Cloudflare production'||
+  if(run?.name!=='Deploy · GitHub Pages production'||
      run?.path!=='.github/workflows/deploy-production.yml'||
      !((run?.status==='in_progress'&&run?.conclusion==null)||
        (run?.status==='completed'&&run?.conclusion==='success'))||
