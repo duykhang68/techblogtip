@@ -49,6 +49,24 @@ function main(){
  }
  const keyRoutes=['','chuyen-muc/','the/','chu-de/','tim-kiem/'];
  const count=auditSitemap(sitemap,origin,keyRoutes);
+ // A sitemap can be syntactically valid but contain 404 pages. Verify each
+ // declared absolute URL against the actual generated static HTML output.
+ assert(sitemap.startsWith('<?xml version="1.0" encoding="UTF-8"?>'),'missing XML prolog');
+ assert(/<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/.test(sitemap),'invalid sitemap namespace');
+ assert(!/<priority>|<changefreq>/.test(sitemap),'unsupported speculative sitemap hints');
+ const entries=[...sitemap.matchAll(/<url>\s*<loc>([^<]+)<\/loc>(?:<lastmod>([^<]+)<\/lastmod>)?<\/url>/g)];
+ assert(entries.length===count,'malformed XML URL elements');
+ for(const [,encodedUrl,lastmod] of entries){
+  const rawUrl=encodedUrl.replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&apos;/g,"'");
+  const parsed=new URL(rawUrl);
+  assert(parsed.origin===new URL(origin).origin,'sitemap contains foreign origin');
+  assert(parsed.pathname.startsWith(new URL(origin).pathname),'sitemap entry outside project directory');
+  assert(!parsed.search&&!parsed.hash,'sitemap must use canonical URLs');
+  assert(parsed.pathname.endsWith('/'),'sitemap URL missing trailing slash');
+  const relative=parsed.pathname.slice(new URL(origin).pathname.length);
+  assert(existsSync(join(dist,relative,'index.html')),'sitemap URL points to a missing HTML page: '+rawUrl);
+  if(lastmod)assert(!Number.isNaN(Date.parse(lastmod)) && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(lastmod),'invalid sitemap lastmod: '+rawUrl);
+ }
  assert(robots.includes(pages?'Allow: /':'Disallow: /'),'robots not aligned with target');
  if(pages)assert(robots.includes(origin+'sitemap.xml'),'wrong public sitemap URL');
  else assert(!root.includes('name="google-site-verification"'),'staging verification token leak');
