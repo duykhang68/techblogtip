@@ -246,6 +246,52 @@ try{
     await page.screenshot({path:join('artifacts/visual-qa','korea-cv-'+w+'.png'),animations:'disabled'});
     console.log('PASS Korea CV human UX '+w+'px');
   }catch(e){record('Korea CV UX '+w,e);}
+
+  // CMS uses Google auth in production. Test the editor layout offline without
+  // user credentials or any write API by revealing the post-login workspace.
+  if ([390,768,1440].includes(w)) {
+    try {
+      await page.route('https://techblogtip-visual-cms.tamsudev-com.workers.dev/api/config',route=>
+        route.fulfill({status:200,contentType:'application/json',body:'{"googleClientId":""}'}));
+      const response=await page.goto(base+'/tools/cms/',{waitUntil:'load'});
+      assert.equal(response?.status(),200,'CMS static UI route missing');
+      await page.waitForFunction(()=>typeof document.querySelector('#nav-toggle')?.onclick==='function');
+      await page.evaluate(()=>{
+        document.querySelector('#auth-panel').hidden=true;
+        document.querySelector('#workspace').hidden=false;
+      });
+      const measures=await page.evaluate(()=>{
+        const rect=sel=>document.querySelector(sel).getBoundingClientRect();
+        return {scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,
+          top:rect('.top').height,workspace:rect('#workspace').height,toolbar:rect('.main-head').height,
+          stage:rect('.frame').height,canvas:rect('#canvas').width};
+      });
+      assert.ok(measures.scrollWidth<=w+1,'CMS horizontal overflow at '+w+'px: '+measures.scrollWidth);
+      assert.ok(measures.top<=60,'CMS header is too tall: '+measures.top);
+      assert.ok(measures.workspace>=h-66,'CMS workspace must fill the viewport');
+      assert.ok(measures.toolbar<=70,'CMS editor toolbar uses too much vertical height: '+measures.toolbar);
+      assert.ok(measures.stage>=h-150,'CMS preview stage must own the remaining height');
+      await page.screenshot({path:join('artifacts/visual-qa','cms-focus-'+w+'.png'),animations:'disabled'});
+      if(w===390){
+        assert.equal(await page.locator('#nav-toggle').getAttribute('aria-expanded'),'false');
+        await page.locator('#nav-toggle').click();
+        assert.equal(await page.locator('#nav-toggle').getAttribute('aria-expanded'),'true');
+        assert.equal(await page.locator('#panel-scrim').isVisible(),true);
+        await page.locator('#panel-scrim').evaluate(element=>element.click());
+        assert.equal(await page.locator('#nav-toggle').getAttribute('aria-expanded'),'false');
+      }
+      if(w===1440){
+        await page.locator('#focus-toggle').click();
+        assert.equal(await page.locator('#focus-toggle').getAttribute('aria-pressed'),'true');
+        assert.equal(await page.locator('#side-panel').isVisible(),false);
+        assert.equal(await page.locator('#inspector-panel').isVisible(),false);
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#focus-toggle').getAttribute('aria-pressed'),'false');
+      }
+      console.log('PASS CMS Focus Workspace '+w+'px: compact header, full-height canvas and functional panels');
+    } catch(e) {record('CMS Focus Workspace '+w,e);}
+  }
+
   await context.close();
  }
  // Network resources from the built artifact must be reachable, without any live APIs.
