@@ -55,7 +55,9 @@ test('read-only Production Status snapshot lists queue, actions and public stagi
  assert.equal(s.staging.matchesMain,false);
  assert.equal(s.publisherDev.matchesMain,true);
  assert.equal(s.production.verified,false);
- assert.equal(s.production.status,'not_configured');
+ assert.equal(s.production.status,'not_verified');
+ assert.equal(s.production.configured,true);
+ assert.equal(s.production.verified,false);
  assert.ok(f.calls.every(c=>c.method==='GET'));
 });
 test('Actions: Read denied displays unavailable instead of PASS',async()=>{
