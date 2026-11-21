@@ -12,7 +12,8 @@
 - Do not expose OAuth credentials, GitHub tokens, service account keys or API secrets in the repo.
 - Preserve trailing-slash paths and canonical URLs. Redirects are required before changing public URLs after launch.
 - Minimize CI/Cloudflare operations. No polling or cron for ordinary delivery; avoid redundant API calls.
-- Notion/Obsidian/Sheets integrations belong to later milestones and must never directly mutate live content.
+- **Retired:** DO NOT re-enable article writing/publishing through Google Sheets/Excel, Visual Editor/Studio, Notion or Obsidian or recreate the dedicated Publisher DEV Worker unless explicitly requested again in a future task. Keep published articles and Korea CV Maker intact.
+- Do not reintroduce retired Publisher secrets, workflows, dependencies, source import APIs, Media Library or dashboard as an incidental change.
 
 ## Branding contract (mandatory for all UI/UX changes)
 
