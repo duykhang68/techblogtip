@@ -10,21 +10,29 @@ import {Script} from 'node:vm';
 const base='https://techblogtip-visual-cms.tamsudev-com.workers.dev';
 const published={id:'a78186b3-6fe1-4921-ae52-a14509975ef7',published_at:'2026-11-21T17:00:00Z',
  published_json:JSON.stringify({title:'Example',slug:'example',locale:'vi',description:'SEO',blocks:[{id:'block-1',type:'heading',props:{text:'Hello'}}]})};
-const database={prepare(sql){return {bind(...params){return {
- async first(){
-  if(sql.includes('FROM cms_spaces'))return params[0]==='default'?{id:'default'}:null;
-  if(sql.includes('FROM cms_pages WHERE space_id='))return params[0]==='default'?published:null;
-  if(sql.includes('FROM cms_components'))return null;
-  if(sql.includes('FROM cms_space_members'))return null;
-  return null;
- },
- async all(){
-  if(sql.includes('FROM cms_schedules'))return {results:[]};
-  if(sql.includes('FROM cms_pages'))return {results:[published]};
-  return {results:[]};
- },
- async run(){return {meta:{changes:1}}}
- };}}};}};
+const database={
+ prepare(sql){
+  return {
+   bind(...params){
+    return {
+     async first(){
+      if(sql.includes('FROM cms_spaces'))return params[0]==='default'?{id:'default'}:null;
+      if(sql.includes('FROM cms_pages WHERE space_id='))return params[0]==='default'?published:null;
+      if(sql.includes('FROM cms_components'))return null;
+      if(sql.includes('FROM cms_space_members'))return null;
+      return null;
+     },
+     async all(){
+      if(sql.includes('FROM cms_schedules'))return {results:[]};
+      if(sql.includes('FROM cms_pages'))return {results:[published]};
+      return {results:[]};
+     },
+     async run(){return {meta:{changes:1}};}
+    };
+   }
+  };
+ }
+};
 test('reusable global block references are validated before storage',()=>{
  const good=normalizePage({title:'Page',slug:'page',blocks:[{id:'id-one',type:'global',props:{componentId:'123e4567-e89b-12d3-a456-426614174000'}}]});
  assert.deepEqual(validatePage(good),[]);
