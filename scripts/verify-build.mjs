@@ -56,15 +56,16 @@ console.log('Verified HTML, sitemap, noindex, retired routes and exact SHA marke
 // Visualizer publication gate: every article with 2+ H2 sections must render its story map.
 import { readdirSync } from 'node:fs';
 const articlesDir=resolve('src/content/articles');
-// Explicit editorial requests authorize the PageSpeed, GitHub CLI and visual iOS roadmap articles.
+// Explicit editorial requests authorize the PageSpeed, GitHub CLI, iOS roadmap and app economics research articles.
 const approved=[
   'techblogtip-100-diem-google-pagespeed-insights.md',
   'xoa-nhieu-repository-github-cli-an-toan.md',
   'lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md',
+  'vibe-code-app-ios-macos-kiem-tien-2026.md',
 ].sort();
 const authored=readdirSync(articlesDir).filter(n=>n.endsWith('.md')).sort();
 if(JSON.stringify(authored)!==JSON.stringify(approved))
-  throw new Error('Published sources must match the three explicitly approved articles');
+  throw new Error('Published sources must match the four explicitly approved articles');
 const builtSlugs=readdirSync(resolve('dist/bai-viet'),{withFileTypes:true})
   .filter(entry=>entry.isDirectory()).map(entry=>entry.name).sort();
 const expectedSlugs=approved.map(name=>name.replace(/\.md$/,'')).sort();
@@ -90,6 +91,8 @@ for(const name of readdirSync(articlesDir).filter(n=>n.endsWith('.md'))){
   throw new Error('Visualizer gate: missing auto-generated story map for '+slug);
  if(slug==='lo-trinh-hoc-lap-trinh-ios-tu-con-so-0' && (!markup.includes('data-ios-roadmap-checklist') || !markup.includes('data-ios-roadmap-schedule') || !markup.includes('iosr-steps') || !markup.includes('iosr-previews')))
   throw new Error('Visualizer gate: iOS roadmap must render its 9-stage map, checklist, app previews and daily schedule');
+ if(slug==='vibe-code-app-ios-macos-kiem-tien-2026' && (!markup.includes('data-econ-calc') || !markup.includes('econ-ranking') || !markup.includes('econ-target') || !markup.includes('econ-funnel')))
+  throw new Error('Visualizer gate: app economics article must render original rankings, unit economics and validation flow');
  if(slug==='xoa-nhieu-repository-github-cli-an-toan' && !markup.includes('data-repo-deletion-flow'))
   throw new Error('Visualizer gate: GitHub CLI article needs its safety flow');
  if(slug==='techblogtip-engineering-rules' && (!markup.includes('ENGINEERING CONTRACT') || !markup.includes('RELEASE TRUST CHAIN')))
