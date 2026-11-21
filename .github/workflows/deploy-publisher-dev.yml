@@ -63,7 +63,12 @@ jobs:
         working-directory: workers/publisher
         env:
           BINDINGS_FILE: ${{ steps.bindings.outputs.file }}
-        run: npx cf deploy --no-provision --secrets-file "$BINDINGS_FILE" --message "Publisher dev $GITHUB_SHA"
+        # The connected Cloudflare Script API may have last uploaded this Worker.
+        # In the protected manual main-only deploy, the checked-out GitHub SHA and
+        # regenerated encrypted bindings are authoritative. --force overrides
+        # cf's upload-origin conflict for this one named Publisher DEV Worker.
+        # --no-provision prevents creating any unexpected Cloudflare resources.
+        run: npx cf deploy --force --no-provision --secrets-file "$BINDINGS_FILE" --message "Publisher dev $GITHUB_SHA"
       - name: Remove ephemeral secret file
         if: always()
         env:
