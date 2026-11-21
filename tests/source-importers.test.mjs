@@ -29,3 +29,17 @@ test('Obsidian complex syntax remains in review until lossless support exists',(
  assert.equal(safe.requiresReview,false);
  assert.match(safe.body,/Đoạn văn không mất dữ liệu/);
 });
+
+test('P6 review gate never treats lossy H1, numbered lists, quotes or code as editable',async()=>{
+ const {notionNeedsReview}=await import('../workers/publisher/src/notion-import.mjs');
+ const b=(type,value='Example')=>({type,[type]:{rich_text:[{plain_text:value}]}});
+ for(const type of ['heading_1','numbered_list_item','quote','code','divider'])assert.equal(notionNeedsReview([b(type)]),true,type);
+ for(const type of ['heading_2','heading_3','paragraph','bulleted_list_item'])assert.equal(notionNeedsReview([b(type)]),false,type);
+});
+test('P7 review gate blocks markup not faithfully round-trippable in visual editor',()=>{
+ for(const markdown of ['# Tựa đề','#### Heading 4','![ảnh](photo.png)','**in đậm**','~~gạch bỏ~~','`inline code`','---\\ntags: [tech]\\n---\\nBody']){
+  assert.equal(obsidianPreview({path:'notes/unsafe.md',markdown}).requiresReview,true,markdown);
+ }
+ const safe=obsidianPreview({path:'notes/safe.md',markdown:'## Mục lớn\\n\\nĐoạn văn tiếng Việt'});
+ assert.equal(safe.requiresReview,false);
+});
