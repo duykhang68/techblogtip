@@ -17,14 +17,12 @@ test('decommissioned writer modules and workflow cannot silently return',()=>{
   'docs/PHASE3-ONE-TIME-SETUP.md'
  ])assert.equal(existsSync(path),false,'Retired component accidentally restored: '+path);
 });
-test('public blog and separate Korea CV remain available',()=>{
+test('retained PageSpeed article, Archive and separate Korea CV remain available',()=>{
  for(const path of [
   'workers/korea-cv/src/index.mjs',
   'src/pages/tools/korea-cv/index.astro',
-  'src/content/articles/hanh-trinh-xay-dung-google-sheets-publisher-techblogtip.md',
-  'src/content/articles/obsidian-va-notion-dung-khi-nao.md',
+  'src/content/articles/techblogtip-100-diem-google-pagespeed-insights.md',
   'src/pages/archieve/index.astro',
-  'src/pages/ban-do-kien-thuc/index.astro',
   'scripts/verify-production-deploy.mjs'
  ])assert.equal(existsSync(path),true,'Existing public content/service missing: '+path);
 });

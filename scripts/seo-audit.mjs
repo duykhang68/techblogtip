@@ -47,7 +47,7 @@ function main(){
   const route=rel==='index.html'?'':rel.replace(/index\.html$/,'');
   auditHtml(readFileSync(path,'utf8'),new URL(route,origin).toString(),pages);
  }
- const keyRoutes=['','chuyen-muc/','the/','chu-de/','tim-kiem/'];
+ const keyRoutes=['','chuyen-muc/','the/','chu-de/'];
  const count=auditSitemap(sitemap,origin,keyRoutes);
  // A sitemap can be syntactically valid but contain 404 pages. Verify each
  // declared absolute URL against the actual generated static HTML output.

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 const read=p=>readFileSync(p,'utf8');
 test('main routes and SEO endpoints are authored',()=>{
- for(const p of ['src/pages/index.astro','src/pages/bai-viet/[slug].astro','src/pages/chuyen-muc/index.astro','src/pages/the/index.astro','src/pages/chu-de/index.astro','src/pages/tim-kiem/index.astro','src/pages/rss.xml.ts','src/pages/sitemap.xml.ts','src/pages/robots.txt.ts'])assert.ok(existsSync(p),p);
+ for(const p of ['src/pages/index.astro','src/pages/bai-viet/[slug].astro','src/pages/chuyen-muc/index.astro','src/pages/the/index.astro','src/pages/chu-de/index.astro','src/pages/sitemap.xml.ts','src/pages/robots.txt.ts'])assert.ok(existsSync(p),p);
 });
 test('content and staging policy',()=>{
  const schema=read('src/content.config.ts');
@@ -40,9 +40,9 @@ test('staging stays Cloudflare while production is protected GitHub Pages',()=>{
  assert.doesNotMatch(pages,/cf deploy|CLOUDFLARE_API_TOKEN/);
 });
 
-test('demo post slugs are unique, no image format violation',()=>{
+test('only the explicitly retained PageSpeed article remains, with valid content assets',()=>{
  const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));
- assert.ok(names.length>=8);
+ assert.deepEqual(names, ['techblogtip-100-diem-google-pagespeed-insights.md']);
  assert.equal(new Set(names).size,names.length);
  for(const name of names){
   const data=read('src/content/articles/'+name);
@@ -50,9 +50,15 @@ test('demo post slugs are unique, no image format violation',()=>{
   assert.doesNotMatch(data,/!\[[^\]]*\]\([^)]*\.(png|jpg|jpeg)(?:\?|\))/i);
  }
 });
-test('no GitHub API in public JavaScript',()=>{
- const pages=readdirSync('src/pages/tim-kiem');
- for(const name of pages)assert.doesNotMatch(read('src/pages/tim-kiem/'+name),/api\.github\.com/);
+test('retired footer features stay removed',()=>{
+ for(const p of ['src/pages/ban-do-kien-thuc/index.astro','src/pages/tim-kiem/index.astro','src/pages/branding/index.astro','src/pages/rss.xml.ts','src/pages/search-index.json.ts'])
+  assert.equal(existsSync(p),false,p+' must remain removed');
+ const footer=read('src/components/SiteFooter.astro');
+ for(const path of ['/ban-do-kien-thuc/','/tim-kiem/','/branding/','/rss.xml'])assert.ok(!footer.includes(path),'retired footer link: '+path);
+ assert.ok(footer.includes('/archieve/'),'Archive must remain accessible');
+ assert.doesNotMatch(read('src/layouts/BaseLayout.astro'),/application\/rss\+xml/);
+ assert.doesNotMatch(read('src/pages/404.astro'),/\/tim-kiem\//);
+ assert.doesNotMatch(read('src/pages/sitemap.xml.ts'),/ban-do-kien-thuc|tim-kiem/);
 });
 
 test('Cloudflare deploy has a verified nonsecret account fallback', () => {
