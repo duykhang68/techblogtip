@@ -100,6 +100,13 @@ async function fixture(){
         state.values[1][9]=body.data[1].values[0][0];
         return Response.json({totalUpdatedCells:8});
       }
+      if(method==='POST'&&url.pathname.endsWith(':clear')){
+        const range=decodeURIComponent(url.pathname.split('/values/')[1]);
+        assert.equal(range,'VN!A2:O2:clear');
+        assert.deepEqual(JSON.parse(options.body),{});
+        state.values[1]=Array(15).fill('');
+        return Response.json({clearedRange:'VN!A2:O2'});
+      }
       if(method==='GET'&&url.pathname.includes('/values/'))
         return Response.json({values:state.values.map(row=>[...row])});
       if(method==='PUT'&&url.pathname.includes('/values/')){
@@ -787,4 +794,72 @@ test('ready validator requires authorized editor and does not expose public GitH
   assert.match(js,/Kiểm tra bài/);
   assert.match(js,/api\/validate/);
   assert.ok(!js.includes('api.github.com'));
+});
+
+test('delete queue: unassigned DRAFT is erased from Google Sheets, not just hidden',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const check=await f.call('/api/delete-check?rowNumber=2',token);
+  assert.equal(check.status,200);
+  assert.equal(check.data.rowNumber,2);
+  assert.equal(check.data.sourceId,'');
+  assert.match(check.data.expectedSnapshot,/^[a-f0-9]{64}$/);
+  const deleted=await f.call('/api/delete-article',token,'POST',{
+    sourceId:'',rowNumber:2,expectedSnapshot:check.data.expectedSnapshot
+  });
+  assert.equal(deleted.status,200);
+  assert.equal(deleted.data.deleted,true);
+  assert.ok(f.state.values[1].every(value=>value===''));
+  assert.deepEqual(f.state.values[0],HEADERS);
+  assert.equal((await f.call('/api/rows',token)).data.rows.length,0);
+  assert.equal(f.state.calls.filter(c=>c.url.includes('api.github.com')).length,0);
+});
+test('delete queue: ID-assigned READY article without PR can be erased',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][8]='READY';
+  const preview=await f.call('/api/delete-check?sourceId='+id,token);
+  assert.equal(preview.status,200);
+  assert.equal(preview.data.sourceId,id);
+  const result=await f.call('/api/delete-article',token,'POST',{
+    sourceId:id,rowNumber:2,expectedSnapshot:preview.data.expectedSnapshot
+  });
+  assert.equal(result.status,200);
+  assert.ok(f.state.lockEvents.some(e=>e.key.endsWith(':source:'+id)));
+});
+test('delete queue: rejects stale confirmation and retains the modified draft',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const preview=(await f.call('/api/delete-check?rowNumber=2',token)).data;
+  f.state.values[1][1]='Bài đã chỉnh sửa trên Sheets';
+  const rejected=await f.call('/api/delete-article',token,'POST',{
+    sourceId:'',rowNumber:2,expectedSnapshot:preview.expectedSnapshot
+  });
+  assert.equal(rejected.status,409);
+  assert.equal(rejected.data.error,'delete_conflict');
+  assert.equal(f.state.values[1][1],'Bài đã chỉnh sửa trên Sheets');
+  assert.equal(f.state.calls.filter(c=>c.url.endsWith(':clear')).length,0);
+});
+test('delete queue: refuses already submitted or published articles',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][8]='READY';
+  f.state.values[1][10]='a'.repeat(64);
+  f.state.values[1][11]='https://github.com/duykhang68/techblogtip/pull/101';
+  const refused=await f.call('/api/delete-check?sourceId='+id,token);
+  assert.equal(refused.status,409);
+  assert.equal(refused.data.error,'delete_locked');
+  assert.equal(f.state.calls.filter(c=>c.url.endsWith(':clear')).length,0);
+  f.state.values[1][10]='';f.state.values[1][11]='';
+  f.state.values[1][8]='PUBLISHED';
+  const published=await f.call('/api/delete-check?sourceId='+id,token);
+  assert.equal(published.status,409);
+});
+test('delete queue: requires authentication and same origin',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const noAuth=await f.call('/api/delete-check?rowNumber=2','');
+  assert.equal(noAuth.status,401);
+  const crossOrigin=await f.call('/api/delete-article',token,'POST',{
+    sourceId:'',rowNumber:2,expectedSnapshot:'0'.repeat(64)
+  },{Origin:'https://bad.example.test'});
+  assert.equal(crossOrigin.status,403);
+  assert.equal(f.state.calls.filter(c=>c.url.endsWith(':clear')).length,0);
 });
