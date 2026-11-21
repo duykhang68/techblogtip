@@ -25,6 +25,7 @@ jobs:
       DEPLOY_TARGET: github-pages
       PUBLIC_INDEXABLE: "true"
       PUBLIC_RESUME_GOOGLE_CLIENT_ID: ${{ vars.PUBLIC_RESUME_GOOGLE_CLIENT_ID }}
+      PUBLIC_GSC_VERIFICATION: ${{ vars.PUBLIC_GSC_VERIFICATION }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
