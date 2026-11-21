@@ -9,7 +9,8 @@ import { chromium } from 'playwright-core';
 import { ADMIN_HTML, ADMIN_JS, ADMIN_CSS } from '../../workers/publisher/src/ui.mjs';
 import { EDITOR_HTML, EDITOR_JS, EDITOR_CSS, EDITOR_IMPORT_CSS, EDITOR_WORKSPACE_CSS } from '../../workers/publisher/src/editor-ui.mjs';
 import { PRODUCTION_HTML, PRODUCTION_JS, PRODUCTION_CSS } from '../../workers/publisher/src/production-ui.mjs';
-import { parsePublisherPreview } from '../../workers/publisher/src/markdown-preview.mjs';\nimport { STUDIO_EDITOR_JS,STUDIO_CSS } from '../../workers/publisher/src/studio-v2.mjs';
+import { parsePublisherPreview } from '../../workers/publisher/src/markdown-preview.mjs';
+import { STUDIO_EDITOR_JS,STUDIO_CSS } from '../../workers/publisher/src/studio-v2.mjs';
 
 const paths=[process.env.CHROME_PATH,process.env.CHROME_BIN,
   '/usr/bin/google-chrome','/usr/bin/google-chrome-stable',
