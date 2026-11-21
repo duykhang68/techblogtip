@@ -1,0 +1,129 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  getArticles, articleUrl, categoryUrl, seriesUrl, tagUrl,
+  valuesWithCounts, formatDate, withBase,
+} from '../../lib/content';
+
+// Render this page at build time from the same published collection used by
+// the blog and sitemap.xml. No browser API, cron or manual link maintenance.
+const articles = await getArticles();
+const categories = valuesWithCounts(articles, article => [article.data.category]);
+const series = valuesWithCounts(articles, article => article.data.series ? [article.data.series] : []);
+const tags = valuesWithCounts(articles, article => article.data.tags);
+const articlesWithDates = articles.map(article => ({
+  article,
+  lastModified: article.data.updated && article.data.updated > article.data.published
+    ? article.data.updated : article.data.published,
+}));
+const mainPages = [
+  { name: 'Trang chủ', href: withBase('/') },
+  { name: 'Kho lưu trữ bài viết', href: withBase('/archieve/') },
+  { name: 'Chuyên mục', href: withBase('/chuyen-muc/') },
+  { name: 'Chủ đề', href: withBase('/chu-de/') },
+  { name: 'Thẻ bài viết', href: withBase('/the/') },
+];
+const tools = [
+  { name: 'Korea CV Maker — Công cụ tạo CV tiếng Hàn', href: withBase('/tools/korea-cv/') },
+];
+// Keep the page size aligned with homepage, pagination and sitemap.xml.
+const extraPages = Array.from(
+  { length: Math.max(0, Math.ceil(articles.length / 8) - 1) },
+  (_, i) => ({ number: i + 2, href: withBase('/page/' + (i + 2) + '/') }),
+);
+---
+<BaseLayout
+  title="Sitemap — Sơ đồ website"
+  description="Sơ đồ website TechBlogTip dạng văn bản: trang công khai, bài viết, chuyên mục, chủ đề, thẻ và công cụ. Tự cập nhật sau mỗi lần xuất bản."
+  canonicalPath={withBase('/sitemap/')}
+>
+  <section class="container text-sitemap" aria-labelledby="sitemap-title">
+    <header class="sitemap-intro">
+      <h1 id="sitemap-title">Sitemap</h1>
+      <p>Danh mục liên kết công khai trên TechBlogTip. Nội dung tự đồng bộ khi blog được build và xuất bản.</p>
+      <p>Đối với công cụ tìm kiếm: <a href={withBase('/sitemap.xml')}>XML sitemap</a> · <a href={withBase('/robots.txt')}>robots.txt</a></p>
+    </header>
+    <nav aria-label="Sơ đồ cấu trúc website TechBlogTip" class="sitemap-groups">
+      <section aria-labelledby="map-pages">
+        <h2 id="map-pages">Trang chính</h2>
+        <ul>{mainPages.map(page => <li><a href={page.href}>{page.name}</a></li>)}</ul>
+      </section>
+
+      <section aria-labelledby="map-articles" class="sitemap-articles">
+        <h2 id="map-articles">Bài viết ({articles.length})</h2>
+        {articlesWithDates.length > 0
+          ? <ul>{articlesWithDates.map(({ article, lastModified }) => (
+              <li>
+                <a href={articleUrl(article)}>{article.data.title}</a>
+                <time datetime={lastModified.toISOString()}>Cập nhật {formatDate(lastModified)}</time>
+              </li>
+            ))}</ul>
+          : <p>Chưa có bài viết công khai.</p>}
+      </section>
+
+      {categories.length > 0 && (
+        <section aria-labelledby="map-categories">
+          <h2 id="map-categories">Chuyên mục ({categories.length})</h2>
+          <ul>{categories.map(item => (
+            <li><a href={categoryUrl(item.name)}>{item.name}</a> <span class="sitemap-count">({item.count})</span></li>
+          ))}</ul>
+        </section>
+      )}
+
+      {series.length > 0 && (
+        <section aria-labelledby="map-series">
+          <h2 id="map-series">Chủ đề ({series.length})</h2>
+          <ul>{series.map(item => (
+            <li><a href={seriesUrl(item.name)}>{item.name}</a> <span class="sitemap-count">({item.count})</span></li>
+          ))}</ul>
+        </section>
+      )}
+
+      {tags.length > 0 && (
+        <section aria-labelledby="map-tags">
+          <h2 id="map-tags">Thẻ ({tags.length})</h2>
+          <ul>{tags.map(item => (
+            <li><a href={tagUrl(item.name)}>{item.name}</a> <span class="sitemap-count">({item.count})</span></li>
+          ))}</ul>
+        </section>
+      )}
+
+      <section aria-labelledby="map-tools">
+        <h2 id="map-tools">Công cụ</h2>
+        <ul>{tools.map(tool => <li><a href={tool.href}>{tool.name}</a></li>)}</ul>
+      </section>
+
+      {extraPages.length > 0 && (
+        <section aria-labelledby="map-pagination">
+          <h2 id="map-pagination">Danh sách bài viết theo trang</h2>
+          <ul>{extraPages.map(page => (
+            <li><a href={page.href}>Trang {page.number}</a></li>
+          ))}</ul>
+        </section>
+      )}
+    </nav>
+  </section>
+</BaseLayout>
+
+<style>
+  .text-sitemap{padding-block:32px 65px}
+  .sitemap-intro{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:25px}
+  .sitemap-intro h1{font-size:clamp(1.5rem,3vw,2rem);line-height:1.3;letter-spacing:-.025em;text-align:start}
+  .sitemap-intro p{margin-top:9px;color:var(--muted);font-size:.86rem;line-height:1.65;text-align:start}
+  .text-sitemap a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+  .text-sitemap a:hover{text-decoration-thickness:2px}
+  .text-sitemap a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .sitemap-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 42px}
+  .sitemap-groups section{min-width:0}
+  .sitemap-groups h2{font-size:1.06rem;line-height:1.45;margin:0 0 10px;text-align:start}
+  .sitemap-groups ul{list-style:disc;padding-left:19px;margin:0}
+  .sitemap-groups li{padding-block:5px;line-height:1.6;font-size:.87rem;overflow-wrap:break-word;word-break:normal;text-align:start}
+  .sitemap-groups li a{overflow-wrap:break-word}
+  .sitemap-articles time{display:block;color:var(--muted);font-size:.73rem;margin-top:2px}
+  .sitemap-count{color:var(--muted);font-size:.8rem}
+  .sitemap-groups section>p{color:var(--muted);font-size:.86rem}
+  @media(max-width:700px){
+    .text-sitemap{padding-block:23px 45px}
+    .sitemap-groups{grid-template-columns:minmax(0,1fr);gap:22px}
+  }
+</style>
