@@ -266,7 +266,6 @@ try{
  const mediaContext=await browser.newContext({viewport:{width:1280,height:900}});
  await mediaContext.addCookies([{name:'publisher_fixture_session',value:'1',url:base}]);
  const mediaPage=await mediaContext.newPage();
- mediaPage.on('dialog',dialog=>dialog.accept('Ảnh nghiệm thu P8'));
  await mediaPage.goto(base+'/editor?sourceId='+draft.sourceId,{waitUntil:'load'});
  await mediaPage.waitForFunction(()=>document.querySelector('#editor-body')?.getAttribute('contenteditable')==='true');
  await mediaPage.locator('#import-drive').click();
@@ -275,8 +274,14 @@ try{
  for(const choice of await mediaPage.locator('#drive-file-grid input[type="checkbox"]').all())await choice.check();
  await mediaPage.locator('#drive-import-selected').click();
  await mediaPage.locator('#media-library-grid button').first().waitFor();
+ await mediaPage.locator('#media-library-grid input[aria-label^="Mô tả ảnh"]').first().fill('Ảnh nghiệm thu P8');
  await mediaPage.locator('#media-library-grid button').first().click();
  assert.equal(await mediaPage.locator('#editor-body figure[data-media-path] img').count(),1);
+ assert.equal(await mediaPage.locator('#editor-body figure[data-media-path] img').first().getAttribute('alt'),'Ảnh nghiệm thu P8');
+ assert.match(await mediaPage.locator('#editor-import-status').textContent()||'',/Đã chèn ảnh/);
+ await mediaPage.locator('#drive-import-selected').click();
+ await mediaPage.waitForFunction(()=>document.querySelector('#editor-import-status')?.textContent.includes('Đã nhập 1 WebP'));
+ assert.equal(await mediaPage.locator('#media-library-grid .drive-tile').count(),1,'Repeated import duplicated media');
  await mediaPage.locator('#editor-save').click();
  await mediaPage.waitForFunction(()=>document.querySelector('#editor-save-status')?.textContent.includes('Đã lưu Google Sheets.'));
  assert.equal(metrics.putDraft,1);
