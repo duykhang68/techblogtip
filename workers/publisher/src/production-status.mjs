@@ -10,36 +10,6 @@ function resultOf(settled,fn){
   try{return fn(settled.value);}catch{return {available:false,status:'invalid'};}
 }
 
-function runSummary(run){
-  if(!Number.isSafeInteger(run?.id)||run.id<1||
-    !/^https:\/\/github\.com\/duykhang68\/techblogtip\/actions\/runs\/\d+$/.test(run.html_url||''))
-    return null;
-  return {
-    id:run.id,name:String(run.name||'GitHub Actions').slice(0,90),
-    status:['queued','in_progress','completed','waiting','requested','pending'].includes(run.status)?run.status:'unknown',
-    conclusion:typeof run.conclusion==='string'?run.conclusion.slice(0,32):null,
-    sha:SHA.test(run.head_sha||'')?run.head_sha:null,
-    event:String(run.event||'').slice(0,40),
-    updatedAt:String(run.updated_at||'').slice(0,50),
-    url:run.html_url,
-  };
-}
-
-// The repository is public. Fine-grained Publisher tokens may intentionally lack
-// Actions:Read, so fall back to its public GitHub Actions endpoint server-side.
-// Still GET-only, bounded, manual and never exposed to the browser.
-async function publicActionsRuns(fetcher){
-  const url='https://api.github.com/repos/duykhang68/techblogtip/actions/runs?per_page=30';
-  const response=await fetcher(url,{
-    method:'GET',
-    headers:{Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',
-      'User-Agent':'techblogtip-production-status'},
-    signal:AbortSignal.timeout(12000),
-  });
-  if(!response.ok)throw Error('public_github_actions_unavailable');
-  return response.json();
-}
-
 async function fetchPublicJson(url,fetcher){
   const response=await fetcher(url,{
     method:'GET',headers:{Accept:'application/json','Cache-Control':'no-cache'},
@@ -58,10 +28,9 @@ export async function readProductionStatus(env,fetcher=fetch){
   const get=path=>githubRequest(env,path,{fetcher});
   let productionBase=null;
   try{productionBase=productionOrigin(env);}catch{ /* not configured; do not use staging */ }
-  const [mainResult,prsResult,runsResult,stagingResult,publisherResult,productionResult]=await Promise.allSettled([
+  const [mainResult,prsResult,stagingResult,publisherResult,productionResult]=await Promise.allSettled([
     get('/git/ref/heads/main'),
     get('/pulls?state=open&per_page=100&sort=created&direction=asc'),
-    get('/actions/runs?per_page=30').catch(()=>publicActionsRuns(fetcher)),
     fetchPublicJson(STAGING+'/release.json',fetcher),
     fetchPublicJson(PUBLISHER+'/health',fetcher),
     productionBase?fetchPublicJson(productionBase+'/release.json',fetcher):Promise.reject(new Error('not_configured')),
@@ -78,13 +47,6 @@ export async function readProductionStatus(env,fetcher=fetch){
       sha:SHA.test(p.head?.sha||'')?p.head.sha:null,
       url:Number.isSafeInteger(p.number)?'https://github.com/duykhang68/techblogtip/pull/'+p.number:null,
     })).filter(p=>p.url)};
-  });
-  const actions=resultOf(runsResult,v=>{
-    if(!Array.isArray(v?.workflow_runs))throw Error('actions_invalid');
-    const runs=v.workflow_runs.map(runSummary).filter(Boolean);
-    return {available:true,items:runs.slice(0,12),
-      // A run conclusion is not proof of a deployed public release.
-      note:'GitHub Actions là thông tin CI/CD, không chứng nhận production'};
   });
   const staging=resultOf(stagingResult,v=>{
     if(v.project!=='techblogtip'||!SHA.test(v.sha||''))throw Error('staging_marker_invalid');
@@ -117,6 +79,6 @@ export async function readProductionStatus(env,fetcher=fetch){
   }
   return {
     snapshotAt:new Date().toISOString(),repo:'duykhang68/techblogtip',
-    main,queue,actions,staging,publisherDev,production,
+    main,queue,staging,publisherDev,production,
   };
 }
