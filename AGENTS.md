@@ -12,6 +12,11 @@
 - Minimize CI/Cloudflare operations. No polling or cron for ordinary delivery; avoid redundant API calls.
 - Notion/Obsidian/Sheets integrations belong to later milestones and must never directly mutate live content.
 
+## Branding contract (mandatory for all UI/UX changes)
+
+- Read `docs/BRANDING.md` and the public `/branding/` guidelines before changing UI, layout, colors, typography, components or interaction patterns.
+- Keep the Markdown and Astro branding page synchronized when design rules change. Reuse existing design tokens and preserve accessibility, mobile-first layouts and site branding.
+
 ## Typography & reading layout (mandatory)
 
 - Body prose paragraphs use editorial text-align: justify with natural last-line alignment. Never justify the last line, force word spacing, or insert spaces through JavaScript.
