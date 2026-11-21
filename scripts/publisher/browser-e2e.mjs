@@ -160,7 +160,9 @@ try{
   const draftCard=page.locator('article.row').filter({hasText:'Bản nháp xem trước'});
   await draftCard.getByRole('button',{name:'Sửa trực quan'}).click();
   const previewButton=page.locator('#editor-preview-toggle');
-  await previewButton.waitFor();
+  // Opening the draft is async; the element exists before its API read
+  // completes. Wait for the control to be enabled, not merely mounted.
+  await page.waitForFunction(()=>document.querySelector('#editor-preview-toggle')?.disabled===false);
   assert.equal(await previewButton.isDisabled(),false);
   assert.equal(await page.locator('#editor-body').getAttribute('contenteditable'),'false',
     'Advanced Markdown must remain read-only in visual editor');
