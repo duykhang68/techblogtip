@@ -92,9 +92,6 @@
 ## Single source of truth workflow
 Any material visual change must update this file and be tested against the existing styles. AI agents use this Markdown reference to enforce the design contract; do not restore the public branding page or its footer link.
 
-## G-CMS admin interface (2026-11-22)
+## Publishing approach (2026-11-22)
 
-- G-CMS is a separate Ghost-inspired administrative application under `/techblogtip/gcms/`, **not** a new homepage hero or a Ghost-branded clone.
-- Reuse TechBlogTip's current light tokens, typography, clear content-first navigation, compact controls and responsive layout. Use real Cloudflare data only; no misleading demo metrics, data or buttons.
-- Static GitHub Pages HTML contains no secrets, member lists, private drafts or media binaries. All private data lives in isolated Cloudflare D1/R2; Google sign-in permissions are verified by the Worker, not the browser.
-- The retired Visual CMS under `/techblogtip/tools/cms/` must stay removed; G-CMS is a separate product.
+G-CMS has been retired at the user's request. Future articles may be drafted and visualized with AI, but must continue through TechBlogTip's current Astro content files and reviewed GitHub PR/FIFO/CI/exact-SHA production verification. Do not add or restore CMS/admin UI, private member data systems, or decorative hero sections merely for AI publishing.
