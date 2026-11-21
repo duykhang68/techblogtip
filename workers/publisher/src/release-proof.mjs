@@ -107,6 +107,18 @@ async function evidence(env,row,pr,fetcher){
   return {url,sha:marker.sha,sourceId:article.sourceId,sourceRevision:article.fingerprint};
 }
 
+// Keep the original first-published release SHA in Sheets M:O. Later
+// production deployments can still prove this article is live if that SHA
+// remains in the ancestry of the current public Pages release.
+export async function releaseShaStillValid(env,storedSha,currentSha,fetcher=fetch){
+  if(!SHA.test(storedSha||'')||!SHA.test(currentSha||''))return false;
+  if(storedSha===currentSha)return true;
+  try{
+    const history=await githubRequest(env,'/compare/'+storedSha+'...'+currentSha,{fetcher});
+    return history?.status==='ahead'||history?.status==='identical';
+  }catch{return false;}
+}
+
 export async function verifyProductionEvidence(env,row,pr,fetcher=fetch){
   return evidence(env,row,pr,fetcher);
 }
@@ -120,6 +132,6 @@ export async function verifiedStoredRelease(env,row,pr,fetcher=fetch){
     return false;
   try{
     const result=await evidence(env,row,pr,fetcher);
-    return result.url===url&&result.sha===sha;
+    return result.url===url&&await releaseShaStillValid(env,sha,result.sha,fetcher);
   }catch{return false;}
 }
