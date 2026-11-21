@@ -36,9 +36,9 @@ function fakeGoogleFetch(url,init={}){
     const record=[...records.entries()].find(([,value])=>value.googleId===id);
     if(uri.pathname.startsWith('/upload/drive/v3/files/')&&method==='PATCH'){
       if(!record)return Promise.resolve(json({error:'missing'},404));
-      const parts=String(init.body).split('\\r\\n\\r\\n');
-      record[1].meta=JSON.parse(parts[1].split('\\r\\n--')[0]);
-      record[1].data=JSON.parse(parts[2].split('\\r\\n--')[0]);
+      const parts=String(init.body).split('\r\n\r\n');
+      record[1].meta=JSON.parse(parts[1].split('\r\n--')[0]);
+      record[1].data=JSON.parse(parts[2].split('\r\n--')[0]);
       return Promise.resolve(json({id,modifiedTime:'2026-11-21T00:00:00Z'}));
     }
     if(uri.pathname.startsWith('/drive/v3/files/')&&method==='GET'&&uri.searchParams.get('alt')==='media'){
