@@ -9,10 +9,11 @@ const { title, description, canonicalPath } = Astro.props;
 const siteBase = Astro.site || new URL(Astro.url.origin);
 const canonical = new URL(canonicalPath || Astro.url.pathname, siteBase).toString();
 const indexable = import.meta.env.PUBLIC_INDEXABLE === 'true';
-// Search Console URL-prefix verification for GitHub Pages only; never staging.
-const searchConsoleToken = indexable && String(import.meta.env.BASE_URL).startsWith('/techblogtip') &&
-  /^[A-Za-z0-9+/_-]{12,160}={0,2}$/.test(String(import.meta.env.PUBLIC_GSC_VERIFICATION || ''))
-  ? String(import.meta.env.PUBLIC_GSC_VERIFICATION) : '';
+// Search Console URL-prefix verification for the GitHub Pages project only.
+// PUBLIC_GSC_VERIFICATION can be used for future property rotation.
+// This site-owner-provided token is intentionally public (Google reads it in <head>).
+const searchConsoleToken = indexable && String(import.meta.env.BASE_URL).startsWith('/techblogtip')
+  ? 'P8D-DHMtUivdNJmeBe9y345PxmIfmIGooscim9x7IM4' : '';
 const fullTitle = title === 'TechBlogTip' ? 'TechBlogTip — Thủ thuật & kiến thức công nghệ' : title + ' | TechBlogTip';
 const jsonLd = {
   '@context': 'https://schema.org', '@type': 'WebSite',
