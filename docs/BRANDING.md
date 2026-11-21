@@ -8,7 +8,7 @@
 - Name: **TechBlogTip**. Vietnamese technology learning, approachable technical guidance, factual engineering narratives.
 - Personality: editorial clarity, quiet confidence, helpfulness, precision, light visual playfulness. Avoid glossy SaaS dashboards, gratuitous gradients, neon. Decorative hero/banner sections are prohibited site-wide.
 - Voice: Vietnamese, clear and specific, concise interface copy, concrete verbs, never claim an unverified production deployment.
-- Source of truth: `src/styles/global.css`, `src/layouts/BaseLayout.astro`, `src/components/SiteHeader.astro`, `src/components/SiteFooter.astro`, then this guideline. If a deviation is desired, update this document AND its visual page in the same PR.
+- Source of truth: `src/styles/global.css`, `src/layouts/BaseLayout.astro`, `src/components/SiteHeader.astro`, `src/components/SiteFooter.astro`, then this guideline. If a deviation is desired, update this internal document in the same PR; do not reintroduce the retired public branding route.
 
 ## Color tokens (current site baseline)
 | Role | CSS token | Hex | Usage |
@@ -33,7 +33,7 @@
 - UI and prose: `'Be Vietnam Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`.
 - Body baseline: 15px / 1.65. Article prose: 1rem / 1.88. Titles: fluid sizes with natural wrapping.
 - Vietnamese long-form paragraphs: justify naturally where appropriate; on narrow widths use left alignment if word spacing looks stretched. Never use `word-break:break-all`, global `overflow-wrap:anywhere`, automatic hyphenation, artificial spaces or manual `<br>` in titles.
-- Headings, links, chips, buttons, compact UI, code, lists, tables and blockquotes: natural left alignment. Article headings: wide enough to wrap naturally, no arbitrary short `max-width` or forced breaks.
+- Headings, links, chips, buttons, compact UI, code, lists, tables and blockquotes: natural left alignment. Article titles use the full shared article-header width (up to 1440px) with `text-wrap: wrap` and natural Vietnamese word boundaries; do not use `text-wrap: balance` on long H1s or justify heading words. Article description/tagline spans the same header width, is justified naturally on desktop with its final line left-aligned, and switches to left alignment at 860px and below. No arbitrary short `max-width`, forced line breaks or stretched words.
 - Readability: prioritize text hierarchy and line length; do not rely on font weight alone for state.
 
 ## Layout, rhythm and responsive behavior

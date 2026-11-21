@@ -27,3 +27,22 @@ test('native thumbnail loading retains article-only IntersectionObserver', () =>
   assert.doesNotMatch(cards, /data-defer-src/);
   assert.match(runtime, /IntersectionObserver/);
 });
+
+test('article title and tagline use full header width with natural Vietnamese wrapping', () => {
+  const css = readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const title = css.match(/\/\* Editorial typography:[\s\S]*?\.article-top h1\{([^}]+)\}/)?.[1];
+  assert.ok(title, 'Editorial title typography rule missing');
+  assert.match(title, /max-width:\s*100%/);
+  assert.match(title, /width:\s*100%/);
+  assert.match(title, /text-wrap:\s*wrap/);
+  assert.match(title, /text-align:\s*start/);
+  assert.doesNotMatch(title, /text-align:\s*justify|text-wrap:\s*balance/);
+  const lead = [...css.matchAll(/\.article-lead\{([^}]+)\}/g)].map(match=>match[1]).find(rule=>/max-width:\s*none/.test(rule));
+  assert.ok(lead, 'Article tagline rule missing');
+  assert.match(lead, /max-width:\s*none/);
+  assert.match(lead, /width:\s*100%/);
+  assert.match(lead, /text-align:\s*justify/);
+  assert.match(lead, /text-align-last:\s*start/);
+  assert.match(lead, /word-break:\s*normal/);
+  assert.match(css, /@media\(max-width:860px\)\{\s*\.article-lead\{text-align:start\}/);
+});
