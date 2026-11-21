@@ -1,5 +1,6 @@
 import {normalizePage, validatePage, safeFilename, BLOCK_TYPES} from './model.mjs';
-import html from './ui.mjs';
+import {googleUser} from './google-auth.mjs';
+import {publishedHTML} from './published-page.mjs';
 
 const HEADERS = {'content-type':'application/json; charset=utf-8','cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
 const now = () => new Date().toISOString();
@@ -10,43 +11,10 @@ const emailList = (s) => String(s||'').toLowerCase().split(',').map(x=>x.trim())
 const idOk = (s) => /^[a-f0-9-]{36}$/i.test(s||'');
 const jwksCache = new Map();
 
-async function verifyAccess(req, env) {
-  const domain=String(env.ACCESS_TEAM_DOMAIN||'').replace(/\/$/,'');
-  const aud=String(env.ACCESS_AUD||'');
-  if (!/^https:\/\/[a-z0-9-]+\.cloudflareaccess\.com$/.test(domain) || !aud) throw new Error('access_not_configured');
-  const token=req.headers.get('cf-access-jwt-assertion')||'';
-  const parts=token.split('.');
-  if (parts.length!==3) throw new Error('login_required');
-  let header,payload;
-  try { header=JSON.parse(new TextDecoder().decode(chunks(parts[0]))); payload=JSON.parse(new TextDecoder().decode(chunks(parts[1]))); }
-  catch { throw new Error('invalid_identity'); }
-  if (header.alg!=='RS256' || !header.kid) throw new Error('invalid_identity');
-  const t=Math.floor(Date.now()/1000);
-  if (payload.iss!==domain || !(Array.isArray(payload.aud)?payload.aud:[payload.aud]).includes(aud) ||
-      typeof payload.exp!=='number' || payload.exp<=t ||
-      (payload.nbf && payload.nbf>t+30)) throw new Error('invalid_identity');
-  let certs=jwksCache.get(domain);
-  if (!certs || certs.expire<Date.now()) {
-    const res=await fetch(domain+'/cdn-cgi/access/certs');
-    if (!res.ok) throw new Error('access_keys_unavailable');
-    const data=await res.json();
-    certs={keys:data.keys||[],expire:Date.now()+5*60*1000};
-    jwksCache.set(domain,certs);
-  }
-  const jwk=certs.keys.find(k=>k.kid===header.kid && k.kty==='RSA');
-  if (!jwk) throw new Error('invalid_identity');
-  const key=await crypto.subtle.importKey('jwk',jwk,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
-  const ok=await crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,chunks(parts[2]),new TextEncoder().encode(parts[0]+'.'+parts[1]));
-  if (!ok) throw new Error('invalid_identity');
-  const email=String(payload.email||'').toLowerCase().trim();
-  const admins=emailList(env.CMS_ADMINS), editors=emailList(env.CMS_EDITORS), reviewers=emailList(env.CMS_REVIEWERS);
-  const role=admins.includes(email)?'admin':editors.includes(email)?'editor':reviewers.includes(email)?'reviewer':null;
-  if (!email || !role) throw new Error('not_allowed');
-  return {email,role};
-}
+
 function canWrite(user) {return user.role==='admin'||user.role==='editor';}
 function sameOrigin(req,url) {
-  return req.headers.get('origin')===url.origin && (req.headers.get('sec-fetch-site')||'same-origin')!=='cross-site';
+  return req.headers.get('origin')===url.origin || req.headers.get('origin')==='https://duykhang68.github.io';
 }
 async function bodyJson(req) {
   const len=Number(req.headers.get('content-length')||0);
@@ -57,7 +25,7 @@ async function bodyJson(req) {
 }
 async function getPage(db,id) {return db.prepare('SELECT * FROM cms_pages WHERE id=?').bind(id).first();}
 function publicPage(row) {
-  return {id:row.id,slug:row.slug,locale:row.locale,title:row.title,description:row.description,status:row.status,revision:row.revision,updatedAt:row.updated_at,publishedAt:row.published_at,blocks:JSON.parse(row.draft_json)};
+  return {id:row.id,slug:row.slug,locale:row.locale,title:row.title,description:row.description,status:row.status,revision:row.revision,updatedAt:row.updated_at,publishedAt:row.published_at,publishedSlug:row.published_slug,publishedLocale:row.published_locale,blocks:JSON.parse(row.draft_json)};
 }
 async function record(db,row,actor) {
   await db.prepare('INSERT INTO cms_revisions (page_id,revision,document_json,actor,created_at) VALUES (?,?,?,?,?)')
@@ -193,11 +161,20 @@ async function published(url,env) {
   if(!row?.published_json)return fail('not_found',404);
   return json({...JSON.parse(row.published_json),publishedAt:row.published_at},200,{'Access-Control-Allow-Origin':'*','Cache-Control':'public,max-age=60'});
 }
-export default {
+const handler = {
   async fetch(req,env) {
     const url=new URL(req.url),method=req.method;
-    if(url.pathname==='/health'&&method==='GET')return json({service:'free-visual-cms',status:'ok',configured:!!(env.CMS_DB&&env.ACCESS_TEAM_DOMAIN&&env.ACCESS_AUD)});
+    if(url.pathname==='/health'&&method==='GET')return json({service:'free-visual-cms',status:'ok',configured:!!(env.CMS_DB&&env.CMS_ADMINS&&env.GOOGLE_CLIENT_ID),authentication:'google-id-token',sourceSha:String(env.SOURCE_SHA||'unknown')});
+    if(url.pathname==='/api/config'&&method==='GET')return json({googleClientId:String(env.GOOGLE_CLIENT_ID||''),apiBase:url.origin});
+    if(url.pathname==='/admin'||url.pathname==='/admin/'||url.pathname==='/')return Response.redirect('https://duykhang68.github.io/techblogtip/tools/cms/',302);
     if(url.pathname.startsWith('/api/published/')&&method==='GET')return published(url,env);
+    if(url.pathname.startsWith('/p/')&&method==='GET'){
+      const parts=url.pathname.split('/');const locale=parts[2],slug=parts[3];
+      if(parts.length!==4||!/^[a-z]{2}(?:-[A-Z]{2})?$/.test(locale||'')||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug||''))return fail('not_found',404);
+      const result=await published(new URL(url.origin+'/api/published/'+locale+'/'+slug),env);
+      if(!result.ok)return new Response('<meta charset="utf-8"><title>Trang chưa được xuất bản</title><p>Trang này vẫn ở bản nháp hoặc không tồn tại.</p>',{status:404,headers:{'content-type':'text/html; charset=utf-8'}});
+      return new Response(publishedHTML(await result.json()),{headers:{'content-type':'text/html; charset=utf-8','cache-control':'public,max-age=60','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'"}});
+    }
     if(url.pathname.startsWith('/media/')&&method==='GET') {
       const id=url.pathname.slice('/media/'.length);
       if(!idOk(id)||!env.CMS_MEDIA||!env.CMS_DB)return fail('not_found',404);
@@ -208,12 +185,10 @@ export default {
       return new Response(object.body,{headers:{'content-type':info.mime,'cache-control':'public,max-age=31536000,immutable','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'"}});
     }
     let user;
-    try{user=await verifyAccess(req,env);}
-    catch(e){return fail(e.message==='not_allowed'?'forbidden':e.message==='access_not_configured'?'access_not_configured':'unauthorized',e.message==='access_not_configured'?503:e.message==='not_allowed'?403:401);}
+    try{user=await googleUser(req,env);}
+    catch(e){return fail(e.message==='not_allowed'?'forbidden':e.message==='google_oauth_not_configured'?'google_oauth_not_configured':'unauthorized',e.message==='google_oauth_not_configured'?503:e.message==='not_allowed'?403:401);}
     if(method!=='GET'&&!sameOrigin(req,url))return fail('origin_denied',403);
     try{
-      if((url.pathname==='/'||url.pathname==='/admin'||url.pathname==='/admin/')&&method==='GET')
-        return new Response(html,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'private,no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','content-security-policy':"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"}});
       if(url.pathname.startsWith('/api/'))return await api(req,url,env,user);
       return fail('not_found',404);
     }catch(e){
@@ -222,4 +197,26 @@ export default {
       return fail('internal_error',500);
     }
   }
+};
+
+function addCors(response,request){
+ const origin=request.headers.get('origin');
+ if(origin!=='https://duykhang68.github.io')return response;
+ const headers=new Headers(response.headers);
+ headers.set('access-control-allow-origin',origin);
+ headers.set('access-control-allow-methods','GET, POST, PUT, DELETE, OPTIONS');
+ headers.set('access-control-allow-headers','Authorization, Content-Type, X-File-Name');
+ headers.set('access-control-max-age','600');
+ headers.set('vary','Origin');
+ return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+}
+export default {
+ async fetch(req,env){
+   if(req.method==='OPTIONS'){
+     if(req.headers.get('origin')!=='https://duykhang68.github.io')return fail('origin_denied',403);
+     return addCors(new Response(null,{status:204}),req);
+   }
+   try{return addCors(await handler.fetch(req,env),req);}
+   catch{return addCors(fail('internal_error',500),req);}
+ }
 };

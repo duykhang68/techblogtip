@@ -45,6 +45,12 @@ function main(){
  for(const path of files){
   const rel=path.slice(dist.length+1).replaceAll('\\','/');
   const route=rel==='index.html'?'':rel.replace(/index\.html$/,'');
+  if(rel==='tools/cms/index.html'){
+   const admin=readFileSync(path,'utf8');
+   assert(admin.includes('name="robots" content="noindex,nofollow"'),'CMS admin must always be noindex');
+   assert(admin.includes('id="google-login"'),'CMS admin Google Sign-In missing');
+   continue;
+  }
   auditHtml(readFileSync(path,'utf8'),new URL(route,origin).toString(),pages);
  }
  const keyRoutes=['','chuyen-muc/','the/','chu-de/'];
