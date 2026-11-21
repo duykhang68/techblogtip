@@ -1,0 +1,40 @@
+name: FIFO · Event-driven Merge Gate
+# Trusted-main dispatcher; never checkout or execute PR branch code with write permissions.
+on:
+  workflow_run: # zizmor: ignore[dangerous-triggers] checkout trusted main only; no PR artifacts or scripts
+    workflows:
+      - Quality
+      - Security · Gitleaks PR Gate
+      - Workflow Security Audit
+      - Publisher Worker · Bundle & Auth Contract
+      - Deploy · GitHub Pages production
+    types: [completed]
+  pull_request_target: # zizmor: ignore[dangerous-triggers] no untrusted PR checkout or code execution
+    types: [opened, reopened, ready_for_review, synchronize, edited]
+  workflow_dispatch:
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  pull-requests: write
+concurrency:
+  group: techblogtip-fifo-event-driven-merge
+  cancel-in-progress: false
+jobs:
+  admit:
+    name: FIFO · Admission
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted main only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Verify trusted checkout
+        run: test "$(git branch --show-current)" = main
+      - name: Evaluate one FIFO candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_REPOSITORY: duykhang68/techblogtip
+        run: node scripts/fifo-event-driven.mjs
