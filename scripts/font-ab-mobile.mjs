@@ -67,7 +67,7 @@ try {
         // No be-vietnam font request and no typography change committed to site.
         await page.route('**/*', async route => {
           const req = route.request();
-          if (!req.isNavigationRequest() || !req.isMainFrame()) return route.continue();
+          if (!req.isNavigationRequest() || req.frame() !== page.mainFrame()) return route.continue();
           const response = await route.fetch();
           const contentType = response.headers()['content-type'] || '';
           if (!contentType.includes('text/html')) return route.fulfill({ response });
