@@ -38,3 +38,17 @@ This file describes a **private CV tool**, not a blog content publisher. No appl
 - Download XLSX: open in Microsoft Excel and LibreOffice, verify six sheets, Unicode, A4 print configuration, cell values, no error on open.
 - Anonymous and foreign token attempts must receive 401/403 with no applicant response.
 - CI must pass the **current exact PR head SHA**; merge FIFO; check public `release.json` exact SHA after Pages deploy.
+
+## One-time owner activation (after all CI is green)
+
+No new paid service or OAuth client is required. The existing TechBlogTip Publisher OAuth Web Client ID and Cloudflare account are reused.
+
+1. **Google Cloud Console**: select the *same* Google Cloud project that owns the existing Publisher OAuth client. At **APIs & Services → Library**, enable **Google Drive API** if not already enabled.
+2. **Google Auth Platform → Data access**: select **Add or remove scopes**, find/add the exact permission `https://www.googleapis.com/auth/drive.appdata`, and save. Keep current scopes unchanged. If the OAuth app remains in Testing, add the Google account used to test Korea CV under **Audience → Test users**. Publishing or verification is a distinct approval task; do not bypass it.
+3. **Google Auth Platform → Clients**: open the **existing Web application Client ID** and ensure **Authorized JavaScript origins** includes `https://duykhang68.github.io` (origin only, without `/techblogtip/`). Do not create a second client unless the existing one cannot accept that origin.
+4. **GitHub → techblogtip → Settings → Secrets and variables → Actions**: confirm repository secret `TBT_GOOGLE_OAUTH_CLIENT_ID` and secret `CLOUDFLARE_API_TOKEN` are accessible to the workflow, and variable `CLOUDFLARE_ACCOUNT_ID` exists. Add a single **repository variable** `PUBLIC_KOREA_CV_API_URL` with value `https://techblogtip-korea-cv-dev.tamsudev-com.workers.dev`. No secret value should be pasted into a PR, issue, chat or commit.
+5. **GitHub → Actions → Deploy · Korea CV DEV (manual)**: choose branch `main`, choose confirmation `deploy-korea-cv-dev`, and start. The workflow reuses the existing Publisher OAuth Client ID. It must show an exact-SHA health check and anonymous 401 denial; a green workflow means deployed code, **not** yet live authenticated acceptance.
+6. **GitHub → Actions → Deploy · GitHub Pages production**: dispatch again on `main` so the Astro build includes the new public Worker URL variable. Require the exact source SHA proof in production.
+7. Open `https://duykhang68.github.io/techblogtip/tools/korea-cv/` and sign into Google. Explicitly grant the new **app data** permission; create a fictional ABC company CV, save, reload, duplicate to another company, compare PDF A4 and Excel, then delete both records.
+
+The app must remain fail-closed (no fake 'saved' status) until all authorization and deployed API checks succeed. Never put personal applicant data in CI or GitHub. `drive.appdata` uses Google Drive's hidden app data space, not a visible My Drive folder.
