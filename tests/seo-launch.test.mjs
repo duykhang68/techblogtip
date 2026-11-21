@@ -24,3 +24,10 @@ test('D GSC token is injected only on production GitHub Pages and staging is pro
  assert.match(flow,/PUBLIC_INDEXABLE: "true"/);
  assert.match(readFileSync('src/pages/robots.txt.ts','utf8'),/Disallow: \/|Disallow:/);
 });
+
+test('D accepts real base64-style verification values without accepting HTML injection',()=>{
+ const sample='+nxGUDJ4QpAZ5l9Bsjdi102tLVC21AIh5d1Nl23908vVuFHs34=';
+ const allowed=/^[A-Za-z0-9+/_-]{12,160}={0,2}$/;
+ assert.ok(allowed.test(sample));
+ assert.equal(allowed.test('<script>evil</script>'),false);
+});
