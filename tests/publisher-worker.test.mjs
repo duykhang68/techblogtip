@@ -56,6 +56,7 @@ async function fixture(){
     ]],
     pr:null,branches:new Set(),files:new Map(),calls:[],
     sourceLeases:new Map(), lockEvents:[],
+    sheetKLFailureOnce:false, sheetKLAckWithoutPersistOnce:false,
   };
   env.SOURCE_LOCKS={
     getByName(key){
@@ -115,6 +116,14 @@ async function fixture(){
         if(rawRange.endsWith('!A2')){
           state.values[1][0]=body.values[0][0];
         } else if(rawRange.endsWith('!K2:L2')){
+          if(state.sheetKLFailureOnce){
+            state.sheetKLFailureOnce=false;
+            return Response.json({error:'mock sheet failure'},{status:503});
+          }
+          if(state.sheetKLAckWithoutPersistOnce){
+            state.sheetKLAckWithoutPersistOnce=false;
+            return Response.json({updatedRange:rawRange});
+          }
           state.values[1][10]=body.values[0][0];
           state.values[1][11]=body.values[0][1];
         }else return Response.json({error:'bad range '+rawRange},{status:400});
@@ -244,6 +253,79 @@ test('READY source can create exactly one GitHub Draft PR, with only K:L writeba
   assert.equal((await f.call('/api/submit',token,'POST',{sourceId,sourceRevision:revision.data.sourceRevision})).data.created,false);
   assert.equal(f.state.calls.filter(c=>c.method==='POST'&&c.url.endsWith('/pulls')).length,1);
 });
+test('replay after merged PR is idempotent, source-linked, and never touches M:O',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][8]='READY';
+  const revision=(await f.call('/api/revision?sourceId='+id,token)).data.sourceRevision;
+  const first=await f.call('/api/submit',token,'POST',{sourceId:id,sourceRevision:revision});
+  assert.equal(first.status,201);
+  f.state.pr.state='closed';
+  f.state.pr.draft=false;
+  f.state.pr.merged_at='2026-11-21T02:41:00Z';
+  const receipt=['https://duykhang68.github.io/techblogtip/bai-viet/test/','a'.repeat(40),'2026-11-21T02:41:26.222Z'];
+  f.state.values[1].splice(12,3,...receipt);
+  const writesBefore=f.state.calls.filter(c=>c.method==='PUT'&&c.url.includes('sheets.googleapis.com')).length;
+  const again=await f.call('/api/submit',token,'POST',{sourceId:id,sourceRevision:revision});
+  assert.equal(again.status,200);
+  assert.equal(again.data.created,false);
+  assert.equal(again.data.review,'merged');
+  assert.equal(again.data.prUrl,first.data.prUrl);
+  assert.deepEqual(f.state.values[1].slice(12,15),receipt);
+  assert.equal(f.state.calls.filter(c=>c.method==='PUT'&&c.url.includes('sheets.googleapis.com')).length,writesBefore);
+  assert.equal(f.state.calls.filter(c=>c.method==='POST'&&c.url.endsWith('/pulls')).length,1);
+});
+
+test('a Sheets PUT acknowledgment without persistence fails closed and safely recovers on retry',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][8]='READY';
+  const revision=(await f.call('/api/revision?sourceId='+id,token)).data.sourceRevision;
+  f.state.sheetKLAckWithoutPersistOnce=true;
+  const first=await f.call('/api/submit',token,'POST',{sourceId:id,sourceRevision:revision});
+  assert.equal(first.status,409);
+  assert.equal(first.data.error,'writeback_unverified');
+  assert.ok(f.state.pr?.draft);
+  assert.deepEqual(f.state.values[1].slice(10,15),['','','','','']);
+  const replay=await f.call('/api/submit',token,'POST',{sourceId:id,sourceRevision:revision});
+  assert.equal(replay.status,200);
+  assert.equal(replay.data.created,false);
+  assert.equal(f.state.values[1][10],revision);
+  assert.equal(f.state.values[1][11],replay.data.prUrl);
+  assert.deepEqual(f.state.values[1].slice(12,15),['','','']);
+  assert.equal(f.state.calls.filter(c=>c.method==='POST'&&c.url.endsWith('/pulls')).length,1);
+});
+
+test('temporary Google Sheets write failure is recoverable without duplicate Draft PR',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][8]='READY';
+  const revision=(await f.call('/api/revision?sourceId='+id,token)).data.sourceRevision;
+  f.state.sheetKLFailureOnce=true;
+  const first=await f.call('/api/submit',token,'POST',{sourceId:id,sourceRevision:revision});
+  assert.equal(first.status,502);
+  assert.equal(first.data.error,'sheet_write_failed');
+  const replay=await f.call('/api/submit',token,'POST',{sourceId:id,sourceRevision:revision});
+  assert.equal(replay.status,200);
+  assert.equal(replay.data.created,false);
+  assert.equal(f.state.calls.filter(c=>c.method==='POST'&&c.url.endsWith('/pulls')).length,1);
+  assert.equal(f.state.values[1][11],replay.data.prUrl);
+});
+
+test('submitted-source PR tampering is rejected instead of silently accepting another source',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
+  f.state.values[1][8]='READY';
+  const revision=(await f.call('/api/revision?sourceId='+id,token)).data.sourceRevision;
+  const initial=await f.call('/api/submit',token,'POST',{sourceId:id,sourceRevision:revision});
+  assert.equal(initial.status,201);
+  f.state.pr.body=f.state.pr.body.replace('source-id: '+id,'source-id: '+id+'-forged');
+  const retry=await f.call('/api/submit',token,'POST',{sourceId:id,sourceRevision:revision});
+  assert.equal(retry.status,409);
+  assert.equal(retry.data.error,'pr_conflict');
+  assert.equal(f.state.calls.filter(c=>c.method==='POST'&&c.url.endsWith('/pulls')).length,1);
+});
+
 test('stale revision refuses PR without GitHub writes',async()=>{
   const f=await fixture(),token=await f.sign();
   const id=(await f.call('/api/allocate-id',token,'POST',{rowNumber:2})).data.sourceId;
