@@ -26,6 +26,9 @@ jobs:
       SITE_URL: ${{ vars.TBT_PRODUCTION_SITE_URL }}
       PRODUCTION_URL: ${{ vars.TBT_PRODUCTION_SITE_URL }}
       PUBLIC_INDEXABLE: "true"
+      TBT_PRODUCTION_SYNC_TOKEN: ${{ secrets.TBT_PRODUCTION_SYNC_TOKEN }}
+      PRODUCTION_RUN_ID: ${{ github.run_id }}
+      PRODUCTION_RELEASE_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -52,3 +55,5 @@ jobs:
         run: npx cf deploy ./dist --mode techblogtip-production --no-provision --message "Production $SOURCE_SHA"
       - name: Verify custom domain, robots and public exact SHA
         run: node scripts/publisher/verify-production-deploy.mjs
+      - name: Reconcile verified published articles back to Sheets M:O
+        run: node scripts/publisher/reconcile-from-actions.mjs
