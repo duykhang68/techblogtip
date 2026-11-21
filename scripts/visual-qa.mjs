@@ -144,6 +144,9 @@ try{
       const end=await readProgress();
       assert.equal(end,100,'Article completion should reach 100%');
       assert.equal(await page.locator('[data-toc-link][aria-current="location"]').getAttribute('href'),await page.locator('[data-toc-link]').last().getAttribute('href'),'Final heading must be active at completion');
+      // The meter and text are updated by separate DOM assignments during scroll.
+      // Wait until the user-facing label catches up rather than sampling mid-render.
+      await page.waitForFunction(() => document.querySelector('[data-reading-percent]')?.textContent === '100%', null, { timeout: 5000 });
       assert.equal(await page.locator('[data-reading-percent]').textContent(),'100%');
       console.log('PASS Smart TOC active section and progress from '+start+'% to '+end+'%');
     }catch(e){record('Smart TOC interaction',e);}
