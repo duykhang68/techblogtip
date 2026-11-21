@@ -1,7 +1,7 @@
 # TechBlogTip — Branding & UI/UX Guidelines
 
 > Canonical machine-readable design contract · Version 1.0 · 2026-11-21  
-> Public human-readable companion: `/techblogtip/branding/`  
+> Internal engineering and design reference; no public branding page is generated.  
 > **AI agents: read this file before changing ANY UI, UX, layout, typography or visual content.** Existing implementation files remain the source of truth for current CSS values; do not silently replace tokens.
 
 ## Brand positioning
@@ -50,7 +50,7 @@
 - Do not add or reintroduce decorative hero banners, split-screen mastheads, giant display headlines, slogan artwork, oversized brand cards, or large empty introductory blocks on any blog route.
 - Start pages with a compact semantic H1 and only essential explanatory text followed immediately by navigation, actions or real content. Preserve functional controls when removing decorative headers.
 - Keep topic-specific article diagrams and visualizations within the substantive content they explain; these are not decorative page-opening heroes.
-- Check the first viewport at 320/375px mobile and desktop during UI review; reject PRs that recreate a hero. This requirement also applies to the public `/branding/` reference page.
+- Check the first viewport at 320/375px mobile and desktop during UI review; reject PRs that recreate a hero. This requirement applies to every existing public route.
 
 ## Form-based tool UX (Korea CV Maker reference)
 - Follow the existing TechBlogTip tokens (`--ink`, `--muted`, `--paper`, `--white`, `--line`, `--accent`, `--soft`). Keep the ink primary CTA, restrained terracotta accent for active/emphasis, and the established Sunny/Lavender/Mint/Sky/Peach backgrounds; do not introduce an unrelated SaaS gradient or new primary hue.
@@ -90,4 +90,4 @@
 `.gitignore` prevents **new untracked files** from being accidentally staged; it does not untrack existing committed content and cannot erase leaked Git history. Audit tracked files and rotate/revoke any credential known to have been exposed. Treat `.env.example` as a deliberately non-secret template: placeholders only.
 
 ## Single source of truth workflow
-Any material visual change must update this file and `src/pages/branding/index.astro` together, and be tested against the existing styles. Link the guide from the site footer. Agents may use the public page as a human-readable reference and this Markdown for precise implementation.
+Any material visual change must update this file and be tested against the existing styles. AI agents use this Markdown reference to enforce the design contract; do not restore the public branding page or its footer link.

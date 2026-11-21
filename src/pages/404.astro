@@ -1,4 +1,13 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/content';
 ---
-<BaseLayout title="Không tìm thấy trang" description="Đường dẫn không tồn tại trên TechBlogTip."><section class="container not-found"><p class="section-kicker">404 · KHÔNG TÌM THẤY</p><h1>Trang này không tồn tại.</h1><p>Đường dẫn có thể đã thay đổi. Hãy quay lại trang chủ hoặc thử tìm kiếm.</p><a class="primary-link" href="/">← Về trang chủ</a><a class="secondary-link" href="/tim-kiem/">Tìm kiếm bài viết →</a></section></BaseLayout>
+<BaseLayout title="Không tìm thấy trang" description="Đường dẫn không tồn tại trên TechBlogTip.">
+  <section class="container not-found">
+    <p class="section-kicker">404 · KHÔNG TÌM THẤY</p>
+    <h1>Trang này không tồn tại.</h1>
+    <p>Đường dẫn có thể đã thay đổi. Bạn có thể quay lại trang chủ hoặc duyệt Archive.</p>
+    <a class="primary-link" href={withBase('/')}>← Về trang chủ</a>
+    <a class="secondary-link" href={withBase('/archieve/')}>Xem Archive →</a>
+  </section>
+</BaseLayout>

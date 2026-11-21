@@ -158,13 +158,8 @@ try{
   }
   if(w===390){
     try{
-      await page.goto(base+'/tim-kiem/',{waitUntil:'load'});
-      await page.locator('#search-input').fill('PageSpeed');
-      await page.waitForFunction(()=>document.querySelectorAll('#search-results li').length>0);
-      assert.ok((await page.locator('#search-results li').count())>=1,'Search returned no results');
-      const url=new URL(page.url());
-      assert.equal(url.searchParams.get('q'),'PageSpeed');
-      await page.screenshot({path:join('artifacts/visual-qa','search-390.png'),animations:'disabled'});
+      const footerLinks=await page.locator('.site-footer nav a').allTextContents();
+      assert.deepEqual(footerLinks.map(s=>s.trim()),['Archive'],'Only Archive should remain in footer');
       await page.goto(base+'/chuyen-muc/',{waitUntil:'load'});
       assert.ok((await page.locator('.directory-item').count())>=1);
       await page.goto(base+'/chu-de/',{waitUntil:'load'});
@@ -174,8 +169,8 @@ try{
       await page.goto(base+'/',{waitUntil:'load'});
       await page.keyboard.press('Tab');
       assert.equal(await page.locator(':focus').getAttribute('href'),'#content','Keyboard skip link not focusable');
-      console.log('PASS search, categories, series, tags and keyboard skip link');
-    }catch(e){record('search/navigation/keyboard',e);}
+      console.log('PASS categories, series, tags and keyboard skip link');
+    }catch(e){record('navigation/keyboard',e);}
     assert.equal(errors.length,0,'Page JavaScript errors: '+errors.join('; '));
   }
   // Korea CV Maker: test actual human-facing controls and readable preview.
@@ -227,7 +222,7 @@ try{
   await context.close();
  }
  // Network resources from the built artifact must be reachable, without any live APIs.
- for(const endpoint of ['robots.txt','rss.xml','sitemap.xml','search-index.json','release.json']){
+ for(const endpoint of ['robots.txt','sitemap.xml','release.json']){
   const response=await fetch(base+'/'+endpoint);
   assert.equal(response.status,200,endpoint+' failed');
  }

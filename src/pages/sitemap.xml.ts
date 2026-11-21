@@ -35,7 +35,7 @@ export const GET: APIRoute = async ({ site }) => {
   const posts = await getArticles();
   const urls = new Map<string, string | null>();
 
-  for (const route of ['/', '/chuyen-muc/', '/chu-de/', '/the/', '/tim-kiem/', '/archieve/', '/ban-do-kien-thuc/']) {
+  for (const route of ['/', '/chuyen-muc/', '/chu-de/', '/the/', '/archieve/']) {
     addUrl(urls, withBase(route), base);
   }
 
