@@ -69,7 +69,7 @@ const essays = [['growth','성장과정 · Quá trình trưởng thành'],['pers
         <div class="kcv-rows" data-rows={section.id} data-fields={JSON.stringify(section.fields)}><p class="kcv-empty">Chưa có dữ liệu. Chọn “Thêm dòng”.</p></div>}
       </section>)}
       <section class="kcv-panel" id="cv-essays"><h2>13 · 자기소개서 / Năm câu hỏi tự giới thiệu</h2><div class="kcv-essays">{essays.map(([key,label]) => <label>{label}<textarea name={`essays.${key}`} rows="5" placeholder="Viết trải nghiệm thật; không tự tạo thành tích."></textarea></label>)}</div></section>
-      <div class="kcv-actions"><button type="button" id="review-input">Xem bản nhập tạm thời</button><span>Bản xem tạm không được lưu. Hãy chọn “Kết nối Google Drive” rồi “Lưu lên Drive” để giữ dữ liệu.</span></div>
+      <div class="kcv-actions"><button type="button" id="review-input">Xem trước hồ sơ</button><span>Bản xem tạm không được lưu. Hãy chọn “Kết nối Google Drive” rồi “Lưu lên Drive” để giữ dữ liệu.</span></div>
     </section>
     <section id="saved-panel" role="tabpanel" aria-labelledby="saved-tab" hidden>
       <div class="kcv-panel kcv-manager">
@@ -89,7 +89,7 @@ const essays = [['growth','성장과정 · Quá trình trưởng thành'],['pers
         <p id="saved-empty" class="kcv-empty">Chưa có bản CV đã lưu.</p>
         <div class="kcv-actions" id="kcv-export-actions"></div>
       </div>
-      <div class="kcv-panel" id="temporary-review" hidden><h2>Xem bản nhập tạm thời (chưa lưu)</h2><pre id="temporary-json"></pre></div>
+      <div class="kcv-panel" id="temporary-review" hidden><h2>Xem trước hồ sơ · Chưa lưu</h2><p class="kcv-help">Bản xem trước chỉ hiển thị trong phiên này. Để lưu, hãy kết nối Google và chọn Lưu CV.</p><div id="temporary-preview" class="kcv-preview-readable"></div></div>
     </section>
     <p class="kcv-reference">Tham khảo cấu trúc từ <a href={withBase('/bai-viet/giai-ma-ho-so-samsung-heavy-industries-resume-han-quoc/')}>bài phân tích hồ sơ Hàn Quốc</a>. Mẫu lịch sử không phải biểu mẫu tuyển dụng chính thức hiện hành.</p>
   </div>
@@ -128,19 +128,41 @@ const essays = [['growth','성장과정 · Quá trình trưởng thành'],['pers
     row.append(grid,remove); container.append(row);
   });
   q('#review-input')?.addEventListener('click',()=>{
-    const data: Record<string,unknown> = {personal:{},essays:{}, label:'',targetCompany:'',targetRole:'',locale:'ko'};
-    for(const control of inputPanel.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>('[name]')){
-      const [group = '',key]=control.name.split('.');
-      if(key) (data[group] as Record<string,string>)[key]=control.value;
-      else data[group]=control.value;
+    const container=q('#temporary-preview')!;
+    container.replaceChildren();
+    const heading=(text:string)=>{const h=document.createElement('h3');h.textContent=text;container.append(h);};
+    const row=(name:string,value:string)=>{
+      const line=document.createElement('div');line.className='kcv-preview-line';
+      const dt=document.createElement('strong');dt.textContent=name;
+      const dd=document.createElement('span');dd.textContent=value.trim()||'Chưa nhập';
+      line.append(dt,dd);container.append(line);
+    };
+    heading('Thông tin ứng tuyển');
+    for(const field of document.querySelectorAll<HTMLInputElement|HTMLSelectElement>('#cv-application [name]')){
+      row(field.closest('label')?.textContent?.trim()||field.name,field.value);
     }
-    for(const section of document.querySelectorAll<HTMLElement>('[data-section]')){
-      const id=section.dataset.section!;
-      if(id==='personal')continue;
-      data[id]=Array.from(section.querySelectorAll<HTMLElement>('.kcv-row'), row=>Object.fromEntries(Array.from(row.querySelectorAll<HTMLInputElement|HTMLTextAreaElement>('[data-field]'), input=>[input.dataset.field!,input.value])));
+    for(const panel of document.querySelectorAll<HTMLElement>('#input-panel [data-section]')){
+      const headingText=panel.querySelector('h2')?.textContent||'Thông tin';
+      heading(headingText);
+      if(panel.dataset.section==='personal'){
+        panel.querySelectorAll<HTMLInputElement>('[name]').forEach(field=>
+          row(field.closest('label')?.textContent?.trim()||field.name,field.value)
+        );
+        continue;
+      }
+      const entries=panel.querySelectorAll<HTMLElement>('.kcv-row');
+      if(!entries.length){row('Dữ liệu','Chưa thêm');continue;}
+      entries.forEach((entry,index)=>{
+        const fields=entry.querySelectorAll<HTMLInputElement|HTMLTextAreaElement>('[data-field]');
+        heading('Mục '+(index+1));
+        fields.forEach(field=>row(field.closest('label')?.textContent?.trim()||field.dataset.field||'',field.value));
+      });
     }
+    heading('Tự giới thiệu');
+    document.querySelectorAll<HTMLTextAreaElement>('#cv-essays textarea').forEach(field=>
+      row(field.closest('label')?.textContent?.trim()||field.name,field.value)
+    );
     const review=q('#temporary-review')!;review.hidden=false;
-    q('#temporary-json')!.textContent=JSON.stringify(data,null,2);
     tab(true);review.scrollIntoView({block:'start'});
   });
 </script>
@@ -163,6 +185,8 @@ const essays = [['growth','성장과정 · Quá trình trưởng thành'],['pers
   @media(max-width:760px){.kcv-toolbar{align-items:stretch}.kcv-toolbar-actions{width:100%}.kcv-toolbar-actions .kcv-btn{flex:1 1 auto}}
   @media(max-width:600px){.kcv{padding-block:16px 62px}.kcv-head h1{font-size:clamp(2.1rem,10vw,2.8rem)}.kcv-fields{grid-template-columns:1fr}.kcv-tabs{gap:7px}.kcv-tabs button{font-size:.81rem;padding:10px 7px;min-height:54px}.kcv-tab-step{width:23px;height:23px;margin-right:3px}.kcv-panel{padding:17px}.kcv-toolbar{padding:15px}.kcv-toolbar-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kcv-toolbar-actions .kcv-btn{padding:10px 7px;font-size:.8rem}.kcv-toolbar-actions #kcv-connect{grid-column:span 2}.kcv-library-actions .kcv-btn{flex:1 1 130px}}
 
+  .kcv-preview-readable{display:grid;gap:7px}.kcv-preview-readable :global(h3){font-size:1rem;margin:16px 0 4px;padding-bottom:7px;border-bottom:1px solid var(--line);color:var(--ink)}.kcv-preview-readable :global(.kcv-preview-line){display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,2fr);gap:8px 16px;padding:7px 0;border-bottom:1px solid var(--line);line-height:1.6}.kcv-preview-readable :global(.kcv-preview-line span){white-space:pre-wrap;word-break:normal;overflow-wrap:break-word}.kcv-preview-readable :global(.kcv-preview-line strong){font-size:.83rem}
+  @media(max-width:520px){.kcv-preview-readable :global(.kcv-preview-line){grid-template-columns:1fr;gap:3px}}
   .kcv-section-nav{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 12px;margin:0 0 15px;border:1px solid var(--line);border-radius:var(--radius);background:var(--soft);scroll-margin-top:100px}
   .kcv-section-nav strong{font-size:.8rem;margin-right:5px;color:var(--ink)}.kcv-section-nav a{display:inline-flex;align-items:center;min-height:40px;padding:8px 12px;border-radius:20px;border:1px solid var(--line);background:var(--white);font-size:.77rem;font-weight:700;color:var(--ink)}.kcv-section-nav a:hover{border-color:var(--accent);color:var(--accent)}
   .kcv-panel[id]{scroll-margin-top:105px}.kcv-fields,.kcv-essays{word-break:normal;hyphens:none}.kcv-btn:focus-visible,.kcv-section-nav a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
