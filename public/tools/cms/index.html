@@ -188,7 +188,7 @@ async function loadSpaces(){
  const r=await call('/api/spaces');s.spaces=r.items||[];
  const pick=$('space-picker');pick.replaceChildren();
  for(const space of s.spaces){const option=el('option',null,space.title||space.id);option.value=space.id;pick.append(option);}
- if(!s.spaces.some(x=>x.id===s.space))s.space='default';
+ if(!s.spaces.some(x=>x.id===s.space))s.space=s.spaces[0]?.id||'default';
  pick.value=s.space;
 }
 async function loadComponents(){
@@ -301,7 +301,7 @@ function publishedLink(){
 }
 function previewToggle(){s.preview=!s.preview;$('workspace').classList.toggle('preview-mode',s.preview);$('preview-toggle').textContent=s.preview?'Thoát xem trước':'Xem trước';}
 function showAuth(message){$('workspace').hidden=true;$('auth-panel').hidden=false;$('identity').textContent='Chưa đăng nhập';$('signout').hidden=true;$('auth-feedback').textContent=message||'Đăng nhập Google để tiếp tục.';}
-async function loadWorkspace(){s.me=await call('/api/me');$('identity').textContent=s.me.email+' · '+s.me.role;$('auth-panel').hidden=true;$('workspace').hidden=false;$('signout').hidden=false;$('new').disabled=!editAllowed();await loadSpaces();await Promise.all([list(),loadAssets(),loadComponents()]);if(s.items.length)await open(s.items[0].id);else render();}
+async function loadWorkspace(){await loadSpaces();s.me=await call('/api/me');$('identity').textContent=s.me.email+' · '+s.me.role;$('auth-panel').hidden=true;$('workspace').hidden=false;$('signout').hidden=false;$('new').disabled=!editAllowed();await Promise.all([list(),loadAssets(),loadComponents()]);if(s.items.length)await open(s.items[0].id);else render();}
 async function acceptGoogle(credential){if(!credential)return;s.token=credential;sessionStorage.setItem(TOKEN_KEY,credential);$('auth-feedback').textContent='Đang xác minh Google ID token...';try{await loadWorkspace();}catch(e){s.token=null;sessionStorage.removeItem(TOKEN_KEY);showAuth('Đăng nhập thất bại: '+e.message);}}
 async function initGoogle(){
  try{
@@ -318,7 +318,7 @@ async function boot(){
  setupRail();
  for(const t of ['pages','assets','history'])$('tab-'+t).onclick=()=>tab(t);
  $('new').onclick=create;$('add').onclick=()=>add();$('save').onclick=()=>save();$('publish').onclick=publish;$('undo').onclick=undo;$('redo').onclick=redo;$('viewport').onchange=drawCanvas;
- $('public-page').onclick=publishedLink;$('preview-toggle').onclick=previewToggle;$('space-picker').onchange=async()=>{const value=$('space-picker').value;if(s.dirty){await save(false);if(s.dirty){$('space-picker').value=s.space;info('Chưa lưu xong bản nháp, không thể chuyển workspace.');return;}}s.space=value;s.page=null;s.selected=null;s.undo=[];s.redo=[];await Promise.all([list(),loadAssets(),loadComponents()]);tab('pages');if(s.items.length)await open(s.items[0].id);else render();};
+ $('public-page').onclick=publishedLink;$('preview-toggle').onclick=previewToggle;$('space-picker').onchange=async()=>{const value=$('space-picker').value;if(s.dirty){await save(false);if(s.dirty){$('space-picker').value=s.space;info('Chưa lưu xong bản nháp, không thể chuyển workspace.');return;}}s.space=value;s.page=null;s.selected=null;s.undo=[];s.redo=[];try{s.me=await call('/api/me');$('identity').textContent=s.me.email+' · '+s.me.role;}catch(e){info('Không có quyền workspace: '+e.message);return;}$('new').disabled=!editAllowed();await Promise.all([list(),loadAssets(),loadComponents()]);tab('pages');if(s.items.length)await open(s.items[0].id);else render();};
  $('signout').onclick=()=>{s.token=null;s.me=null;sessionStorage.removeItem(TOKEN_KEY);window.google?.accounts?.id?.disableAutoSelect();showAuth('Đã đăng xuất.');};
  window.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='s'){e.preventDefault();save();}if(e.key==='Escape'&&s.preview)previewToggle();});
  showAuth('Đang chuẩn bị đăng nhập Google...');
