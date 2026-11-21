@@ -37,9 +37,9 @@ test('P6 review gate never treats lossy H1, numbered lists, quotes or code as ed
  for(const type of ['heading_2','heading_3','paragraph','bulleted_list_item'])assert.equal(notionNeedsReview([b(type)]),false,type);
 });
 test('P7 review gate blocks markup not faithfully round-trippable in visual editor',()=>{
- for(const markdown of ['# Tựa đề','#### Heading 4','![ảnh](photo.png)','**in đậm**','~~gạch bỏ~~','`inline code`','---\\ntags: [tech]\\n---\\nBody']){
+ for(const markdown of ['# Tựa đề','#### Heading 4','![ảnh](photo.png)','**in đậm**','~~gạch bỏ~~','`inline code`','---\ntags: [tech]\n---\nBody']){
   assert.equal(obsidianPreview({path:'notes/unsafe.md',markdown}).requiresReview,true,markdown);
  }
- const safe=obsidianPreview({path:'notes/safe.md',markdown:'## Mục lớn\\n\\nĐoạn văn tiếng Việt'});
+ const safe=obsidianPreview({path:'notes/safe.md',markdown:'## Mục lớn\n\nĐoạn văn tiếng Việt'});
  assert.equal(safe.requiresReview,false);
 });
