@@ -65,3 +65,56 @@
     .article-card:nth-child(n+5) { contain-intrinsic-size: auto 150px; }
   }
 }
+
+/* Editorial typography: natural Vietnamese word wrapping and full-width balanced titles. */
+.article-top{max-width:1440px}
+.article-top h1{
+  max-width:100%;
+  width:100%;
+  font-size:clamp(2rem,4.15vw,4.4rem);
+  line-height:1.24;
+  text-align:start;
+  text-wrap:balance;
+  word-break:normal;
+  overflow-wrap:normal;
+  hyphens:none;
+}
+.article-lead{max-width:1000px}
+.prose{
+  overflow-wrap:normal;
+  word-break:normal;
+  hyphens:none;
+  word-spacing:normal;
+  letter-spacing:normal;
+}
+.prose p{
+  text-align:justify;
+  text-align-last:start;
+  text-wrap:wrap;
+  overflow-wrap:normal;
+  word-break:normal;
+  hyphens:none;
+  word-spacing:normal;
+  letter-spacing:normal;
+}
+.prose :is(ul,ol,blockquote,li),
+.prose :is(h2,h3,h4,h5,h6,pre,code,table,th,td,figcaption){
+  text-align:start;
+  text-wrap:wrap;
+  word-break:normal;
+  hyphens:none;
+}
+.prose pre,.prose code{overflow-wrap:normal;word-break:normal}
+.prose a{overflow-wrap:break-word}
+.article-card h3,.related-links strong,.list-page>h1{
+  text-wrap:balance;
+  word-break:normal;
+  overflow-wrap:normal;
+  hyphens:none;
+  text-align:start;
+}
+.card-desc{word-break:normal;overflow-wrap:normal;hyphens:none;text-align:start;text-wrap:wrap}
+@media(max-width:520px){
+  .article-top h1{font-size:clamp(1.9rem,7.8vw,2.65rem);line-height:1.29;letter-spacing:-.035em}
+  .prose p{text-align:start}
+}
