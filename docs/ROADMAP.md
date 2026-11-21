@@ -8,7 +8,7 @@
 - Visual Editor / Studio 2.0, dedicated Publisher DEV Worker, article metadata and import APIs.
 - Notion P6, Obsidian P7, P8 Drive test media, manual deploy/canary workflows and Sheets M:O production reconciliation.
 
-Dedicated editorial spreadsheet and P8 test media were moved to Google Drive Trash. The CV sample folder was deliberately preserved.
+The dedicated Editorial Publisher spreadsheet was permanently deleted. The five P8 test images were moved to Trash and the now-empty P8 folder was deleted; the image IDs are no longer accessible through Drive. The separate CV sample folder was deliberately preserved.
 
 ## Preserved
 
