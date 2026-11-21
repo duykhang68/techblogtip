@@ -92,6 +92,24 @@ export async function putSystemCells(env,token,rowNumber,columns,values,fetcher=
   });
   if(!response.ok)fail(502,'sheet_write_failed','Could not write system-owned cells');
 }
+// Erases the complete article (A:O), leaving a blank row so unrelated
+// source IDs and pending row-scoped operations cannot shift underneath us.
+export async function clearArticleCells(env,token,rowNumber,fetcher=fetch){
+  if(!Number.isInteger(rowNumber)||rowNumber<2||rowNumber>200)
+    fail(400,'row_invalid','Row number out of range');
+  const {spreadsheetId}=sheetConfig(env);
+  const range='VN!A'+rowNumber+':O'+rowNumber;
+  const url=API+encodeURIComponent(spreadsheetId)+'/values/'+encodeURIComponent(range)+':clear';
+  const response=await fetcher(url,{
+    method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:'{}',signal:AbortSignal.timeout(12000),
+  });
+  if(!response.ok)fail(502,'sheet_delete_failed','Could not erase article data in Google Sheets');
+  const result=await response.json();
+  if(result.clearedRange!==range)
+    fail(502,'sheet_delete_unconfirmed','Google Sheets did not confirm the exact article range');
+}
+
 export function rowById(records,sourceId){
   const matches=records.filter(r=>r.cells[0].trim()===sourceId);
   if(matches.length!==1)fail(409,'source_missing','Source ID missing or duplicated after sheet reorder');
