@@ -13,7 +13,7 @@ import { obsidianPreview } from './obsidian-import.mjs';
 import { driveImageMetadata } from './drive-import.mjs';
 import { getSheetsToken } from './google-api.mjs';
 import { withSourceWriteLock,withRowWriteLock } from './source-lock.mjs';
-import { EDITOR_HTML,EDITOR_JS,EDITOR_CSS,EDITOR_IMPORT_CSS } from './editor-ui.mjs';
+import { EDITOR_HTML,EDITOR_JS,EDITOR_CSS,EDITOR_IMPORT_CSS,EDITOR_WORKSPACE_CSS } from './editor-ui.mjs';
 import { prepareSheetArticle } from '../../../scripts/publisher/sheets.mjs';
 import { ADMIN_HTML, ADMIN_JS, ADMIN_CSS } from './ui.mjs';
 import { PRODUCTION_HTML, PRODUCTION_JS, PRODUCTION_CSS } from './production-ui.mjs';
@@ -85,16 +85,33 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
       const clientId=String(env.GOOGLE_OAUTH_CLIENT_ID||'');
       const escaped=clientId.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       return staticResponse(ADMIN_HTML.replace('__GOOGLE_CLIENT_ID__',escaped)
-        .replace('</main>',EDITOR_HTML+PRODUCTION_HTML+'</main>')
-        .replace('</body>','<script src="/editor.js" defer></script><script src="/production-status.js" defer></script></body>'),
+        .replace('</main>',PRODUCTION_HTML+'</main>')
+        .replace('</body>','<script src="/production-status.js" defer></script></body>'),
         'text/html; charset=utf-8',{
         'Content-Security-Policy':"default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: https://*.googleusercontent.com https://duykhang68.github.io; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+      });
+    }
+    if(request.method==='GET'&&path==='/editor'){
+      // A dedicated editorial workspace under the same origin and cookie session.
+      // Loading the shell is safe; protected article data is fetched with /api/draft.
+      const shell='<!doctype html><html lang="vi"><head><meta charset="utf-8">'+
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+        '<meta name="robots" content="noindex,nofollow">'+
+        '<title>Editor · TechBlogTip</title><link rel="stylesheet" href="/admin.css"></head>'+
+        '<body class="editor-workspace"><header class="editor-workspace-header">'+
+        '<a href="/admin" class="editor-workspace-back">← Hàng đợi bài viết</a>'+
+        '<span class="editor-workspace-brand">TECHBLOGTIP <strong>Visual Editor</strong></span>'+
+        '<span class="editor-workspace-label">Không gian biên tập</span></header>'+
+        '<main class="editor-workspace-main">'+EDITOR_HTML+
+        '</main><script src="/editor.js" defer></script></body></html>';
+      return staticResponse(shell,'text/html; charset=utf-8',{
+        'Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://duykhang68.github.io; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
       });
     }
     if(request.method==='GET'&&path==='/admin.js')
       return staticResponse(ADMIN_JS,'application/javascript; charset=utf-8');
     if(request.method==='GET'&&path==='/admin.css')
-      return staticResponse(ADMIN_CSS+EDITOR_CSS+EDITOR_IMPORT_CSS+PRODUCTION_CSS,'text/css; charset=utf-8');
+      return staticResponse(ADMIN_CSS+EDITOR_CSS+EDITOR_IMPORT_CSS+EDITOR_WORKSPACE_CSS+PRODUCTION_CSS,'text/css; charset=utf-8');
     if(request.method==='GET'&&path==='/editor.js')
       return staticResponse(EDITOR_JS,'application/javascript; charset=utf-8');
     if(request.method==='GET'&&path==='/production-status.js')

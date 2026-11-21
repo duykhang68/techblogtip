@@ -741,7 +741,10 @@ test('P5c visual editor rejects unsafe HTML, invalid body, and system-field inje
 
 test('P5c editor UI has visual contenteditable, safe paste and no client GitHub API',async()=>{
   const f=await fixture();
-  const html=await (await handleRequest(f.request('/admin',''),f.env,{fetcher:f.fetcher})).text();
+  const adminHtml=await (await handleRequest(f.request('/admin',''),f.env,{fetcher:f.fetcher})).text();
+  const html=await (await handleRequest(f.request('/editor?sourceId=TBT-test',''),f.env,{fetcher:f.fetcher})).text();
+  assert.doesNotMatch(adminHtml,/id="editor-panel"/);
+  assert.match(adminHtml,/id="open-editor"/);
   const js=await (await handleRequest(f.request('/editor.js',''),f.env,{fetcher:f.fetcher})).text();
   const mainJs=await (await handleRequest(f.request('/admin.js',''),f.env,{fetcher:f.fetcher})).text();
   assert.match(html,/id="editor-panel"/);
@@ -749,7 +752,6 @@ test('P5c editor UI has visual contenteditable, safe paste and no client GitHub 
   assert.match(html,/src="\/editor.js"/);
   assert.match(mainJs,/Sửa trực quan/);
   assert.match(mainJs,/Mở Editor/);
-  assert.match(html,/id="open-editor"/);
   assert.match(js,/draft\.editable===false/);
   assert.match(js,/api\/draft/);
   assert.match(js,/clipboardData.*text\/plain/);
