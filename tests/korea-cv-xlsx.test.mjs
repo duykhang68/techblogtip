@@ -24,7 +24,7 @@ test('XLSX ZIP local entries contain all valid six worksheet parts and Unicode v
     entries.set(name,decoder.decode(bytes.slice(start,start+length)));
     at=start+length;
   }
-  assert.equal(entries.size,10);
+  assert.equal(entries.size,11);
   for(let i=1;i<=6;i++)assert.match(entries.get('xl/worksheets/sheet'+i+'.xml')||'',/<worksheet /);
   assert.match(entries.get('xl/worksheets/sheet2.xml')||'',/Tiếng Việt &amp; 한국어/);
   assert.match(entries.get('xl/worksheets/sheet1.xml')||'',/Kỹ sư/);
