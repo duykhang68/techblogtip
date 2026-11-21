@@ -1,37 +1,36 @@
-// Fail closed after a manually approved production deployment.
+// Verify the public GitHub Pages *project* path, not a staging Worker.
+const expected='https://duykhang68.github.io/techblogtip/';
 const raw=String(process.env.PRODUCTION_URL||'').trim();
 const sha=String(process.env.SOURCE_SHA||process.env.GITHUB_SHA||'');
-const url=new URL(raw);
-if(url.protocol!=='https:'||!url.hostname.includes('.')||
-   url.hostname.endsWith('.workers.dev')||url.hostname.endsWith('.pages.dev')||
-   url.port||url.pathname!=='/'||url.search||url.hash||
-   !/^[a-f0-9]{40}$/.test(sha))
-  throw new Error('Dedicated production hostname and exact source SHA required');
-const base=url.origin;
+if(raw!==expected||!/^[a-f0-9]{40}$/.test(sha))
+  throw new Error('Production must be the approved GitHub Pages project and exact SHA');
+const root=expected.slice(0,-1);
 async function fetchEvidence(path){
-  const res=await fetch(base+path,{
+  const response=await fetch(root+path+'?check='+Date.now(),{
     redirect:'manual',headers:{'Cache-Control':'no-cache'},
     signal:AbortSignal.timeout(12000),
   });
-  if(res.status!==200)throw new Error('Public production HTTP '+res.status+' at '+path);
-  return res.text();
+  if(response.status!==200)throw new Error('Public production HTTP '+response.status+' at '+path);
+  return response.text();
 }
-let error;
-for(let attempt=1;attempt<=5;attempt++){
+let last;
+for(let attempt=1;attempt<=6;attempt++){
   try{
     const marker=JSON.parse(await fetchEvidence('/release.json'));
-    if(marker.sha!==sha||marker.ref!=='main'||marker.project!=='techblogtip')
-      throw new Error('Production marker mismatch with main SHA');
-    const home=await fetchEvidence('/');
-    if(!home.includes('content="index,follow"')||
-       !home.includes('href="'+base+'/"'))
-      throw new Error('Production homepage must be indexable and canonical');
+    if(marker.project!=='techblogtip'||marker.ref!=='main'||marker.sha!==sha)
+      throw new Error('Pages release marker does not match main SHA');
+    const html=await fetchEvidence('/');
+    if(!html.includes('content="index,follow"')||
+       !html.includes('href="'+expected+'"')||
+       !html.includes('href="/techblogtip/favicon.svg"'))
+      throw new Error('GitHub Pages homepage canonical or base assets incorrect');
     const robots=await fetchEvidence('/robots.txt');
-    if(!robots.includes('Allow: /')||robots.includes('Disallow: /'))
-      throw new Error('Production robots rules are not indexable');
-    console.log('Verified production public release and exact SHA '+sha);
+    if(!robots.includes('Allow: /')||robots.includes('Disallow: /')||
+       !robots.includes(expected+'sitemap.xml'))
+      throw new Error('GitHub Pages indexability or sitemap invalid');
+    console.log('Verified GitHub Pages project release at exact SHA '+sha);
     process.exit(0);
-  }catch(e){error=e;console.warn('Production verification attempt '+attempt+' incomplete');}
-  if(attempt<5)await new Promise(r=>setTimeout(r,2000*attempt));
+  }catch(err){last=err;console.warn('GitHub Pages verification attempt '+attempt+' not yet valid');}
+  if(attempt<6)await new Promise(r=>setTimeout(r,2000*attempt));
 }
-throw new Error('Production verification failed: '+(error?.message||'unknown'));
+throw new Error('GitHub Pages production release verification failed: '+(last?.message||'unknown'));

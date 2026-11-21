@@ -12,22 +12,24 @@ test('content and staging policy',()=>{
  assert.ok(read('src/pages/robots.txt.ts').includes('Disallow: /'));
  assert.ok(read('astro.config.mjs').includes("output: 'static'"));
 });
-test('staging remains isolated and production deploy requires a protected manual gate',()=>{
+test('staging stays Cloudflare while production is protected GitHub Pages',()=>{
  assert.ok(existsSync('.github/workflows/deploy-staging.yml'));
- assert.ok(existsSync('.github/workflows/deploy-production.yml'));
  const staging=read('.github/workflows/deploy-staging.yml');
- const production=read('.github/workflows/deploy-production.yml');
- assert.match(staging,/SOURCE_SHA/);
+ const pages=read('.github/workflows/deploy-production.yml');
  assert.match(staging,/cf deploy/);
  assert.match(staging,/verify-deploy/);
- assert.match(production,/workflow_dispatch/);
- assert.match(production,/deploy-production-only/);
- assert.match(production,/environment: techblogtip-production/);
- assert.match(production,/PUBLIC_INDEXABLE: "true"/);
- assert.match(production,/--mode techblogtip-production/);
- assert.match(production,/verify-production-deploy/);
- assert.doesNotMatch(production,/\n  push:\n/);
+ assert.match(pages,/name: Deploy · GitHub Pages production/);
+ assert.match(pages,/environment:/);
+ assert.match(pages,/name: github-pages/);
+ assert.match(pages,/DEPLOY_TARGET: github-pages/);
+ assert.match(pages,/actions\/configure-pages@/);
+ assert.match(pages,/actions\/upload-pages-artifact@/);
+ assert.match(pages,/actions\/deploy-pages@/);
+ assert.match(pages,/verify-production-deploy/);
+ assert.match(pages,/branches: \[main\]/);
+ assert.doesNotMatch(pages,/cf deploy|CLOUDFLARE_API_TOKEN/);
 });
+
 test('demo post slugs are unique, no image format violation',()=>{
  const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));
  assert.ok(names.length>=8);

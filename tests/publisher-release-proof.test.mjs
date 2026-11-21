@@ -90,7 +90,7 @@ async function fixture(){
     if(path.startsWith('/compare/'))return Response.json({status:runtime.compare});
     if(path==='/git/ref/heads/main')return Response.json({object:{sha:mainSha}});
     if(path==='/actions/runs/123')
-      return Response.json({name:'Deploy · Cloudflare production',
+      return Response.json({name:'Deploy · GitHub Pages production',
         path:'.github/workflows/deploy-production.yml',status:'completed',
         conclusion:'success',head_branch:'main',head_sha:mainSha,
         repository:{full_name:'duykhang68/techblogtip'},event:'workflow_dispatch'});
@@ -113,9 +113,11 @@ async function fixture(){
  return {runtime,fetcher,env,row:{cells,rowNumber:2},snapshot,normalized};
 }
 test('production rejects absent staging/dev URLs instead of treating them as public blog',()=>{
- assert.throws(()=>productionOrigin({...env0,PRODUCTION_SITE_URL:''}),{code:'production_not_configured'});
+ assert.equal(productionOrigin({...env0,PRODUCTION_SITE_URL:''}),'https://duykhang68.github.io/techblogtip');
+ assert.equal(productionOrigin({...env0,PRODUCTION_SITE_URL:'https://duykhang68.github.io/techblogtip/'}),'https://duykhang68.github.io/techblogtip');
  for(const u of ['https://techblogtip-staging.tamsudev-com.workers.dev',
-  'http://blog.example.test','https://blog.example.test:8443','https://localhost/'])
+  'http://blog.example.test','https://blog.example.test:8443','https://localhost/',
+  'https://duykhang68.github.io/', 'https://other.github.io/techblogtip/'])
   assert.throws(()=>productionOrigin({...env0,PRODUCTION_SITE_URL:u}),{code:'production_config_invalid'});
 });
 test('verified live release checks source proof, canonical, indexable HTML and commit ancestry',async()=>{
@@ -149,6 +151,20 @@ test('writes exactly M:O after live proof, re-reads, and repeats idempotently',a
  assert.equal(await verifiedStoredRelease(f.env,f.row,f.snapshot,f.fetcher),true);
  const again=await finalizeVerifiedArticle(f.env,sourceId,f.fetcher);
  assert.equal(again.created,false);
+ assert.equal(f.runtime.writes.length,1);
+});
+test('published article remains verified after a later Pages release without rewriting M:O',async()=>{
+ const f=await fixture();
+ const published=await finalizeVerifiedArticle(f.env,sourceId,f.fetcher);
+ const oldSha=published.releaseSha;
+ const oldStamp=published.publishedAt;
+ const newSha='e'.repeat(40);
+ f.runtime.marker.sha=newSha;
+ assert.equal(await verifiedStoredRelease(f.env,f.row,f.snapshot,f.fetcher),true);
+ const checked=await finalizeVerifiedArticle(f.env,sourceId,f.fetcher);
+ assert.equal(checked.created,false);
+ assert.equal(checked.releaseSha,oldSha);
+ assert.equal(checked.publishedAt,oldStamp);
  assert.equal(f.runtime.writes.length,1);
 });
 test('never writes stale, unavailable or incorrect production SHA; no manual overwrite',async()=>{

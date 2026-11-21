@@ -7,22 +7,26 @@ const REV=/^[a-f0-9]{64}$/;
 const PR_LINK=/^https:\/\/github\.com\/duykhang68\/techblogtip\/pull\/[1-9][0-9]*$/;
 const VERIFIED_CHECK='Astro · Types · Content · Build';
 
+export const GITHUB_PAGES_PRODUCTION='https://duykhang68.github.io/techblogtip/';
+
+// A project Pages site has a fixed, dedicated subpath. Never drop /techblogtip/
+// when constructing release and article URLs, and never trust arbitrary github.io.
 export function productionOrigin(env){
-  const raw=String(env.PRODUCTION_SITE_URL||'').trim();
-  if(!raw)fail(503,'production_not_configured','Production URL is not configured; staging cannot be used');
+  const raw=String(env.PRODUCTION_SITE_URL||GITHUB_PAGES_PRODUCTION).trim();
   let url;
   try{url=new URL(raw);}catch{fail(503,'production_config_invalid','Production URL is invalid');}
-  const host=url?.hostname?.toLowerCase()||'';
-  if(url.protocol!=='https:'||url.username||url.password||url.port||
-     url.pathname!=='/'||url.search||url.hash||
+  const host=url.hostname.toLowerCase();
+  const isProjectPages=host==='duykhang68.github.io'&&url.pathname==='/techblogtip/';
+  const customRoot=url.pathname==='/'&&!host.endsWith('.github.io');
+  if(url.protocol!=='https:'||url.username||url.password||url.port||url.search||url.hash||
      !/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(host)||
+     !(isProjectPages||customRoot)||
      host.endsWith('.workers.dev')||host.endsWith('.pages.dev')||
-     host==='localhost'||host.endsWith('.localhost')||
-     host==='127.0.0.1'||host==='0.0.0.0'||host.endsWith('.internal')||
-     host.endsWith('.local')||host.endsWith('.example')||
+     host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||
+     host.endsWith('.example')||host.endsWith('.internal')||
      /^(\d+\.){3}\d+$/.test(host))
-    fail(503,'production_config_invalid','Production needs a dedicated HTTPS public domain; staging/dev are forbidden');
-  return url.origin;
+    fail(503,'production_config_invalid','Production must use the approved GitHub Pages project path or an explicitly approved root domain');
+  return isProjectPages?url.origin+'/techblogtip':url.origin;
 }
 
 function prepareRow(env,row,sourceId){
@@ -103,6 +107,18 @@ async function evidence(env,row,pr,fetcher){
   return {url,sha:marker.sha,sourceId:article.sourceId,sourceRevision:article.fingerprint};
 }
 
+// Keep the original first-published release SHA in Sheets M:O. Later
+// production deployments can still prove this article is live if that SHA
+// remains in the ancestry of the current public Pages release.
+export async function releaseShaStillValid(env,storedSha,currentSha,fetcher=fetch){
+  if(!SHA.test(storedSha||'')||!SHA.test(currentSha||''))return false;
+  if(storedSha===currentSha)return true;
+  try{
+    const history=await githubRequest(env,'/compare/'+storedSha+'...'+currentSha,{fetcher});
+    return history?.status==='ahead'||history?.status==='identical';
+  }catch{return false;}
+}
+
 export async function verifyProductionEvidence(env,row,pr,fetcher=fetch){
   return evidence(env,row,pr,fetcher);
 }
@@ -116,6 +132,6 @@ export async function verifiedStoredRelease(env,row,pr,fetcher=fetch){
     return false;
   try{
     const result=await evidence(env,row,pr,fetcher);
-    return result.url===url&&result.sha===sha;
+    return result.url===url&&await releaseShaStillValid(env,sha,result.sha,fetcher);
   }catch{return false;}
 }

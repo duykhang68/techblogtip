@@ -64,3 +64,8 @@ The optional read-only audit can now recheck the cross-system result by source I
 ## P5c.3 — Code gate implemented, production configuration pending
 
 Verified release workflow and M:O writeback code, tests and runbooks are described in docs/PUBLISHER-P5C3-RELEASE.md. Public production hostname and protected credentials are **not yet provisioned**; staging/Publisher DEV cannot count as a production release. Until a real release is successfully verified, the Editor must not show 100%.
+
+
+## GitHub Pages selected as production — 21/11/2026
+
+Production target is **https://duykhang68.github.io/techblogtip/**, not a Cloudflare custom domain or seomoney.org. Astro pages must use base `/techblogtip`; P5c.3 release proof and M:O writeback must fetch this project URL. Publisher DEV stays on Cloudflare and staging remains separate. See docs/PUBLISHER-P5C3-RELEASE.md. The Actions source must be enabled in GitHub Settings → Pages, and the same protected sync secret must be available to github-pages and techblogtip-publisher-dev environments. A merged PR is never by itself a published article.

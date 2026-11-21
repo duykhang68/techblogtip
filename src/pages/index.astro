@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ArticleList from '../components/ArticleList.astro';
-import { getArticles, categoryUrl, valuesWithCounts } from '../lib/content';
+import { getArticles, categoryUrl, valuesWithCounts, withBase } from '../lib/content';
 const articles = await getArticles();
 const categories = valuesWithCounts(articles, a => [a.data.category]);
 const maxPerPage = 8;
@@ -14,18 +14,18 @@ const pages = Math.ceil(articles.length / maxPerPage);
       <h1 id="home-title">Thủ thuật và kiến thức công nghệ</h1>
       <p>Hướng dẫn dễ hiểu, có thể thực hành ngay.</p>
     </div>
-    <a class="home-search-link" href="/tim-kiem/" aria-label="Mở trang tìm kiếm bài viết">
+    <a class="home-search-link" href={withBase('/tim-kiem/')} aria-label="Mở trang tìm kiếm bài viết">
       <span>Tìm hướng dẫn, chủ đề hoặc thủ thuật</span>
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.7" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="1.9"/></svg>
     </a>
   </section>
   <section class="container topic-strip" aria-labelledby="topics-title">
-    <div class="section-head"><h2 id="topics-title">Chuyên mục</h2><a href="/chuyen-muc/">Xem tất cả →</a></div>
+    <div class="section-head"><h2 id="topics-title">Chuyên mục</h2><a href={withBase('/chuyen-muc/')}>Xem tất cả →</a></div>
     <div class="topic-chips" aria-label="Danh sách chuyên mục">{categories.map(item => <a href={categoryUrl(item.name)}>{item.name}<span>{item.count}</span></a>)}</div>
   </section>
   <section class="container article-section" aria-labelledby="latest-title">
     <div class="section-head"><div><p class="section-kicker">KHÁM PHÁ BÀI VIẾT</p><h2 id="latest-title">Bài viết mới nhất</h2></div><span class="issue-label">TẤT CẢ · {articles.length} BÀI</span></div>
     <ArticleList articles={articles.slice(0,maxPerPage)} />
-    <div class="pagination">{pages > 1 && <a href="/page/2/">Trang tiếp theo →</a>}</div>
+    <div class="pagination">{pages > 1 && <a href={withBase('/page/2/')}>Trang tiếp theo →</a>}</div>
   </section>
 </BaseLayout>
