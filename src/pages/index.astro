@@ -7,15 +7,8 @@ const maxPerPage = 8;
 const pages = Math.ceil(articles.length / maxPerPage);
 ---
 <BaseLayout title="TechBlogTip" description="Hướng dẫn công nghệ, thủ thuật máy tính, tin học văn phòng, AI và lập trình. Nội dung tiếng Việt dễ hiểu, đi thẳng vào giải pháp.">
-  <section class="container homepage-heading homepage-search-only" aria-labelledby="home-title">
-    <h1 id="home-title" class="visually-hidden">Tìm thủ thuật và kiến thức công nghệ</h1>
-    <a class="home-search-link" href={withBase('/tim-kiem/')} aria-label="Mở trang tìm kiếm bài viết">
-      <span>Tìm hướng dẫn, chủ đề hoặc thủ thuật</span>
-      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.7" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="1.9"/></svg>
-    </a>
-  </section>
   <section class="container article-section" aria-labelledby="latest-title">
-    <div class="section-head"><div><p class="section-kicker">KHÁM PHÁ BÀI VIẾT</p><h2 id="latest-title">Bài viết mới nhất</h2></div><span class="issue-label">TẤT CẢ · {articles.length} BÀI</span></div>
+    <div class="section-head"><div><h2 id="latest-title">Bài viết mới nhất</h2></div><span class="issue-label">TẤT CẢ · {articles.length} BÀI</span></div>
     <ArticleList articles={articles.slice(0,maxPerPage)} />
     <div class="pagination">{pages > 1 && <a href={withBase('/page/2/')}>Trang tiếp theo →</a>}</div>
   </section>
