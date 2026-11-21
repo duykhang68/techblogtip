@@ -65,7 +65,7 @@ try{
    assert.equal(await page.locator('.home-search-link').count(),0,'Removed homepage search hero must not return');
    assert.equal(await page.locator('[data-theme-toggle]').count(),1,'Lightbulb theme toggle must be available');
    const cards=await page.locator('.article-card').count();
-   assert.equal(cards,8,'Exactly eight homepage article cards required');
+   assert.equal(cards,1,'Only the retained PageSpeed article should appear on the homepage');
    const metric=await page.evaluate(()=>{
     const rect=selector=>document.querySelector(selector)?.getBoundingClientRect();
     return {
@@ -84,7 +84,7 @@ try{
    console.log('PASS homepage '+w+'px; first card y='+Math.round(metric.articleStart)+'; columns='+metric.columns);
   }catch(e){record('homepage '+w,e);}
   try{
-   const response=await page.goto(base+'/bai-viet/lam-quen-voi-google-sheets/',{waitUntil:'load'});
+   const response=await page.goto(base+'/bai-viet/techblogtip-100-diem-google-pagespeed-insights/',{waitUntil:'load'});
    assert.equal(response.status(),200);
    assert.equal(await page.locator('.prose h2').count()>0,true,'Article heading missing');
    const state=await page.evaluate(()=>({
@@ -99,30 +99,27 @@ try{
    await page.screenshot({path:join('artifacts/visual-qa','article-'+w+'.png'),animations:'disabled'});
    console.log('PASS article '+w+'px');
   }catch(e){record('article '+w,e);}
-  // Visual publication regression: story map plus topic-specific diagrams.
+  // Visual publication regression: the retained article must still render its story map.
   if(w===390 || w===1440){
     try{
-      const response=await page.goto(base+'/bai-viet/techblogtip-engineering-rules/',{waitUntil:'load'});
+      const response=await page.goto(base+'/bai-viet/techblogtip-100-diem-google-pagespeed-insights/',{waitUntil:'load'});
       assert.equal(response.status(),200);
-      assert.equal(await page.locator('[data-auto-visualizer]').count(),1,'Missing auto story map');
-      assert.equal(await page.locator('.rules-visual').count(),2,'Missing engineering-specific infographics');
+      assert.equal(await page.locator('[data-auto-visualizer]').count(),1,'Retained article story map missing');
       const details=await page.evaluate(()=>({
         scrollWidth:document.documentElement.scrollWidth,
         mapCards:document.querySelectorAll('[data-auto-visualizer] .map-grid li').length,
-        ruleCards:document.querySelectorAll('.rules-grid li').length
       }));
-      assert.ok(details.scrollWidth<=w+1,'Engineering article horizontal overflow at '+w+'px');
-      assert.ok(details.mapCards>=2,'Visualizer map must include headings');
-      assert.equal(details.ruleCards,11,'Engineering visual must cover 11 rules');
-      await page.screenshot({path:join('artifacts/visual-qa','engineering-rules-'+w+'.png'),animations:'disabled'});
-      console.log('PASS engineering story visual QA '+w+'px');
-    }catch(e){record('engineering visual '+w,e);}
+      assert.ok(details.scrollWidth<=w+1,'PageSpeed article horizontal overflow at '+w+'px');
+      assert.ok(details.mapCards>=2,'PageSpeed story map should include article sections');
+      await page.screenshot({path:join('artifacts/visual-qa','pagespeed-100-'+w+'.png'),animations:'disabled'});
+      console.log('PASS PageSpeed story visual QA '+w+'px');
+    }catch(e){record('PageSpeed visual '+w,e);}
   }
   if(w===1440){
     try{
-      const response=await page.goto(base+'/bai-viet/hanh-trinh-xay-dung-google-sheets-publisher-techblogtip/',{waitUntil:'load'});
+      const response=await page.goto(base+'/bai-viet/techblogtip-100-diem-google-pagespeed-insights/',{waitUntil:'load'});
       assert.equal(response.status(),200);
-      assert.equal(await page.locator('[data-toc-link]').count(),13,'Publisher article must expose all 13 TOC headings');
+      assert.ok((await page.locator('[data-toc-link]').count())>=4,'Retained article must expose Smart TOC headings');
       const readProgress=()=>page.locator('[data-reading-progress]').evaluate(node=>Number(node.value));
       const start=await readProgress();
       await page.locator('#article-body h2').nth(5).evaluate(node=>{
@@ -162,16 +159,16 @@ try{
   if(w===390){
     try{
       await page.goto(base+'/tim-kiem/',{waitUntil:'load'});
-      await page.locator('#search-input').fill('Google Sheets');
+      await page.locator('#search-input').fill('PageSpeed');
       await page.waitForFunction(()=>document.querySelectorAll('#search-results li').length>0);
       assert.ok((await page.locator('#search-results li').count())>=1,'Search returned no results');
       const url=new URL(page.url());
-      assert.equal(url.searchParams.get('q'),'Google Sheets');
+      assert.equal(url.searchParams.get('q'),'PageSpeed');
       await page.screenshot({path:join('artifacts/visual-qa','search-390.png'),animations:'disabled'});
       await page.goto(base+'/chuyen-muc/',{waitUntil:'load'});
-      assert.ok((await page.locator('.directory-item').count())>=4);
+      assert.ok((await page.locator('.directory-item').count())>=1);
       await page.goto(base+'/chu-de/',{waitUntil:'load'});
-      assert.ok((await page.locator('.directory-item').count())>=2);
+      assert.equal(await page.locator('.directory-item').count(),0,'No old series should be listed');
       await page.goto(base+'/the/',{waitUntil:'load'});
       assert.ok((await page.locator('.topic-chips a').count())>=4);
       await page.goto(base+'/',{waitUntil:'load'});
