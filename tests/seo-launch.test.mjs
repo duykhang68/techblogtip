@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {auditHtml,auditSitemap} from '../scripts/seo-audit.mjs';
+import {auditHtml,auditSitemap,auditCmsAdminHtml} from '../scripts/seo-audit.mjs';
 const sample='<html lang="vi"><head><title>TechBlogTip</title><meta name="description" content="Test"><meta name="robots" content="index,follow"><link rel="canonical" href="https://duykhang68.github.io/techblogtip/"></head></html>';
 test('D SEO gate verifies canonical, title, language and indexability',()=>{
  assert.doesNotThrow(()=>auditHtml(sample,'https://duykhang68.github.io/techblogtip/',true));
@@ -30,4 +30,13 @@ test('D accepts real base64-style verification values without accepting HTML inj
  const allowed=/^[A-Za-z0-9+/_-]{12,160}={0,2}$/;
  assert.ok(allowed.test(sample));
  assert.equal(allowed.test('<script>evil</script>'),false);
+});
+
+test('D CMS private page remains noindex without weakening public SEO audit',()=>{
+ const admin=readFileSync('public/tools/cms/index.html','utf8');
+ assert.doesNotThrow(()=>auditCmsAdminHtml(admin));
+ assert.throws(()=>auditCmsAdminHtml(admin.replace('noindex,nofollow','index,follow')),/always be noindex/);
+ assert.throws(()=>auditCmsAdminHtml(admin.replace('id="google-login"','id="missing-login"')),/Google Sign-In missing/);
+ assert.throws(()=>auditCmsAdminHtml(admin.replace('lang="vi"','lang="en"')),/missing Vietnamese lang/);
+ assert.throws(()=>auditHtml(admin,'https://duykhang68.github.io/techblogtip/tools/cms/',true),/missing meta description/);
 });
