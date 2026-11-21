@@ -74,6 +74,11 @@ body{background:var(--cms-bg)}
 @media(max-width:690px){.top{position:static;padding:9px}.top #breadcrumb{display:none}.top .buttons{width:100%;gap:5px}.top .buttons .btn{min-width:0;font-size:11px}.grid{display:flex;flex-direction:column}.sidebar{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto}.rail{display:flex;flex-direction:row;overflow-x:auto;padding:4px;border-right:0;border-bottom:1px solid var(--cms-border)}.rail button{min-width:63px;min-height:57px}.sidepane .head{padding:10px}.sidepane .list{max-height:180px}.sidepane .foot{display:flex;align-items:center}.frame{min-height:370px;margin:8px;padding:9px}.preview-body{padding:18px}.canvas{min-height:350px}.inspector{border-left:0}.grid.preview-mode .main{width:100%}}
 @media(prefers-reduced-motion:reduce){.block{transition:none}}
 
+/* Keep the editor in the middle grid track even when mobile panels become
+   position:absolute (otherwise auto-placement puts the main in a 0px track). */
+.grid>.sidebar{grid-column:1;grid-row:1}
+.grid>.main{grid-column:2;grid-row:1}
+.grid>.inspector{grid-column:3;grid-row:1}
 /* Focus Workspace v2: optimize the first viewport for editing rather than chrome.
    Panels scroll independently; compact screens use overlays instead of stacking. */
 :root{--cms-mint:var(--accent);--cms-mintlight:#fcf0ea;--cms-border:var(--line);--cms-ink:var(--ink);--cms-bg:#f3f2ef}
