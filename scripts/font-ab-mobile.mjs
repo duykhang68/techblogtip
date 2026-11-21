@@ -76,7 +76,7 @@ try {
           html = html.replace(/<noscript>\s*<link[^>]*Be\+Vietnam\+Pro[^>]*>\s*<\/noscript>/gi, '');
           html = html.replace(/<link\b[^>]*Be\+Vietnam\+Pro[^>]*>/gi, '');
           const injection = '<link rel="stylesheet" href="' + googleCss + '">' +
-            '<style>html,body,button,input,select,textarea {font-family:"Google Sans Flex",system-ui,sans-serif!important} * {font-family:inherit}</style>';
+            '<style>html,body,main,article,header,nav,footer,h1,h2,h3,h4,h5,h6,p,a,span,small,strong,button,input,select,textarea,li {font-family:"Google Sans Flex",system-ui,sans-serif!important}</style>';
           html = html.replace('</head>', injection + '</head>');
           return route.fulfill({ response, body: html, headers: { ...response.headers(), 'content-type': 'text/html; charset=utf-8' } });
         });
@@ -92,7 +92,7 @@ try {
         lcpMs: window.__fontAB?.lcp ?? null,
         cls: window.__fontAB?.cls ?? null,
         actualFamily: getComputedStyle(document.body).fontFamily,
-        fontLoaded: document.fonts.check('400 16px "' + family + '"', 'Tiếng Việt: ă â ê ô ơ ư đ'),
+        fontLoaded: [...document.fonts].some(face => face.family.replaceAll('"', '').replaceAll("'", '') === family && face.status === 'loaded'),
         fontResources: performance.getEntriesByType('resource')
           .filter(e => /fonts\.(googleapis|gstatic)\.com/.test(e.name))
           .map(e => ({ url: e.name, transferSize: e.transferSize || null })),
