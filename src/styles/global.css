@@ -54,17 +54,11 @@
 .homepage-search-only + .article-section{padding-top:25px}
 @media(max-width:520px){.homepage-heading.homepage-search-only{padding-block:12px 0}.homepage-search-only + .article-section{padding-top:18px}}
 
-/* Skip painting expensive, genuinely offscreen sections while keeping SSG HTML readable/searchable. */
-@supports (content-visibility: auto) {
-  .article-card:nth-child(n+5), .related-section, .site-footer,
-  .prose > pre, .prose > table, .prose > figure {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 340px;
-  }
-  @media (max-width: 520px) {
-    .article-card:nth-child(n+5) { contain-intrinsic-size: auto 150px; }
-  }
-}
+/* Stable scroll geometry: never use estimated heights on variable-height cards,
+   articles, figures or footer. content-visibility:auto with a fixed
+   contain-intrinsic-size causes scroll jumps when offscreen boxes become visible.
+   Image cards already reserve exact square space via aspect-ratio and width/height;
+   offscreen transfers stay deferred via IntersectionObserver and native lazy load. */
 
 /* Editorial typography: natural Vietnamese word wrapping and full-width balanced titles. */
 .article-top{max-width:1440px}
