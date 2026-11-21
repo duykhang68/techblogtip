@@ -1,0 +1,102 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getArticles, articleUrl, categoryUrl, formatDate } from '../../lib/content';
+
+const articles = await getArticles();
+const groups = new Map<string, typeof articles>();
+for (const article of articles) {
+  const category = article.data.category;
+  if (!groups.has(category)) groups.set(category, []);
+  groups.get(category)!.push(article);
+}
+const categories = [...groups.entries()].sort((a,b) => b[1].length-a[1].length || a[0].localeCompare(b[0],'vi'));
+---
+<BaseLayout title="Archive — Tất cả bài viết" description="Kho lưu trữ toàn bộ bài viết TechBlogTip, duyệt nhanh theo chuyên mục và tìm theo tiêu đề.">
+  <section class="container archive-page" aria-labelledby="archive-title">
+    <div class="archive-topline">
+      <div>
+        <p class="section-kicker">THƯ VIỆN BÀI VIẾT</p>
+        <h1 id="archive-title">Archive <span>· {articles.length} bài viết</span></h1>
+        <p class="archive-description">Khám phá toàn bộ bài viết theo chuyên mục, không cần chuyển qua nhiều trang.</p>
+      </div>
+      <label class="archive-filter" for="archive-query">
+        <span>Lọc bài viết</span>
+        <input id="archive-query" type="search" placeholder="Nhập tên bài viết hoặc chuyên mục…" autocomplete="off" aria-controls="archive-directory" />
+      </label>
+    </div>
+    <div class="archive-directory" id="archive-directory">
+      {categories.map(([category, entries], index) => (
+        <section class="archive-group" data-category={category.toLocaleLowerCase('vi')} aria-labelledby={`archive-group-${index}`}>
+          <div class="archive-group-heading">
+            <h2 id={`archive-group-${index}`}><a href={categoryUrl(category)}>{category}</a></h2>
+            <span>{entries.length} bài</span>
+          </div>
+          <ul>
+            {entries.map(article => (
+              <li data-title={article.data.title.toLocaleLowerCase('vi')}>
+                <a href={articleUrl(article)}>{article.data.title}</a>
+                <time datetime={article.data.published.toISOString()}>{formatDate(article.data.published)}</time>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+    <p id="archive-empty" class="archive-empty" hidden>Không tìm thấy bài viết phù hợp. Thử một từ khóa khác.</p>
+    <p id="archive-status" class="visually-hidden" role="status" aria-live="polite"></p>
+  </section>
+</BaseLayout>
+<script>
+  const search = document.querySelector<HTMLInputElement>('#archive-query');
+  const groups = [...document.querySelectorAll<HTMLElement>('.archive-group')];
+  const empty = document.querySelector<HTMLElement>('#archive-empty');
+  const status = document.querySelector<HTMLElement>('#archive-status');
+  const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLocaleLowerCase('vi').trim();
+  search?.addEventListener('input', () => {
+    const query = normalize(search.value);
+    let visible = 0;
+    for (const group of groups) {
+      const categoryMatches = normalize(group.dataset.category || '').includes(query);
+      let groupCount = 0;
+      for (const item of group.querySelectorAll<HTMLElement>('li')) {
+        const matches = categoryMatches || normalize(item.dataset.title || '').includes(query);
+        item.hidden = !matches;
+        if (matches) groupCount++;
+      }
+      group.hidden = groupCount === 0;
+      visible += groupCount;
+    }
+    if (empty) empty.hidden = visible !== 0;
+    if (status) status.textContent = `Có ${visible} bài viết phù hợp.`;
+  });
+</script>
+<style>
+  .archive-page{padding-block:36px 78px}
+  .archive-topline{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:25px}
+  .archive-topline h1{font-size:clamp(2rem,4vw,3rem);letter-spacing:-.05em}
+  .archive-topline h1 span{font-size:.35em;letter-spacing:0;font-weight:600;color:var(--muted);white-space:nowrap}
+  .archive-description{color:var(--muted);margin-top:8px;font-size:.9rem}
+  .archive-filter{display:flex;flex-direction:column;gap:6px;min-width:min(100%,330px);font-weight:700;font-size:.76rem;color:var(--ink)}
+  .archive-filter input{width:100%;min-height:46px;background:#fff;border:1px solid #d5d6dc;border-radius:10px;padding:10px 13px;font:inherit;font-weight:500;font-size:.84rem;color:var(--ink)}
+  .archive-directory{border:1px solid #e9d8d0;border-radius:13px;padding:22px;background:#fff9f5;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:start;gap:15px}
+  .archive-group{background:#fff;min-width:0;border:1px solid #e6e5ea;border-radius:11px;padding:17px 15px 20px}
+  .archive-group:nth-child(5n+1){background:#ffebe0;border-color:#f6d7c9}
+  .archive-group:nth-child(5n+2){background:#e9e7ff;border-color:#dcd8fa}
+  .archive-group:nth-child(5n+3){background:#e5f5e9;border-color:#d0e9d8}
+  .archive-group:nth-child(5n+4){background:#e6f2ff;border-color:#d3e5f7}
+  .archive-group:nth-child(5n){background:#fff1d5;border-color:#f6e3b8}
+  .archive-group-heading{display:flex;align-items:start;justify-content:space-between;gap:9px;border-bottom:1px solid rgba(42,43,54,.12);padding-bottom:12px;margin-bottom:11px}
+  .archive-group-heading h2{font-size:1rem;line-height:1.45;letter-spacing:-.02em}
+  .archive-group-heading h2 a{text-decoration:underline;text-decoration-color:rgba(42,43,54,.25);text-underline-offset:4px}
+  .archive-group-heading span{white-space:nowrap;color:#515767;font-size:.68rem;font-weight:700;margin-top:3px}
+  .archive-group ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+  .archive-group li{min-width:0;line-height:1.52}
+  .archive-group li a{font-size:.84rem;font-weight:600;overflow-wrap:break-word;text-wrap:pretty;display:block}
+  .archive-group time{display:block;color:#616875;font-size:.68rem;margin-top:2px}
+  .archive-group li[hidden],.archive-group[hidden],.archive-empty[hidden]{display:none}
+  .archive-empty{padding:28px;text-align:center;color:var(--muted)}
+  .visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  @media(max-width:1100px){.archive-directory{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media(max-width:760px){.archive-directory{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px;gap:10px}.archive-topline{align-items:stretch;flex-direction:column}.archive-filter{min-width:0;width:100%}}
+  @media(max-width:520px){.archive-page{padding-block:24px 52px}.archive-directory{grid-template-columns:1fr}.archive-group{padding:16px}.archive-topline h1 span{display:block;font-size:.36em;margin-top:6px}}
+</style>
