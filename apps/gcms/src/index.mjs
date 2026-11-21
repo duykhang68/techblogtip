@@ -313,7 +313,7 @@ export default {
     const due=(await env.GCMS_DB.prepare("SELECT * FROM gcms_entries WHERE status='scheduled' AND scheduled_at<=? ORDER BY scheduled_at LIMIT 30").bind(stamp()).all()).results||[];
     for(const row of due) {
       const t=stamp();
-      const published=JSON.stringify(decode(row));
+      const published=JSON.stringify({...decode(row),status:'published',scheduledAt:null,publishedAt:t});
       const updated=await change(env.GCMS_DB,"UPDATE gcms_entries SET status='published',published_json=?,published_at=?,scheduled_at=NULL,updated_at=? WHERE id=? AND status='scheduled'",[published,t,t,row.id]);
       if(updated)await audit(env.GCMS_DB,'scheduler','entry.publish','entry',row.id);
     }

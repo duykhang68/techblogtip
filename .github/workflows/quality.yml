@@ -31,6 +31,8 @@ jobs:
           node -e "const r=require('./dist/release.json');if(r.sha!==process.env.SOURCE_SHA) process.exit(1);"
       - name: Browser visual QA · mobile / desktop (no browser download)
         run: npm run qa:visual
+      - name: G-CMS browser acceptance · mocked Google/API (no production writes)
+        run: node scripts/gcms-browser-qa.mjs
       - name: Validate GitHub Pages /techblogtip/ release build (no deploy)
         env:
           DEPLOY_TARGET: github-pages
