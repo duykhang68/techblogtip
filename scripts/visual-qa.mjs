@@ -65,7 +65,7 @@ try{
    assert.equal(await page.locator('.home-search-link').count(),0,'Removed homepage search hero must not return');
    assert.equal(await page.locator('[data-theme-toggle]').count(),1,'Lightbulb theme toggle must be available');
    const cards=await page.locator('.article-card').count();
-   assert.equal(cards,3,'Homepage should show the three explicitly approved articles');
+   assert.equal(cards,4,'Homepage should show the four explicitly approved articles');
    const metric=await page.evaluate(()=>{
     const rect=selector=>document.querySelector(selector)?.getBoundingClientRect();
     return {
@@ -131,6 +131,34 @@ try{
       await page.screenshot({path:join('artifacts/visual-qa','github-cli-'+w+'.png'),animations:'disabled'});
       console.log('PASS GitHub CLI safety diagram '+w+'px');
     }catch(e){record('GitHub CLI visual '+w,e);}
+  }
+  // App economics editorial visualization: five score bars, revenue calculator,
+  // and mobile-first data explanations must remain usable without external APIs.
+  if(w===390 || w===1440){
+    try{
+      const response=await page.goto(base+'/bai-viet/vibe-code-app-ios-macos-kiem-tien-2026/',{waitUntil:'load'});
+      assert.equal(response.status(),200);
+      assert.equal(await page.locator('[data-auto-visualizer]').count(),1,'Economics auto story map missing');
+      assert.equal(await page.locator('.econ-ranking li').count(),5,'Economics ranking requires five products');
+      assert.equal(await page.locator('.econ-target-card').count(),5,'Revenue target cards missing');
+      assert.equal(await page.locator('.econ-funnel>div').count(),4,'Customer validation flow missing');
+      assert.equal(await page.locator('[data-econ-gross]').innerText(),'$999.00');
+      await page.locator('[data-econ-app]').selectOption('release');
+      assert.equal(await page.locator('[data-econ-gross]').innerText(),'$900.00');
+      assert.equal(await page.locator('[data-econ-net]').innerText(),'$765.00');
+      await page.locator('[data-econ-app]').selectOption('doc');
+      assert.ok((await page.locator('[data-econ-unit]').innerText()).includes('Giấy phép'));
+      const metrics=await page.evaluate(()=>({
+        scrollWidth:document.documentElement.scrollWidth,
+        rankingRight:document.querySelector('.econ-ranking').getBoundingClientRect().right,
+        calcRight:document.querySelector('[data-econ-calc]').getBoundingClientRect().right
+      }));
+      assert.ok(metrics.scrollWidth<=w+1,'Economics article horizontal overflow '+metrics.scrollWidth+' > '+w);
+      assert.ok(metrics.rankingRight<=w+1,'Economics chart clipped at '+w+'px');
+      assert.ok(metrics.calcRight<=w+1,'Economics calculator clipped at '+w+'px');
+      await page.screenshot({path:join('artifacts/visual-qa','app-economics-'+w+'.png'),animations:'disabled',fullPage:true});
+      console.log('PASS app economics interactive and visual QA '+w+'px');
+    }catch(e){record('App economics visuals '+w,e);}
   }
   // Full iOS roadmap: static flow + progressive checklist/schedule + responsive preview.
   if(w===390 || w===1440){
