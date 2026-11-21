@@ -9,6 +9,10 @@ const { title, description, canonicalPath } = Astro.props;
 const siteBase = Astro.site || new URL(Astro.url.origin);
 const canonical = new URL(canonicalPath || Astro.url.pathname, siteBase).toString();
 const indexable = import.meta.env.PUBLIC_INDEXABLE === 'true';
+// Search Console URL-prefix verification for GitHub Pages only; never staging.
+const searchConsoleToken = indexable && String(import.meta.env.BASE_URL).startsWith('/techblogtip') &&
+  /^[A-Za-z0-9+/_-]{12,160}={0,2}$/.test(String(import.meta.env.PUBLIC_GSC_VERIFICATION || ''))
+  ? String(import.meta.env.PUBLIC_GSC_VERIFICATION) : '';
 const fullTitle = title === 'TechBlogTip' ? 'TechBlogTip — Thủ thuật & kiến thức công nghệ' : title + ' | TechBlogTip';
 const jsonLd = {
   '@context': 'https://schema.org', '@type': 'WebSite',
@@ -25,6 +29,7 @@ const jsonLd = {
     <meta name="theme-color" content="#f8f7f4" />
     <meta name="description" content={description} />
     <meta name="robots" content={indexable ? 'index,follow' : 'noindex,nofollow'} />
+    {searchConsoleToken && <meta name="google-site-verification" content={searchConsoleToken} />}
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
