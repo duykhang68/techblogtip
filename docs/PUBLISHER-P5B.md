@@ -280,3 +280,12 @@ The next reliability slice hardens `POST /api/submit`:
 - A changed revision, foreign source PR, unavailable Google Sheets or unknown state still **fails closed**. K:L confirmation never touches M:O, doesn't imply publication, and requires authenticated same-origin editor plus Durable Object source lock.
 
 Regression tests simulate a second submit after merge, forged body markers, a false write acknowledgment, and one-time Google Sheets write failures. This covers deterministic backend replays but **does not claim** a fresh browser-driven Google OAuth end-to-end test; keep [Issue #19](https://github.com/duykhang68/techblogtip/issues/19) available for that final UI acceptance.
+
+
+## Cloudflare CLI vs Script API origin conflicts (21/11/2026)
+
+[Publisher DEV run #44858565981](https://github.com/duykhang68/techblogtip/actions/runs/44858565981) passed 72 Publisher tests and validated all secrets, then `cf deploy` aborted before upload because Worker `techblogtip-publisher-dev` was **last modified via Cloudflare Script API**. Cloudflare's [CLI release-candidate documentation](https://developers.cloudflare.com/changelog/post/2026-11-17-release-candidate/) explicitly prescribes `cf deploy --force` for this upload-origin conflict. This is not a broken production URL, missing secret, or runtime failure.
+
+The **manual**, `main`-only protected environment `techblogtip-publisher-dev` now uses `cf deploy --force --no-provision --secrets-file "$BINDINGS_FILE"`. It must still check out and compare the exact source SHA, pass Publisher tests, regenerate all required secret bindings from GitHub Environment secrets, and verify public Worker `/health` SHA plus anonymous API denial. The selected Worker name remains `techblogtip-publisher-dev`; **GitHub Pages production is not touched by this workflow**. This intentionally replaces direct Script API changes in that Worker with reviewed code/configuration from `main`; avoid using the Script API for unreviewed production edits in future.
+
+Cloudflare account inspection confirmed the latest Worker deployment origin was `api` at 2026-11-21T02:38:51Z and expected Worker bindings included `SOURCE_LOCKS`, `DEPLOY_SHA`, and required Google/GitHub secret names. Secret values were never read or logged. The new version is not live until an authorized workflow_dispatch rerun succeeds on the merged fix's exact main SHA.
