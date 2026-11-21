@@ -37,6 +37,7 @@ jobs:
       TBT_GITHUB_PUBLISHER_TOKEN: ${{ secrets.TBT_GITHUB_PUBLISHER_TOKEN }}
       TBT_PRODUCTION_SITE_URL: https://duykhang68.github.io/techblogtip/
       TBT_PRODUCTION_SYNC_TOKEN: ${{ secrets.TBT_PRODUCTION_SYNC_TOKEN }}
+      TBT_NOTION_INTEGRATION_TOKEN: ${{ secrets.TBT_NOTION_INTEGRATION_TOKEN }}
       PUBLISHER_URL: https://techblogtip-publisher-dev.tamsudev-com.workers.dev
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

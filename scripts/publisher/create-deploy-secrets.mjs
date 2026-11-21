@@ -43,6 +43,13 @@ if(syncToken){
     throw new Error('TBT_PRODUCTION_SYNC_TOKEN must have 32–256 characters');
   payload.PRODUCTION_SYNC_TOKEN=syncToken;
 }
+// Optional P6 Notion integration: never log its value, and never require it for P7/Publisher.
+// The workflow always rebuilds the complete encrypted bindings from protected secrets.
+const notionToken=String(process.env.TBT_NOTION_INTEGRATION_TOKEN||'').trim();
+if(notionToken){
+  if(notionToken.length<20||notionToken.length>2048)throw new Error('TBT_NOTION_INTEGRATION_TOKEN format/length invalid');
+  payload.NOTION_INTEGRATION_TOKEN=notionToken;
+}
 // Missing sync token keeps authenticated manual verification available;
 // the automated Pages callback remains unavailable until configured.
 payload.DEPLOY_SHA=sha;

@@ -25,6 +25,10 @@ jobs:
       DEPLOY_TARGET: github-pages
       PUBLIC_INDEXABLE: "true"
       PUBLIC_GSC_VERIFICATION: ${{ vars.PUBLIC_GSC_VERIFICATION }}
+      # Existing Publisher OAuth Web Client ID is public by design; no new Google credential.
+      PUBLIC_KOREA_CV_GOOGLE_CLIENT_ID: ${{ secrets.TBT_GOOGLE_OAUTH_CLIENT_ID }}
+      # Fail closed until operator sets the reviewed private Korea CV API origin.
+      PUBLIC_KOREA_CV_API_URL: ${{ vars.PUBLIC_KOREA_CV_API_URL }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

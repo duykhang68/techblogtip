@@ -31,6 +31,9 @@ dự án xác nhận.** Một PR merged không đồng nghĩa chức năng đã 
 
 **Giai đoạn 3: chưa nghiệm thu end-to-end**, tập trung:
 
+- **P6/P7 + SEO one-time setup:** xem [PHASE3-ONE-TIME-SETUP.md](PHASE3-ONE-TIME-SETUP.md). Chỉ cấu hình token một lần sau khi code/CI sẵn sàng; không lưu secret trong repo và không khẳng định live PASS khi chưa có kiểm chứng.
+
+
 1. [P6 Notion #125](https://github.com/duykhang68/techblogtip/issues/125): dữ liệu nguồn thật → preview lossless/review → WYSIWYG → DRAFT Google Sheets → Draft PR. Blocks/media chưa hỗ trợ phải Review, không ghi đè âm thầm.
 2. [P7 Obsidian #126](https://github.com/duykhang68/techblogtip/issues/126): file Markdown thật → bảo toàn frontmatter/wikilinks/attachments hoặc Review bắt buộc → DRAFT Sheets → Draft PR. Không xuất bản tự động.
 3. **SEO:** live sitemap 78 URL, 6 sampled HTML pages, robots/canonical PASS trong run #44920107716. Google URL Inspection **SKIP** vì `GSC_SERVICE_ACCOUNT_JSON` chưa được cấu hình; không được suy đoán là Google đã index. Monitor chỉ đọc, không submit URL hàng loạt và không cron.

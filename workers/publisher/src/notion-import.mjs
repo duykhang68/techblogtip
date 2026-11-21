@@ -3,7 +3,10 @@ export function notionId(id){const s=String(id||'').replace(/-/g,'');if(!/^[a-f0
 export function notionNeedsReview(blocks){
  return blocks.some(b=>{
   const part=b[b.type]||{};
-  const supported=['heading_1','heading_2','heading_3','paragraph','bulleted_list_item','numbered_list_item','quote','code','divider'];
+  // Only markup that the current WYSIWYG visualize()/serialize() path can round-trip.
+  // H1, numbered lists, quotes, code and dividers need review until there is a
+  // lossless editor mapping (the preview endpoint never saves to Sheets).
+  const supported=['heading_2','heading_3','paragraph','bulleted_list_item'];
   return b.has_children || !supported.includes(b.type) || (part.rich_text||[]).some(t=>{
    const ann=t.annotations||{};
    return Boolean(t.href||t.text?.link||t.mention||t.equation||Object.entries(ann).some(([key,value])=>key!=='color' && Boolean(value))|| (ann.color && ann.color!=='default'));
@@ -41,5 +44,28 @@ export async function notionPagePreview({id,token,fetcher=fetch}){
   if(cursor){if(visitedCursors.has(cursor))fail(502,'notion_pagination_cycle','Repeated pagination cursor');visitedCursors.add(cursor);}
  }while(cursor);
  const title=Object.values(info.properties||{}).filter(v=>v.type==='title').flatMap(v=>v.title||[]).map(v=>v.plain_text||'').join('')||'Notion import';
- return {sourceType:'notion',sourceId:page,title,body:notionMarkdown(blocks),lastEditedTime:info.last_edited_time,requiresReview:notionNeedsReview(blocks)};
+ const requiresReview=notionNeedsReview(blocks);
+ return {sourceType:'notion',sourceId:page,title,body:notionMarkdown(blocks),lastEditedTime:info.last_edited_time,requiresReview,reviewReason:requiresReview?'Notion contains unsupported or potentially lossy blocks/formatting; review in the original page before importing.':null};
+}
+
+/**
+ * Authenticated, read-only discovery of pages shared with the Notion integration.
+ * No page body or integration token is returned to the browser.
+ */
+export async function notionListPages({token,fetcher=fetch}){
+ if(!token)fail(503,'notion_token_missing','Notion integration token required');
+ const res=await fetcher('https://api.notion.com/v1/search',{
+  method:'POST',
+  headers:{'Authorization':'Bearer '+token,'Notion-Version':'2022-06-28','Content-Type':'application/json'},
+  body:JSON.stringify({filter:{property:'object',value:'page'},page_size:50}),
+  signal:AbortSignal.timeout(12000)
+ });
+ if(!res.ok)fail(502,'notion_search_failed','Cannot list Notion pages shared with integration');
+ const data=await res.json();
+ if(!Array.isArray(data.results))fail(502,'notion_search_invalid','Invalid Notion page listing');
+ return {pages:data.results.filter(p=>p.object==='page'&&!p.archived&&!p.in_trash).slice(0,50).map(p=>{
+  const title=Object.values(p.properties||{}).filter(v=>v?.type==='title')
+   .flatMap(v=>v.title||[]).map(v=>v.plain_text||'').join('').slice(0,150);
+  return {id:notionId(p.id),title:title||'Untitled Notion page'};
+ }),hasMore:Boolean(data.has_more)};
 }
