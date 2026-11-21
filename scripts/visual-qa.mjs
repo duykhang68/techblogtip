@@ -134,23 +134,27 @@ try{
       },start);
       const middle=await readProgress();
       assert.ok(middle>start&&middle<100,'TOC percentage must increase while reading');
-      // Media/layout can grow after load: the article's bottom - 120px
-      // is not a stable "100% read" position. Scroll to the actual document end.
-      await page.evaluate(()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'}));
-      await page.waitForFunction(middle=>{
-        const meter=document.querySelector('[data-reading-progress]');
-        return meter&&Number(meter.value)>middle;
-      },middle);
-      const end=await readProgress();
+      // Images and embedded visuals can adjust the document height after load.
+      // Wait for a settled end-of-document reading state, not merely the first
+      // progress increment (which can legitimately be 99%).
+      await page.waitForFunction(() => {
+        const root = document.documentElement;
+        const maxScroll = Math.max(0, root.scrollHeight - window.innerHeight);
+        if (window.scrollY < maxScroll - 2) {
+          window.scrollTo({ top: maxScroll, behavior: 'instant' });
+          return false;
+        }
+        const meter = document.querySelector('[data-reading-progress]');
+        const label = document.querySelector('[data-reading-percent]');
+        const links = [...document.querySelectorAll('[data-toc-link]')];
+        return Number(meter?.value) === 100 &&
+          label?.textContent === '100%' &&
+          links.length > 0 &&
+          links.at(-1)?.getAttribute('aria-current') === 'location';
+      }, null, { timeout: 10000 });
+      const end = await readProgress();
       assert.equal(end,100,'Article completion should reach 100%');
       assert.equal(await page.locator('[data-toc-link][aria-current="location"]').getAttribute('href'),await page.locator('[data-toc-link]').last().getAttribute('href'),'Final heading must be active at completion');
-      // The meter and text are updated by separate DOM assignments during scroll.
-      // Wait until the user-facing label catches up rather than sampling mid-render.
-      await page.waitForFunction(() => {
-        const meter=document.querySelector('[data-reading-progress]');
-        const label=document.querySelector('[data-reading-percent]');
-        return meter && label && Number(meter.value)===100 && label.textContent==='100%';
-      }, null, {timeout:5000});
       assert.equal(await page.locator('[data-reading-percent]').textContent(),'100%');
       console.log('PASS Smart TOC active section and progress from '+start+'% to '+end+'%');
     }catch(e){record('Smart TOC interaction',e);}

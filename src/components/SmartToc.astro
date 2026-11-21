@@ -75,7 +75,9 @@ const visibleHeadings = headings.filter(heading => heading.depth === 2 || headin
       sections.forEach(({ heading }, index) => {
         if (heading.getBoundingClientRect().top <= readingLine + 1) activeIndex = index;
       });
-      if (readingPosition >= articleBottom && sections.length) activeIndex = sections.length - 1;
+      // The final heading stays active once the reader reaches the end, even
+      // when a fixed reading line remains above the last heading.
+      if (completion === 100 && sections.length) activeIndex = sections.length - 1;
 
       sections.forEach(({ link }, index) => {
         const active = index === activeIndex;
