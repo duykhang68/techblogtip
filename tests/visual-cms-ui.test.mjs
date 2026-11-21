@@ -49,7 +49,7 @@ test('Focus Workspace supports independent panel toggles, keyboard escape, mobil
    "window.addEventListener('resize',updateWorkspacePanels)",
    "if(e.key==='Escape')",
    'function previewToggle()',
-   "workspace.classList.toggle('focus-mode')",
+   "$('workspace').classList.toggle('focus-mode')",
    "workspace.classList.add('right-collapsed')",
  ])assert.ok(cmsHTML.includes(marker),'missing UX behavior: '+marker);
 });
