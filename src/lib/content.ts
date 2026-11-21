@@ -3,8 +3,14 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 export type Article = CollectionEntry<'articles'>;
 
 export function slugify(input: string): string {
-  return input.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const normalized = input.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd');
+  const ascii = normalized.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  // A tag written entirely in Korean, Japanese, etc. must still have a valid
+  // static route. Preserve existing ASCII/Vietnamese slugs for stable URLs.
+  if (ascii) return ascii;
+  const unicode = Array.from(input.trim()).map(char => char.codePointAt(0)!.toString(16)).join('-');
+  return unicode ? `unicode-${unicode}` : 'untagged';
 }
 
 // GitHub Pages uses /techblogtip/ while Cloudflare staging stays at /.
