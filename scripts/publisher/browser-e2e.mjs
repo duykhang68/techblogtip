@@ -47,6 +47,8 @@ const ready={
   status:'READY',slug:'bai-ready-trong-trinh-duyet'
 };
 const rows=[draft,ready];
+const mediaItems=[];
+const mediaFilename='b'.repeat(32)+'.webp';
 const metrics={signIns:0,submit:0,preview:0,putDraft:0,revision:0,unexpected:[]};
 const expectedFields=['title','body','author','category','tags','summary','series','slug'];
 const json=(res,obj,status=200,headers={})=>{
@@ -94,12 +96,37 @@ const server=createServer(async(req,res)=>{
    if(!auth&&route.startsWith('/api/'))return json(res,{message:'Not authenticated'},401);
    if(req.method==='GET'&&route==='/api/rows')
     return json(res,{editor:'synthetic@example.test',rows});
-   if(req.method==='GET'&&route==='/api/media-library')return json(res,{sourceId:url.searchParams.get('sourceId'),items:[]});
+   if(req.method==='GET'&&route==='/api/drive/files')
+    return json(res,{files:[
+     {id:'drive-image-001',name:'photo.jpg',mimeType:'image/jpeg',size:30000},
+     {id:'drive-image-002',name:'photo.png',mimeType:'image/png',size:44000},
+     {id:'drive-image-003',name:'photo.webp',mimeType:'image/webp',size:16000}]});
+   if(req.method==='POST'&&route==='/api/media/import'){
+    const input=await bodyOf(req);
+    assert.equal(input.sourceId,draft.sourceId);
+    assert.deepEqual(input.fileIds,['drive-image-001','drive-image-002','drive-image-003']);
+    const asset={filename:mediaFilename,path:'/media/tbt-'+'a'.repeat(16)+'/'+mediaFilename,
+      preview:'/api/media/'+draft.sourceId+'/'+mediaFilename,bytes:16000};
+    if(!mediaItems.length)mediaItems.push(asset);
+    return json(res,{items:[asset]});
+   }
+   if(req.method==='GET'&&route.startsWith('/api/media/')){
+    res.writeHead(200,{'Content-Type':'image/webp','Cache-Control':'private'});
+    res.end(Buffer.from('UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA','base64'));return;
+   }
+   if(req.method==='GET'&&route==='/api/media-library')return json(res,{sourceId:url.searchParams.get('sourceId'),items:mediaItems});
    if(req.method==='GET'&&route==='/api/draft'){
     const row=rows.find(r=>r.sourceId===url.searchParams.get('sourceId'));
     if(!row||row.status!=='DRAFT')return json(res,{message:'Draft unavailable'},409);
     return json(res,{status:'DRAFT',snapshot:'fixture-snapshot',
       fields:Object.fromEntries(expectedFields.map(key=>[key,row[key]]))});
+   }
+   if(req.method==='PUT'&&route==='/api/draft'){
+    const input=await bodyOf(req);
+    assert.equal(input.sourceId,draft.sourceId);
+    assert.match(input.fields.body,/!\[Ảnh nghiệm thu P8\]\(\/media\/tbt-[a-f0-9]{16}\/[a-f0-9]{32}\.webp\)/);
+    draft.body=input.fields.body;metrics.putDraft++;
+    return json(res,{saved:true,snapshot:'fixture-snapshot',fields:input.fields});
    }
    if(req.method==='POST'&&route==='/api/preview'){
     metrics.preview++;
@@ -231,6 +258,30 @@ try{
   await context.close();
   console.log('PASS synthetic Google-session browser UI at '+width+'px: preview, read-only advanced Markdown, safe submit/reload');
  }
+ // P8 real browser exercise: multi-select, import, insert, save and reopen using local fakes only.
+ draft.body='## Bài P8\n\nBài viết nhập ảnh dùng kiểm thử trực quan.';
+ const mediaContext=await browser.newContext({viewport:{width:1280,height:900}});
+ await mediaContext.addCookies([{name:'publisher_fixture_session',value:'1',url:base}]);
+ const mediaPage=await mediaContext.newPage();
+ mediaPage.on('dialog',dialog=>dialog.accept('Ảnh nghiệm thu P8'));
+ await mediaPage.goto(base+'/editor?sourceId='+draft.sourceId,{waitUntil:'load'});
+ await mediaPage.waitForFunction(()=>document.querySelector('#editor-body')?.getAttribute('contenteditable')==='true');
+ await mediaPage.locator('#import-drive').click();
+ await mediaPage.locator('#drive-file-grid input[type="checkbox"]').first().waitFor();
+ assert.equal(await mediaPage.locator('#drive-file-grid input[type="checkbox"]').count(),3);
+ await mediaPage.locator('#drive-file-grid input[type="checkbox"]').check();
+ await mediaPage.locator('#drive-import-selected').click();
+ await mediaPage.locator('#media-library-grid button').first().waitFor();
+ await mediaPage.locator('#media-library-grid button').first().click();
+ assert.equal(await mediaPage.locator('#editor-body figure[data-media-path] img').count(),1);
+ await mediaPage.locator('#editor-save').click();
+ await mediaPage.waitForFunction(()=>document.querySelector('#editor-save-status')?.textContent.includes('Đã lưu Google Sheets.'));
+ assert.equal(metrics.putDraft,1);
+ await mediaPage.reload({waitUntil:'load'});
+ await mediaPage.waitForFunction(()=>document.querySelector('#editor-body figure[data-media-path] img')!==null);
+ assert.equal(await mediaPage.locator('#editor-body figure[data-media-path] img').count(),1,'Stored WebP did not survive reload');
+ await mediaContext.close();
+ console.log('PASS P8 synthetic browser batch picker → WebP library → WYSIWYG insert → Sheet save → reopen');
  assert.equal(metrics.submit,1,'Expected exactly one synthetic submit across both viewports');
  assert.ok(metrics.preview>=2,'Expected preview request on mobile and desktop');
  assert.deepEqual(metrics.unexpected,[],'Unexpected synthetic endpoint');
