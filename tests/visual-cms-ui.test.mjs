@@ -8,7 +8,7 @@ test('Visual CMS static HTML has valid inline JavaScript',()=>{
  assert.doesNotThrow(()=>new Script(match[1]));
 });
 test('Visual CMS authoring controls exist and preserve Google-only authentication',()=>{
- for(const pattern of ['id="google-login"','id="auth-panel"','id="workspace"','id="signout"','id="public-page"','id="preview-toggle"','id="rail-','function publishedLink','function setupRail','function drawCanvas','palette-entry','layer-entry']){
+ for(const pattern of ['id="google-login"','id="auth-panel"','id="workspace"','id="signout"','id="public-page"','id="preview-toggle"','b.id=\'rail-\'+id','function publishedLink','function setupRail','function drawCanvas','palette-entry','layer-entry']){
   assert.ok(cmsHTML.includes(pattern),pattern);
  }
  assert.ok(!cmsHTML.includes('CF_Authorization'));
