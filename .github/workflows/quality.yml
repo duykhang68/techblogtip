@@ -31,6 +31,14 @@ jobs:
           node -e "const r=require('./dist/release.json');if(r.sha!==process.env.SOURCE_SHA) process.exit(1);"
       - name: Browser visual QA · mobile / desktop (no browser download)
         run: npm run qa:visual
+      - name: Validate GitHub Pages /techblogtip/ release build (no deploy)
+        env:
+          DEPLOY_TARGET: github-pages
+          SITE_URL: https://duykhang68.github.io/techblogtip/
+          PUBLIC_INDEXABLE: "true"
+        run: |
+          npm run build
+          npm run verify:build
       - name: Preserve screenshots (on failure or success)
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
