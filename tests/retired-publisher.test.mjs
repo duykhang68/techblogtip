@@ -17,11 +17,12 @@ test('decommissioned writer modules and workflow cannot silently return',()=>{
   'docs/PHASE3-ONE-TIME-SETUP.md'
  ])assert.equal(existsSync(path),false,'Retired component accidentally restored: '+path);
 });
-test('retained PageSpeed article, Archive and separate Korea CV remain available',()=>{
+test('approved PageSpeed and GitHub CLI articles, Archive and Korea CV remain available',()=>{
  for(const path of [
   'workers/korea-cv/src/index.mjs',
   'src/pages/tools/korea-cv/index.astro',
   'src/content/articles/techblogtip-100-diem-google-pagespeed-insights.md',
+  'src/content/articles/xoa-nhieu-repository-github-cli-an-toan.md',
   'src/pages/archieve/index.astro',
   'scripts/verify-production-deploy.mjs'
  ])assert.equal(existsSync(path),true,'Existing public content/service missing: '+path);
