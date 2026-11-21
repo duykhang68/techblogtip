@@ -50,7 +50,8 @@ async function fixture(){
   body:'source-id: '+sourceId+'\nsource-revision: '+cells[10],
  };
  const runtime={
-  cells,env,pr,marker:{project:'techblogtip',ref:'main',sha:mainSha,
+  cells,env,pr,runName:'Deploy production · SHA '+mainSha,
+  runPath:'.github/workflows/deploy-production.yml',marker:{project:'techblogtip',ref:'main',sha:mainSha,
     builtAt:'2026-11-21T00:10:00.000Z'},
   html:'',status:200,compare:'ahead',writes:[],requests:[],
  };
@@ -90,8 +91,8 @@ async function fixture(){
     if(path.startsWith('/compare/'))return Response.json({status:runtime.compare});
     if(path==='/git/ref/heads/main')return Response.json({object:{sha:mainSha}});
     if(path==='/actions/runs/123')
-      return Response.json({name:'Deploy · GitHub Pages production',
-        path:'.github/workflows/deploy-production.yml',status:'completed',
+      return Response.json({name:runtime.runName,
+        path:runtime.runPath,status:'completed',
         conclusion:'success',head_branch:'main',head_sha:mainSha,
         repository:{full_name:'duykhang68/techblogtip'},event:'workflow_dispatch'});
     return Response.json({message:'not found'},{status:404});
@@ -188,6 +189,23 @@ test('event-driven sync verifies a trusted workflow run and writes bounded batch
   runId:123,releaseSha:mainSha,cursor:1,
  },f.fetcher);
  assert.equal(valid.releaseSha,mainSha);
+ // `run-name:` changes GitHub's run.name to a SHA label, while the
+ // workflow path remains the trusted identity.
+ f.runtime.runName='Deploy · GitHub Pages production';
+ assert.equal((await requireProductionSync(request,f.env,{
+  runId:123,releaseSha:mainSha,cursor:1,
+ },f.fetcher)).runId,123);
+ // Renaming a display label does not affect authorization.
+ f.runtime.runName='Renamed display label';
+ assert.equal((await requireProductionSync(request,f.env,{
+  runId:123,releaseSha:mainSha,cursor:1,
+ },f.fetcher)).runId,123);
+ // A different workflow path must still fail closed even with a valid token.
+ f.runtime.runPath='.github/workflows/untrusted.yml';
+ await assert.rejects(requireProductionSync(request,f.env,{
+  runId:123,releaseSha:mainSha,cursor:1,
+ },f.fetcher),{code:'release_sync_untrusted'});
+ f.runtime.runPath='.github/workflows/deploy-production.yml';
  const batch=await reconcileProductionBatch(f.env,valid,f.fetcher);
  assert.equal(batch.processed,1);
  assert.equal(batch.results[0].state,'written');
