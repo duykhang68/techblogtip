@@ -6,7 +6,7 @@ import { createDraftPR,inspectSubmittedSourcePR,githubRequest } from './github-a
 import { inspectPublisherPR } from './pr-status.mjs';
 import { finalizeVerifiedArticle,requireProductionSync,reconcileProductionBatch } from './release-writeback.mjs';
 import { readProductionStatus } from './production-status.mjs';
-import { loadEditableDraft,saveEditableDraft } from './editorial.mjs';
+import { loadEditableDraft,saveEditableDraft,forkEditableRevision } from './editorial.mjs';
 import { parsePublisherPreview } from './markdown-preview.mjs';
 import { notionPagePreview } from './notion-import.mjs';
 import { obsidianPreview } from './obsidian-import.mjs';
@@ -237,6 +237,16 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         const payload=await jsonRequest(request,2048);
         const token=await getSheetsToken(env,fetcher,'https://www.googleapis.com/auth/drive.readonly');
         return respond(await driveImageMetadata({id:payload.id,token,fetcher}));
+      }
+      if(request.method==='POST'&&path==='/api/draft/fork'){
+        const data=await jsonRequest(request,512);
+        // Lock one free row; re-read the sheet under that lock before writing.
+        const sheet=await readSheet(env,fetcher);
+        const occupied=new Set(sheet.records.map(row=>row.rowNumber));
+        const free=Array.from({length:199},(_,i)=>i+2).find(number=>!occupied.has(number));
+        if(!free)fail(409,'sheet_full','No free editorial row within A1:O200');
+        return respond(await withRowWriteLock(env,free,()=>
+          forkEditableRevision(env,data.sourceId,data.expectedSnapshot,free,fetcher)),201);
       }
       if(path==='/api/draft'){
         if(request.method==='GET'){

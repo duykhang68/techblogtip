@@ -1,5 +1,5 @@
 import { fail } from './auth.mjs';
-import { rowById, readSheet, putEditorialCells } from './google-api.mjs';
+import { rowById, readSheet, putEditorialCells, writeRevisionRow } from './google-api.mjs';
 
 const fields=['title','body','author','category','tags','summary','series','slug'];
 const editableStates=new Set(['IDEA','DRAFT','REVIEW']);
@@ -89,4 +89,32 @@ export async function saveEditableDraft(env,request,fetcher=fetch){
      fields.some((name,i)=>updated.cells[i<7?i+1:9]!==values[name]))
     fail(409,'draft_write_conflict','Draft was changed while saving; check Sheet before retry');
   return {sourceId,saved:true,snapshot:await draftSnapshot(updated,env),fields:values};
+}
+
+
+// Called under a destination row lock. The original row is never changed.
+export async function forkEditableRevision(env,sourceId,expectedSnapshot,rowNumber,fetcher=fetch){
+ if(typeof sourceId!=='string'||!idPattern.test(sourceId)||
+    typeof expectedSnapshot!=='string'||!hashPattern.test(expectedSnapshot))
+  fail(400,'draft_invalid','Source ID and current snapshot required');
+ const sheet=await readSheet(env,fetcher),source=rowById(sheet.records,sourceId);
+ if(!source)fail(404,'source_missing','Original article not found');
+ if(await draftSnapshot(source,env)!==expectedSnapshot)
+  fail(409,'draft_conflict','Original article changed. Reload before creating a revision');
+ if(canOpenForWriting(source))
+  fail(409,'revision_not_needed','Article already editable');
+ if(!Number.isInteger(rowNumber)||rowNumber<2||rowNumber>200)
+  fail(400,'row_invalid','Invalid revision row');
+ const occupied=sheet.records.find(row=>row.rowNumber===rowNumber);
+ if(occupied)fail(409,'revision_slot_busy','Revision row was occupied. Retry');
+ const newId='TBT-'+crypto.randomUUID();
+ const cells=[newId,...source.cells.slice(1,8),'DRAFT',source.cells[9],'','','','',''];
+ // The new row has no GitHub PR, release hash or publication metadata.
+ await writeRevisionRow(env,sheet.token,rowNumber,cells,fetcher);
+ const after=await readSheet(env,fetcher),created=rowById(after.records,newId);
+ if(!created||created.rowNumber!==rowNumber||created.cells[8]!=='DRAFT'||
+    created.cells.slice(10).some(Boolean))
+  fail(409,'revision_write_conflict','Cannot verify revision row; inspect Sheets');
+ return {sourceId:newId,originalSourceId:sourceId,status:'DRAFT',rowNumber,
+  snapshot:await draftSnapshot(created,env)};
 }
