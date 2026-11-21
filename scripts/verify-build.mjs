@@ -1,9 +1,18 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-const expect=['index.html','robots.txt','sitemap.xml','release.json','chuyen-muc/index.html','chu-de/index.html','the/index.html','404.html'];
+const expect=['index.html','robots.txt','sitemap.xml','release.json','chuyen-muc/index.html','chu-de/index.html','the/index.html','sitemap/index.html','404.html'];
 for(const path of expect)if(!existsSync(resolve('dist',path)))throw new Error('Missing dist/'+path);
 const html=readFileSync('dist/index.html','utf8');
 const production=process.env.PUBLIC_INDEXABLE==='true';
+const sitemapHtml=readFileSync('dist/sitemap/index.html','utf8');
+const publicPathPrefix=process.env.DEPLOY_TARGET==='github-pages'?'/techblogtip':'';
+if(!html.includes('href="'+publicPathPrefix+'/sitemap/"'))
+  throw new Error('Global footer is missing the public HTML sitemap link');
+if(!sitemapHtml.includes('href="'+publicPathPrefix+'/sitemap.xml"'))
+  throw new Error('HTML sitemap must link the canonical XML sitemap');
+if(!sitemapHtml.includes('aria-label="Sơ đồ cấu trúc website TechBlogTip"'))
+  throw new Error('HTML sitemap is missing semantic navigation');
+
 if(!html.includes('lang="vi"'))throw new Error('Vietnamese language marker missing');
 if(!html.includes(production?'index,follow':'noindex,nofollow'))
   throw new Error(production?'Production must be indexable':'Staging must remain noindex');
@@ -52,6 +61,14 @@ const builtSlugs=readdirSync(resolve('dist/bai-viet'),{withFileTypes:true})
 const expectedSlugs=approved.map(name=>name.replace(/\.md$/,'')).sort();
 if(JSON.stringify(builtSlugs)!==JSON.stringify(expectedSlugs))
   throw new Error('Built article routes contain removed or missing posts');
+for(const slug of builtSlugs){
+  const href=publicPathPrefix+'/bai-viet/'+slug+'/';
+  if(!sitemapHtml.includes('href="'+href+'"'))
+    throw new Error('HTML sitemap is missing the published article URL: '+href);
+}
+if(!sitemap.includes(publicPathPrefix+'/sitemap/</loc>'))
+  throw new Error('XML sitemap is missing the public HTML sitemap route');
+
 for(const name of readdirSync(articlesDir).filter(n=>n.endsWith('.md'))){
  const source=readFileSync(resolve(articlesDir,name),'utf8');
  if(/^draft:\s*true\s*$/m.test(source))continue;
