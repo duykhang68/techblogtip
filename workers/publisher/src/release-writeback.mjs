@@ -1,7 +1,7 @@
 import { fail, PublisherError } from './auth.mjs';
 import { readSheet, putSystemCells, rowById } from './google-api.mjs';
 import { inspectPublisherPR } from './pr-status.mjs';
-import { verifyProductionEvidence, verifiedStoredRelease, productionOrigin } from './release-proof.mjs';
+import { verifyProductionEvidence, verifiedStoredRelease, productionOrigin, releaseShaStillValid } from './release-proof.mjs';
 import { withSourceWriteLock } from './source-lock.mjs';
 import { githubRequest } from './github-api.mjs';
 
@@ -25,7 +25,8 @@ export async function finalizeVerifiedArticle(env,sourceId,fetcher=fetch,expecte
     fail(409,'release_callback_sha_mismatch','Current public release does not match confirmed deployment SHA');
   const before=recordedTriple(row);
   if(before.some(Boolean)){
-    if(!before.every(Boolean)||before[0]!==proof.url||before[1]!==proof.sha||
+    if(!before.every(Boolean)||before[0]!==proof.url||
+       !await releaseShaStillValid(env,before[1],proof.sha,fetcher)||
        !STAMP.test(before[2])||!Number.isFinite(Date.parse(before[2]))||
        Date.parse(before[2])>Date.now()+300000)
       fail(409,'release_writeback_conflict','Existing release metadata is incomplete or differs; manual review required');
