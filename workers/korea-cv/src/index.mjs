@@ -41,22 +41,42 @@ async function lookup(id, token) {
   return payload.files?.[0] || null;
 }
 async function list(token) {
-  const params=new URLSearchParams({spaces:'appDataFolder',q:"name contains 'korea-cv-' and 'appDataFolder' in parents and trashed = false",fields:'nextPageToken,files(id,name,modifiedTime)',pageSize:'100'});
-  const data=await googleJson(DRIVE+'?'+params,{headers:fetchHeaders(token)});
-  return (data.files||[]).filter(f=>/^korea-cv-[0-9a-f-]{36}\.json$/i.test(f.name)).map(f=>({id:f.name.slice(9,-5),updatedAt:f.modifiedTime}));
+  const found=[];let nextPageToken='';
+  do {
+    const params=new URLSearchParams({
+      spaces:'appDataFolder',
+      q:"name contains 'korea-cv-' and 'appDataFolder' in parents and trashed = false",
+      fields:'nextPageToken,files(id,name,modifiedTime,appProperties)',pageSize:'100',
+    });
+    if(nextPageToken)params.set('pageToken',nextPageToken);
+    const data=await googleJson(DRIVE+'?'+params,{headers:fetchHeaders(token)});
+    found.push(...(data.files||[]));
+    nextPageToken=data.nextPageToken||'';
+  } while(nextPageToken && found.length<500);
+  return found.filter(f=>/^korea-cv-[0-9a-f-]{36}\.json$/i.test(f.name)).map(f=>({
+    id:f.name.slice(9,-5),updatedAt:f.modifiedTime,label:f.appProperties?.label||'',
+    targetCompany:f.appProperties?.targetCompany||'',targetRole:f.appProperties?.targetRole||'',
+  }));
 }
 async function readFile(googleId,token) { return googleJson(DRIVE+'/'+encodeURIComponent(googleId)+'?alt=media',{headers:fetchHeaders(token)}); }
 async function writeFile(id, json, token, existing) {
-  if (existing) {
-    await googleJson(UPLOAD+'/'+encodeURIComponent(existing.id)+'?uploadType=media&fields=id,modifiedTime',{
-      method:'PATCH', headers:{...fetchHeaders(token),'Content-Type':'application/json; charset=utf-8'},body:json,
-    });
-    return;
-  }
+  // Single multipart operation updates the CV content AND searchable display metadata.
+  // Only non-secret version labels are stored in the private appDataFolder file metadata.
+  const cv=JSON.parse(json);
+  const metadata={
+    name:fileName(id),
+    mimeType:'application/json',
+    appProperties:{
+      label:cv.label.slice(0,200),
+      targetCompany:cv.targetCompany.slice(0,200),
+      targetRole:cv.targetRole.slice(0,200),
+    },
+    ...(!existing ? {parents:['appDataFolder']} : {}),
+  };
   const boundary='kcv-'+crypto.randomUUID();
-  const metadata=JSON.stringify({name:fileName(id),parents:['appDataFolder'],mimeType:'application/json'});
-  const body='--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+metadata+'\r\n--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+json+'\r\n--'+boundary+'--';
-  await googleJson(UPLOAD+'?uploadType=multipart&fields=id,name',{method:'POST',headers:{...fetchHeaders(token),'Content-Type':'multipart/related; boundary='+boundary},body});
+  const body='--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(metadata)+'\r\n--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+json+'\r\n--'+boundary+'--';
+  const endpoint=UPLOAD+(existing?'/'+encodeURIComponent(existing.id):'')+'?uploadType=multipart&fields=id,name';
+  await googleJson(endpoint,{method:existing?'PATCH':'POST',headers:{...fetchHeaders(token),'Content-Type':'multipart/related; boundary='+boundary},body});
 }
 
 export default {
