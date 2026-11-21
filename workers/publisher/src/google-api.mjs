@@ -15,10 +15,10 @@ function b64url(binary){
 function privateKeyBytes(pem){
   return Uint8Array.from(atob(pem.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g,'')),c=>c.charCodeAt(0));
 }
-async function createAssertion(config,time=Math.floor(Date.now()/1000)){
+async function createAssertion(config,time=Math.floor(Date.now()/1000),scope=SCOPE){
   const encode=obj=>b64url(new TextEncoder().encode(JSON.stringify(obj)));
   const header=encode({alg:'RS256',typ:'JWT'});
-  const claims=encode({iss:config.client_email,scope:SCOPE,aud:TOKEN_ENDPOINT,iat:time,exp:time+3500});
+  const claims=encode({iss:config.client_email,scope,aud:TOKEN_ENDPOINT,iat:time,exp:time+3500});
   const payload=header+'.'+claims;
   const key=await crypto.subtle.importKey('pkcs8',privateKeyBytes(config.private_key),{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
   const signature=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',key,new TextEncoder().encode(payload));
@@ -31,14 +31,15 @@ export function sheetConfig(env){
     fail(503,'sheet_not_configured','TechBlogTip Sheet ID/GID is not configured');
   return {spreadsheetId,gid};
 }
-export async function getSheetsToken(env,fetcher=fetch){
+export async function getSheetsToken(env,fetcher=fetch,scope=SCOPE){
+  if(![SCOPE,'https://www.googleapis.com/auth/drive.readonly'].includes(scope))fail(400,'google_scope_invalid','Unapproved Google OAuth scope');
   let account;
   try{account=JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_JSON||'');}catch{fail(503,'google_not_configured','Google service account secret missing');}
   if(account?.type!=='service_account'||!account.private_key?.includes('PRIVATE KEY')||
      !account.client_email?.endsWith('.gserviceaccount.com'))
      fail(503,'google_not_configured','Google service account fields incomplete');
   let assertion;
-  try{assertion=await createAssertion(account);}catch{fail(503,'google_not_configured','Cannot sign Google service-account assertion');}
+  try{assertion=await createAssertion(account,undefined,scope);}catch{fail(503,'google_not_configured','Cannot sign Google service-account assertion');}
   const response=await fetcher(TOKEN_ENDPOINT,{
     method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
     body:new URLSearchParams({grant_type:'urn:ietf:params:oauth:grant-type:jwt-bearer',assertion}),
