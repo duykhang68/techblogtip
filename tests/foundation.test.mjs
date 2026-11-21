@@ -12,11 +12,21 @@ test('content and staging policy',()=>{
  assert.ok(read('src/pages/robots.txt.ts').includes('Disallow: /'));
  assert.ok(read('astro.config.mjs').includes("output: 'static'"));
 });
-test('production deploy is not in milestone A',()=>{
+test('staging remains isolated and production deploy requires a protected manual gate',()=>{
  assert.ok(existsSync('.github/workflows/deploy-staging.yml'));
- assert.ok(!existsSync('.github/workflows/deploy-production.yml'));
- const deploy=read('.github/workflows/deploy-staging.yml');
- assert.match(deploy,/SOURCE_SHA/);assert.match(deploy,/cf deploy/);assert.match(deploy,/verify-deploy/);
+ assert.ok(existsSync('.github/workflows/deploy-production.yml'));
+ const staging=read('.github/workflows/deploy-staging.yml');
+ const production=read('.github/workflows/deploy-production.yml');
+ assert.match(staging,/SOURCE_SHA/);
+ assert.match(staging,/cf deploy/);
+ assert.match(staging,/verify-deploy/);
+ assert.match(production,/workflow_dispatch/);
+ assert.match(production,/deploy-production-only/);
+ assert.match(production,/environment: techblogtip-production/);
+ assert.match(production,/PUBLIC_INDEXABLE: "true"/);
+ assert.match(production,/--mode techblogtip-production/);
+ assert.match(production,/verify-production-deploy/);
+ assert.doesNotMatch(production,/\n  push:\n/);
 });
 test('demo post slugs are unique, no image format violation',()=>{
  const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));

@@ -1,0 +1,59 @@
+name: Deploy · Cloudflare production
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Deploy distinct production Worker to approved custom hostname"
+        type: choice
+        required: true
+        options: [deploy-production-only]
+permissions:
+  contents: read
+concurrency:
+  group: techblogtip-production-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: ${{ github.ref == 'refs/heads/main' && inputs.confirm == 'deploy-production-only' }}
+    name: Exact SHA · deploy production · public verification
+    environment: techblogtip-production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_SHA: ${{ github.sha }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      SITE_URL: ${{ vars.TBT_PRODUCTION_SITE_URL }}
+      PRODUCTION_URL: ${{ vars.TBT_PRODUCTION_SITE_URL }}
+      PUBLIC_INDEXABLE: "true"
+      TBT_PRODUCTION_SYNC_TOKEN: ${{ secrets.TBT_PRODUCTION_SYNC_TOKEN }}
+      PRODUCTION_RUN_ID: ${{ github.run_id }}
+      PRODUCTION_RELEASE_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+      - name: Reject missing secrets or unsafe production hostname
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Cloudflare production secret missing"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Cloudflare account variable missing"; exit 1; }
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA" || { echo "::error::SHA mismatch"; exit 1; }
+          node --input-type=module -e "
+            const x = new URL(process.env.PRODUCTION_URL);
+            if(x.protocol!=='https:' || x.hostname.endsWith('.workers.dev') || x.hostname.endsWith('.pages.dev') ||
+               !x.hostname.includes('.') || x.port || x.pathname!=='/' || x.search || x.hash)
+              process.exit(1);
+          "
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Production indexability, content and exact SHA build gate
+        run: npm run quality
+      - name: Deploy assets ONLY to distinct production Worker
+        run: npx cf deploy ./dist --mode techblogtip-production --no-provision --message "Production $SOURCE_SHA"
+      - name: Verify custom domain, robots and public exact SHA
+        run: node scripts/publisher/verify-production-deploy.mjs
+      - name: Reconcile verified published articles back to Sheets M:O
+        run: node scripts/publisher/reconcile-from-actions.mjs

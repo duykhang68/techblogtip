@@ -29,6 +29,8 @@ jobs:
       TBT_SHEETS_GID: ${{ secrets.TBT_SHEETS_GID }}
       TBT_GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.TBT_GOOGLE_SERVICE_ACCOUNT_JSON }}
       TBT_GITHUB_PUBLISHER_TOKEN: ${{ secrets.TBT_GITHUB_PUBLISHER_TOKEN }}
+      TBT_PRODUCTION_SITE_URL: ${{ vars.TBT_PRODUCTION_SITE_URL }}
+      TBT_PRODUCTION_SYNC_TOKEN: ${{ secrets.TBT_PRODUCTION_SYNC_TOKEN }}
       PUBLISHER_URL: https://techblogtip-publisher-dev.tamsudev-com.workers.dev
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

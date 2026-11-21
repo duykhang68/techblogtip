@@ -1,9 +1,10 @@
 import { defineConfig } from 'cf/config';
 
-// Staging only. A separate production hostname is a post-brand-decision task.
-export default defineConfig({
+// Explicit modes keep the existing staging deploy unchanged. Production is a
+// separate Worker name and requires the protected, manual release workflow.
+export default defineConfig(({ mode }) => ({
   worker: {
-    name: 'techblogtip-staging',
+    name: mode === 'techblogtip-production' ? 'techblogtip-production' : 'techblogtip-staging',
     compatibilityDate: '2026-11-20',
     workersDev: true,
     assets: {
@@ -11,4 +12,4 @@ export default defineConfig({
       notFoundHandling: '404-page',
     },
   },
-});
+}));

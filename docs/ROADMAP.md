@@ -59,3 +59,8 @@ PR #35 was then **closed unmerged** to prevent a test article with
 \`draft: false\` from entering main. Core READY → Draft PR → K:L is verified;
 live replay of an identical POST and failure injection have not been tested.
 The optional read-only audit can now recheck the cross-system result by source ID.
+
+
+## P5c.3 — Code gate implemented, production configuration pending
+
+Verified release workflow and M:O writeback code, tests and runbooks are described in docs/PUBLISHER-P5C3-RELEASE.md. Public production hostname and protected credentials are **not yet provisioned**; staging/Publisher DEV cannot count as a production release. Until a real release is successfully verified, the Editor must not show 100%.

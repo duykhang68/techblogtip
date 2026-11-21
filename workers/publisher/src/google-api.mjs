@@ -78,8 +78,8 @@ export async function readSheet(env,fetcher=fetch){
 }
 export async function putSystemCells(env,token,rowNumber,columns,values,fetcher=fetch){
   if(!Number.isInteger(rowNumber)||rowNumber<2||rowNumber>200)fail(400,'row_invalid','Row number out of range');
-  if(!['A','K:L'].includes(columns))fail(400,'column_denied','Only system-owned columns may be written');
-  if((columns==='A'&&values.length!==1)||(columns==='K:L'&&values.length!==2))
+  if(!['A','K:L','M:O'].includes(columns))fail(400,'column_denied','Only system-owned columns may be written');
+  if((columns==='A'&&values.length!==1)||(columns==='K:L'&&values.length!==2)||(columns==='M:O'&&values.length!==3))
     fail(400,'value_invalid','Wrong number of system values');
   const {spreadsheetId}=sheetConfig(env);
   const range='VN!'+columns.replace(':',rowNumber+':')+rowNumber;

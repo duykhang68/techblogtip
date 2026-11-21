@@ -30,6 +30,20 @@ try{
 }catch {throw new Error('TBT_GOOGLE_SERVICE_ACCOUNT_JSON must be a complete Google service account JSON');}
 const sha=process.env.GITHUB_SHA;
 if(!/^[a-f0-9]{40}$/.test(sha||''))throw new Error('Cannot determine exact deployment SHA');
+// Optional until an independent public production environment is provisioned.
+const productionUrl=String(process.env.TBT_PRODUCTION_SITE_URL||'').trim();
+const syncToken=String(process.env.TBT_PRODUCTION_SYNC_TOKEN||'').trim();
+if(productionUrl){
+  const url=new URL(productionUrl);
+  if(url.protocol!=='https:'||url.port||url.pathname!=='/'||
+     url.search||url.hash||url.hostname.endsWith('.workers.dev')||
+     url.hostname.endsWith('.pages.dev')||url.hostname==='localhost')
+    throw new Error('TBT_PRODUCTION_SITE_URL must be a dedicated HTTPS origin');
+  payload.PRODUCTION_SITE_URL=url.origin;
+  if(syncToken.length<32||syncToken.length>256)
+    throw new Error('Production URL requires a 32–256 character TBT_PRODUCTION_SYNC_TOKEN');
+  payload.PRODUCTION_SYNC_TOKEN=syncToken;
+}else if(syncToken)throw new Error('Production sync token was configured without a production URL');
 payload.DEPLOY_SHA=sha;
 if(!process.env.RUNNER_TEMP||!process.env.GITHUB_OUTPUT)throw new Error('Not running on GitHub Actions');
 const dir=mkdtempSync(join(process.env.RUNNER_TEMP,'tbt-publisher-'));
