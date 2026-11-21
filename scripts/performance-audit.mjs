@@ -7,7 +7,7 @@ function walk(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isD
 const files=walk(root);
 const assets=files.filter(f=>/\.(css|js|woff2?|webp|jpe?g|png|avif)$/i.test(f))
  .map(f=>({path:f.slice(root.length+1),bytes:statSync(f).size,gzipBytes:gzipSync(readFileSync(f)).length})).sort((a,b)=>b.bytes-a.bytes);
-const pages=['index.html','archieve/index.html','bai-viet/lam-quen-voi-google-sheets/index.html'];
+const pages=['index.html','archieve/index.html','bai-viet/techblogtip-100-diem-google-pagespeed-insights/index.html'];
 const routes=pages.filter(f=>files.includes(join(root,f))).map(route=>{
  const html=readFileSync(join(root,route),'utf8');
  const css=[...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map(x=>x[1]).join('');
@@ -24,7 +24,7 @@ const cardImages=cards.map(match=>{
   width:attr('width'),height:attr('height'),deferred:tag.includes('data-defer-src=')};
 });
 function check(ok,message){if(!ok)throw Error('Performance regression: '+message);}
-check(cards.length===8,'homepage must contain 8 article cards');
+check(cards.length===1,'homepage must contain the one retained PageSpeed article card');
 if(cardImages[0].src)check(cardImages[0].loading==='eager'&&cardImages[0].fetchpriority==='high','LCP image not prioritized');
 cardImages.forEach((im,i)=>{if(!im.src)return;check(im.width&&im.height,'image geometry missing');
  if(i>0)check(im.loading==='lazy'&&!im.deferred,'card thumbnails must be native lazy');});
