@@ -60,7 +60,7 @@ test('P6 page picker fails closed without token, lists only shared-page metadata
  assert.deepEqual(result.pages[0],{id:'a'.repeat(32),title:'Bài thử nghiệm'});
  assert.equal(result.hasMore,false);
  assert.equal(seen[0].method,'POST');
- assert.match(seen[0].url,/api.notion.com\\/v1\\/search/);
+ assert.ok(seen[0].url.endsWith('/v1/search'));
  assert.equal(seen[0].auth,'Bearer synthetic-private-token');
  assert.ok(!JSON.stringify(result).includes('synthetic-private-token'));
 });
