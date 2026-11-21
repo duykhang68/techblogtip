@@ -11,7 +11,7 @@ const canonical = new URL(canonicalPath || Astro.url.pathname, siteBase).toStrin
 const indexable = import.meta.env.PUBLIC_INDEXABLE === 'true';
 // Search Console URL-prefix verification for GitHub Pages only; never staging.
 const searchConsoleToken = indexable && String(import.meta.env.BASE_URL).startsWith('/techblogtip') &&
-  /^[A-Za-z0-9_-]{12,160}={0,2}$/.test(String(import.meta.env.PUBLIC_GSC_VERIFICATION || ''))
+  /^[A-Za-z0-9+/_-]{12,160}={0,2}$/.test(String(import.meta.env.PUBLIC_GSC_VERIFICATION || ''))
   ? String(import.meta.env.PUBLIC_GSC_VERIFICATION) : '';
 const fullTitle = title === 'TechBlogTip' ? 'TechBlogTip — Thủ thuật & kiến thức công nghệ' : title + ' | TechBlogTip';
 const jsonLd = {
