@@ -30,3 +30,22 @@ npm run dev
 - The site emits staging canonical URLs and `noindex` by default.
 - Before public launch, decide brand and domain, set `SITE_URL`, set `PUBLIC_INDEXABLE=true`, validate sitemap/robots/canonicals, then enable search indexing.
 - Search Console and real keyword data will be added in a later milestone.
+
+## Understanding skipped GitHub Actions
+
+GitHub Actions does not provide arbitrary labels for workflow runs. We use `run-name` as a no-runner-cost reason label, visible in the **Actions** run list even when the job-level `if` prevents a runner from starting.
+
+| Run title | Meaning | Next action |
+| --- | --- | --- |
+| `SKIP OK · <workflow> passed` | Upstream CI completed successfully. **CI Incident Collector** has no failure to record; expected skip. | None. |
+| `COLLECT INCIDENT · <workflow>: <conclusion>` | Upstream failed, timed out, requested action, or did not start. The collector should create or update a deduplicated GitHub Issue. | Check the collector job and incident Issue. |
+| `SKIP REVIEW · <workflow>: <conclusion>` | Upstream was cancelled, skipped, neutral, etc. Collector intentionally does not classify it as a failure, **but that does not prove CI passed**. | Inspect upstream run; rerun or investigate when appropriate. |
+| `BACKFILL · workflow_dispatch/push` | The collector was started manually or its own code changed. It scans recent failures. | Check job logs for scan results. |
+| `SKIP · ... requires main` | A manual deployment or canary was launched from a non-`main` ref and is correctly blocked. | Select `main` for manual runs. |
+| `SKIP · ... confirmation` | Publisher DEV was not explicitly authorized by the `deploy-dev-only` input. | Re-dispatch with the expected input on `main`. |
+
+Production release also has an optional Sheets M:O writeback step. When `TBT_PRODUCTION_SYNC_TOKEN` is absent, the opposite explanatory step emits a notice **and a job summary**. This does **not** imply production deployment failed; confirm the live SHA verification separately.
+
+Path-filtered workflows may **not start at all** if their watched files have not changed. Missing runs are not equivalent to green checks; inspect the `on.paths` filters before deciding a check is intentionally omitted.
+
+These titles apply only to **new runs after the workflow update reaches `main`**. GitHub cannot retroactively rename historical skipped runs. All checks, main-only guards, write-token restrictions, and event-driven behavior remain unchanged.

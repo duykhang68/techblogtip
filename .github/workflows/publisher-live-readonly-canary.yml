@@ -1,4 +1,8 @@
 name: Publisher DEV · Live Read-only Canary
+run-name: >-
+  ${{ github.ref == 'refs/heads/main'
+      && format('Publisher canary · SHA {0}', github.sha)
+      || format('SKIP · read-only canary requires main (got {0})', github.ref_name) }}
 on:
   push:
     branches: [main]

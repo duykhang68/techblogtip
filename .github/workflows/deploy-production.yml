@@ -1,4 +1,8 @@
 name: Deploy · GitHub Pages production
+run-name: >-
+  ${{ github.ref == 'refs/heads/main'
+      && format('Deploy production · SHA {0}', github.sha)
+      || format('SKIP · production requires main (got {0})', github.ref_name) }}
 on:
   push:
     branches: [main]
@@ -67,6 +71,13 @@ jobs:
       - name: Reconcile verified Sheets M:O (when service secret is provisioned)
         if: ${{ env.TBT_PRODUCTION_SYNC_TOKEN != '' }}
         run: node scripts/publisher/reconcile-from-actions.mjs
-      - name: Explain manual recovery until sync token is available
+      - name: Explain skipped Sheets writeback when sync token is missing
         if: ${{ env.TBT_PRODUCTION_SYNC_TOKEN == '' }}
-        run: echo '::notice::Pages deployed and verified. Configure TBT_PRODUCTION_SYNC_TOKEN in the github-pages environment and Publisher DEV to enable automatic M:O writeback.'
+        run: |
+          echo '::notice title=Sheets writeback skipped::Pages verified, but TBT_PRODUCTION_SYNC_TOKEN is missing. Configure it in the github-pages environment and Publisher DEV to enable M:O writeback.'
+          {
+            echo '### SKIP · Sheets production writeback'
+            echo ''
+            echo 'Reason: TBT_PRODUCTION_SYNC_TOKEN is not configured for github-pages.'
+            echo 'GitHub Pages deployment and live SHA verification remain separate from Sheets writeback.'
+          } >> "$GITHUB_STEP_SUMMARY"
