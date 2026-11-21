@@ -15,6 +15,19 @@ if(!sitemap.includes('<urlset'))throw new Error('Sitemap malformed');
 const index=JSON.parse(readFileSync('dist/search-index.json','utf8'));
 if(!Array.isArray(index)||index.length<8)throw new Error('Search index empty or malformed');
 if(!index.every(x=>x.title&&x.url&&x.category))throw new Error('Search index entries invalid');
+if(process.env.DEPLOY_TARGET==='github-pages'){
+  const prefix='/techblogtip/';
+  if(!html.includes('href="'+prefix+'"')||!html.includes('href="'+prefix+'favicon.svg"')||
+     !html.includes('href="https://duykhang68.github.io'+prefix+'"'))
+    throw new Error('GitHub Pages base-path navigation, favicon, or canonical is missing');
+  if(!index.every(x=>x.url.startsWith(prefix)))
+    throw new Error('Search index links must remain inside the Pages project');
+  if(!sitemap.includes('https://duykhang68.github.io'+prefix))
+    throw new Error('Sitemap URLs must use the GitHub Pages project path');
+  if(!robots.includes('https://duykhang68.github.io'+prefix+'sitemap.xml'))
+    throw new Error('Sitemap directive must reference GitHub Pages subpath');
+}
+
 const release=JSON.parse(readFileSync('dist/release.json','utf8'));
 const sha=process.env.SOURCE_SHA || process.env.GITHUB_SHA;
 if(process.env.GITHUB_ACTIONS==='true' && release.sha!==sha)throw new Error('Built release SHA mismatch');
