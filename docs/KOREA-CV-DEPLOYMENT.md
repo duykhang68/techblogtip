@@ -15,12 +15,12 @@ This file describes a **private CV tool**, not a blog content publisher. No appl
 10. **Master integration PR**: create only after component PRs have merged (or are ready for clean cherry-picking), never assert 'production' before exact-SHA checks.
 
 ## Google Cloud setup
-1. In Google Cloud Console, select the Google Cloud project for **TechBlogTip Korea CV only**.
+1. In Google Cloud Console, select the **existing TechBlogTip Publisher Google Cloud project**. Reuse the existing OAuth Web Client ID already referenced by GitHub secret `TBT_GOOGLE_OAUTH_CLIENT_ID`. Do not reuse credentials from OneBlog.
 2. APIs & Services → Library → enable **Google Drive API**.
-3. Google Auth Platform / OAuth consent screen: declare `https://www.googleapis.com/auth/drive.appdata` (application-owned Drive app data, not full Drive access). Complete relevant verification/consent requirements before general access.
-4. Create OAuth **Web application** client ID and include `https://duykhang68.github.io` in **Authorized JavaScript origins**. Add a separate staging origin when relevant. The exact website origin must match, without `/techblogtip` path.
-5. Configure GitHub repository/environment variable `PUBLIC_KOREA_CV_GOOGLE_CLIENT_ID` with the *public client ID* and `PUBLIC_KOREA_CV_API_URL` with the HTTPS Korea CV Worker origin for the production Astro build **only after acceptance**. Do not place a Google client secret in the frontend.
-6. In protected GitHub environment `techblogtip-korea-cv-dev`, configure `KOREA_CV_GOOGLE_CLIENT_ID` and Cloudflare API credentials. Deploy DEV only via manual main-branch confirmation workflow.
+3. Google Auth Platform / OAuth consent screen: declare `https://www.googleapis.com/auth/drive.appdata` (application-owned Drive app data, not full Drive access). The existing Publisher ID-token sign-in and Korea CV Drive access token use different flows: the latter requires separate user consent for `drive.appdata`. Complete relevant verification/consent requirements before general access.
+4. Open the **existing OAuth Web application** client and include `https://duykhang68.github.io` in **Authorized JavaScript origins**. Add a separate staging origin when relevant. The exact website origin must match, without `/techblogtip` path.
+5. At a reviewed production integration PR, expose the existing public client ID to the Astro build as `PUBLIC_KOREA_CV_GOOGLE_CLIENT_ID` (mapped from `TBT_GOOGLE_OAUTH_CLIENT_ID` without printing it in logs), and configure `PUBLIC_KOREA_CV_API_URL` with the HTTPS Korea CV Worker origin for the production Astro build **only after acceptance**. Do not place a Google client secret in the frontend.
+6. For protected DEV deployment, the workflow **reuses** `secrets.TBT_GOOGLE_OAUTH_CLIENT_ID`, `secrets.CLOUDFLARE_API_TOKEN`, and `vars.CLOUDFLARE_ACCOUNT_ID`. Confirm these existing settings are accessible to environment `techblogtip-korea-cv-dev`; repository secrets and environment-scoped secrets have different visibility. Deploy DEV only via manual main-branch confirmation workflow.
 7. For production, use an independently reviewed, restricted Worker deployment and provenance check; do not treat a DEV deployment as production.
 
 ## Security and privacy
