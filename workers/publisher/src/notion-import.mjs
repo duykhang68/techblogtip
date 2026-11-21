@@ -3,7 +3,10 @@ export function notionId(id){const s=String(id||'').replace(/-/g,'');if(!/^[a-f0
 export function notionNeedsReview(blocks){
  return blocks.some(b=>{
   const part=b[b.type]||{};
-  const supported=['heading_1','heading_2','heading_3','paragraph','bulleted_list_item','numbered_list_item','quote','code','divider'];
+  // Only markup that the current WYSIWYG visualize()/serialize() path can round-trip.
+  // H1, numbered lists, quotes, code and dividers need review until there is a
+  // lossless editor mapping (the preview endpoint never saves to Sheets).
+  const supported=['heading_2','heading_3','paragraph','bulleted_list_item'];
   return b.has_children || !supported.includes(b.type) || (part.rich_text||[]).some(t=>{
    const ann=t.annotations||{};
    return Boolean(t.href||t.text?.link||t.mention||t.equation||Object.entries(ann).some(([key,value])=>key!=='color' && Boolean(value))|| (ann.color && ann.color!=='default'));
@@ -41,5 +44,6 @@ export async function notionPagePreview({id,token,fetcher=fetch}){
   if(cursor){if(visitedCursors.has(cursor))fail(502,'notion_pagination_cycle','Repeated pagination cursor');visitedCursors.add(cursor);}
  }while(cursor);
  const title=Object.values(info.properties||{}).filter(v=>v.type==='title').flatMap(v=>v.title||[]).map(v=>v.plain_text||'').join('')||'Notion import';
- return {sourceType:'notion',sourceId:page,title,body:notionMarkdown(blocks),lastEditedTime:info.last_edited_time,requiresReview:notionNeedsReview(blocks)};
+ const requiresReview=notionNeedsReview(blocks);
+ return {sourceType:'notion',sourceId:page,title,body:notionMarkdown(blocks),lastEditedTime:info.last_edited_time,requiresReview,reviewReason:requiresReview?'Notion contains unsupported or potentially lossy blocks/formatting; review in the original page before importing.':null};
 }
