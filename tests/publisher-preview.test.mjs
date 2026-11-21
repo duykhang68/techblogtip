@@ -74,7 +74,7 @@ test('editor preview is on demand, read-only and uses safe DOM text APIs',()=>{
   assert.match(source,/editor-preview-prose/);
   assert.match(source,/max-width:700px/);
   assert.doesNotMatch(source,/\.innerHTML\s*=/);
-  assert.match(source,/canvas\.contentEditable=complex/);
+  assert.match(source,/canvas\.contentEditable=\(complex\|\|locked\)/);
   assert.match(route,/requireSameOrigin\(request\)/);
   assert.ok(route.indexOf("const editor=await requireEditor(") < route.indexOf("path==='/api/preview'"));
   assert.match(route,/parsePublisherPreview\(payload\.body\)/);
