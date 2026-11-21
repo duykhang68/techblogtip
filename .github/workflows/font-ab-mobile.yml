@@ -27,7 +27,7 @@ concurrency:
 jobs:
   measure:
     name: Mobile cold-cache font comparison
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
       FONT_AB_URL: ${{ inputs.url || 'https://duykhang68.github.io/techblogtip/' }}
@@ -41,7 +41,7 @@ jobs:
           node-version: '22'
       - run: npm install --no-package-lock --no-audit --no-fund
       - name: Install pinned Chromium for Playwright Core
-        run: npx --yes playwright@1.56.0 install --with-deps chromium
+        run: npx playwright-core install --with-deps chromium
       - name: Run mobile A/B (production site remains unchanged)
         run: node scripts/font-ab-mobile.mjs
       - name: Publish measurement summary
