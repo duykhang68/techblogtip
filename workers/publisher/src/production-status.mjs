@@ -1,4 +1,5 @@
 import {githubRequest} from './github-api.mjs';
+import {productionOrigin} from './release-proof.mjs';
 
 const SHA=/^[a-f0-9]{40}$/;
 const STAGING='https://techblogtip-staging.tamsudev-com.workers.dev';
@@ -55,12 +56,15 @@ async function fetchPublicJson(url,fetcher){
 // a production environment verified based on GitHub or staging alone.
 export async function readProductionStatus(env,fetcher=fetch){
   const get=path=>githubRequest(env,path,{fetcher});
-  const [mainResult,prsResult,runsResult,stagingResult,publisherResult]=await Promise.allSettled([
+  let productionBase=null;
+  try{productionBase=productionOrigin(env);}catch{ /* not configured; do not use staging */ }
+  const [mainResult,prsResult,runsResult,stagingResult,publisherResult,productionResult]=await Promise.allSettled([
     get('/git/ref/heads/main'),
     get('/pulls?state=open&per_page=100&sort=created&direction=asc'),
     get('/actions/runs?per_page=30').catch(()=>publicActionsRuns(fetcher)),
     fetchPublicJson(STAGING+'/release.json',fetcher),
     fetchPublicJson(PUBLISHER+'/health',fetcher),
+    productionBase?fetchPublicJson(productionBase+'/release.json',fetcher):Promise.reject(new Error('not_configured')),
   ]);
   const main=resultOf(mainResult,v=>{
     if(!SHA.test(v?.object?.sha||''))throw Error('main_sha_invalid');
@@ -96,10 +100,23 @@ export async function readProductionStatus(env,fetcher=fetch){
       matchesMain:main.available?v.releaseSha===main.sha:null,
       sourceWriteLocks:v.sourceWriteLocks===true,environment:'publisher-dev'};
   });
+  const production=resultOf(productionResult,v=>{
+    if(v.project!=='techblogtip'||v.ref!=='main'||!SHA.test(v.sha||''))
+      throw Error('production_marker_invalid');
+    return {configured:true,verified:true,status:'release_marker_verified',
+      releaseSha:v.sha,base:productionBase,
+      matchesMain:main.available?v.sha===main.sha:null,
+      note:'Production release marker found; individual article publication is verified separately'};
+  });
+  if(!productionBase){
+    production.configured=false;production.verified=false;production.status='not_configured';
+    production.note='No dedicated production domain; staging and Publisher DEV do not count';
+  }else if(!production.available){
+    production.configured=true;production.verified=false;production.status='not_verified';
+    production.note='Dedicated production URL configured but public release not verified';
+  }
   return {
     snapshotAt:new Date().toISOString(),repo:'duykhang68/techblogtip',
-    main,queue,actions,staging,publisherDev,
-    production:{configured:false,verified:false,status:'not_configured',
-      note:'Chưa có production public URL/verified release cho TechBlogTip. Staging và Publisher DEV không phải production.'},
+    main,queue,actions,staging,publisherDev,production,
   };
 }
