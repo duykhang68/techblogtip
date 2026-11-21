@@ -32,7 +32,7 @@
 - Body prose paragraphs use editorial text-align: justify with natural last-line alignment. Never justify the last line, force word spacing, or insert spaces through JavaScript.
 - Never split Vietnamese words: disallow word-break: break-all, overflow-wrap: anywhere and automatic hyphenation on prose. Prefer word-break: normal, overflow-wrap: normal, hyphens: none, word-spacing: normal and letter-spacing: normal. Only code, URLs and genuinely unbroken tokens may have scoped emergency overflow handling.
 - Short snippets, navigation, buttons, metadata, headings, code, blockquotes, lists and tables must not be stretched to achieve justification. Use natural alignment on compact/mobile layouts where justification would produce excessive gaps.
-- Full article headings use available content width, responsive font sizes and text-wrap: balance. Do not insert manual line breaks, nowrap or truncation for full article titles.
+- Full article headings use the entire article-header width (up to the 1440px site container), responsive font sizes and `text-wrap: wrap` for natural line packing; do not use balance, justify headings, insert manual line breaks, nowrap or truncate full titles. Article tagline uses that same width with natural desktop justification and a left-aligned final line, reverting to left alignment on mobile.
 - Test 320px mobile and wide desktop for horizontal overflow, broken Vietnamese diacritics, excessive word gaps and abrupt one-word title lines; use the Google Sheets Publisher story as the regression sample.
 
 ## Automatic editorial visualization gate

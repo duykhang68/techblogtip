@@ -68,12 +68,23 @@
   font-size:clamp(2rem,4.15vw,4.4rem);
   line-height:1.24;
   text-align:start;
-  text-wrap:balance;
+  text-wrap:wrap;
   word-break:normal;
   overflow-wrap:normal;
   hyphens:none;
 }
-.article-lead{max-width:1000px}
+.article-lead{
+  width:100%;
+  max-width:none;
+  text-align:justify;
+  text-align-last:start;
+  text-wrap:wrap;
+  word-break:normal;
+  overflow-wrap:normal;
+  hyphens:none;
+  word-spacing:normal;
+  letter-spacing:normal;
+}
 .prose{
   overflow-wrap:normal;
   word-break:normal;
@@ -108,6 +119,9 @@
   text-align:start;
 }
 .card-desc{word-break:normal;overflow-wrap:normal;hyphens:none;text-align:start;text-wrap:wrap}
+@media(max-width:860px){
+  .article-lead{text-align:start}
+}
 @media(max-width:520px){
   .article-top h1{font-size:clamp(1.9rem,7.8vw,2.65rem);line-height:1.29;letter-spacing:-.035em}
   .prose p{text-align:start}
