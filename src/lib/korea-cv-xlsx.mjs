@@ -26,10 +26,10 @@ function worksheet(rows){
   }).join('')+'</row>').join('');
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
     '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
-    '<sheetViews><sheetView workbookViewId="0"/></sheetViews>'+
+    '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0"/></sheetViews>'+
     '<sheetFormatPr defaultRowHeight="24"/><cols>'+Array.from({length:maxCols},(_,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+(i===0?24:30)+'" customWidth="1"/>').join('')+'</cols>'+
     '<sheetData>'+rendered+'</sheetData><printOptions horizontalCentered="1"/><pageMargins left=".25" right=".25" top=".45" bottom=".45" header=".1" footer=".1"/>'+
-    '<pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'+
+    '<pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/>'+
     '</worksheet>';
 }
 function records(items,cols){return (items||[]).map(item=>cols.map(k=>item?.[k]??''));}
