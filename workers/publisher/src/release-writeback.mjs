@@ -13,7 +13,7 @@ function recordedTriple(row){
   return row.cells.slice(12,15).map(x=>String(x||'').trim());
 }
 
-export async function finalizeVerifiedArticle(env,sourceId,fetcher=fetch){
+export async function finalizeVerifiedArticle(env,sourceId,fetcher=fetch,expectedReleaseSha=null){
   if(!ID.test(sourceId||''))fail(400,'source_invalid','System-issued source ID required');
   // Before any mutating request, confirm a dedicated production URL exists.
   productionOrigin(env);
@@ -21,6 +21,8 @@ export async function finalizeVerifiedArticle(env,sourceId,fetcher=fetch){
   const row=rowById(initial.records,sourceId);
   const pr=await inspectPublisherPR(env,row,sourceId,fetcher);
   const proof=await verifyProductionEvidence(env,row,pr,fetcher);
+  if(expectedReleaseSha&&proof.sha!==expectedReleaseSha)
+    fail(409,'release_callback_sha_mismatch','Current public release does not match confirmed deployment SHA');
   const before=recordedTriple(row);
   if(before.some(Boolean)){
     if(!before.every(Boolean)||before[0]!==proof.url||before[1]!==proof.sha||
@@ -93,9 +95,7 @@ export async function reconcileProductionBatch(env,{cursor=1,releaseSha},fetcher
     const sourceId=row.cells[0];
     try{
       const result=await withSourceWriteLock(env,sourceId,()=>
-        finalizeVerifiedArticle(env,sourceId,fetcher));
-      if(result.releaseSha!==releaseSha)
-        fail(409,'release_callback_sha_mismatch','Current public release does not match workflow SHA');
+        finalizeVerifiedArticle(env,sourceId,fetcher,releaseSha));
       results.push({sourceId,state:'written',created:result.created});
     }catch(error){
       results.push({sourceId,state:'pending',code:error instanceof PublisherError?error.code:'verification_unavailable'});
