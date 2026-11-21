@@ -65,7 +65,7 @@ try{
    assert.equal(await page.locator('.home-search-link').count(),0,'Removed homepage search hero must not return');
    assert.equal(await page.locator('[data-theme-toggle]').count(),1,'Lightbulb theme toggle must be available');
    const cards=await page.locator('.article-card').count();
-   assert.equal(cards,2,'Homepage should show the two explicitly approved articles');
+   assert.equal(cards,3,'Homepage should show the three explicitly approved articles');
    const metric=await page.evaluate(()=>{
     const rect=selector=>document.querySelector(selector)?.getBoundingClientRect();
     return {
@@ -131,6 +131,37 @@ try{
       await page.screenshot({path:join('artifacts/visual-qa','github-cli-'+w+'.png'),animations:'disabled'});
       console.log('PASS GitHub CLI safety diagram '+w+'px');
     }catch(e){record('GitHub CLI visual '+w,e);}
+  }
+  // Full iOS roadmap: static flow + progressive checklist/schedule + responsive preview.
+  if(w===390 || w===1440){
+    try{
+      const response=await page.goto(base+'/bai-viet/lo-trinh-hoc-lap-trinh-ios-tu-con-so-0/',{waitUntil:'load'});
+      assert.equal(response.status(),200);
+      assert.equal(await page.locator('[data-auto-visualizer]').count(),1,'Roadmap story map missing');
+      assert.equal(await page.locator('.iosr-steps li').count(),9,'Roadmap requires nine stages');
+      assert.equal(await page.locator('[data-ios-task]').count(),9,'Roadmap requires nine checklist tasks');
+      assert.equal(await page.locator('.iosr-previews figure').count(),2,'HabitFlow previews missing');
+      assert.equal(await page.locator('[data-ios-progress]').getAttribute('aria-valuenow'),'0');
+      await page.locator('[data-ios-task="0"]').check();
+      assert.equal(await page.locator('[data-ios-progress-label]').innerText(),'1/9 giai đoạn');
+      await page.reload({waitUntil:'load'});
+      assert.equal(await page.locator('[data-ios-task="0"]').isChecked(),true,'Roadmap progress must persist on reload');
+      await page.locator('[data-ios-reset]').click();
+      assert.equal(await page.locator('[data-ios-progress]').getAttribute('aria-valuenow'),'0');
+      await page.locator('[data-ios-hours="3"]').click();
+      assert.equal(await page.locator('[data-ios-plan="3"]').isVisible(),true);
+      assert.equal(await page.locator('[data-ios-plan="2"]').isVisible(),false);
+      await page.reload({waitUntil:'load'});
+      assert.equal(await page.locator('[data-ios-hours="3"]').getAttribute('aria-pressed'),'true','Daily schedule preference must persist on reload');
+      const metrics=await page.evaluate(()=>({
+        scrollWidth:document.documentElement.scrollWidth,
+        mapRight:document.querySelector('.iosr-map').getBoundingClientRect().right,
+      }));
+      assert.ok(metrics.scrollWidth<=w+1,'iOS roadmap horizontal overflow '+metrics.scrollWidth+' > '+w);
+      assert.ok(metrics.mapRight<=w+1,'iOS roadmap flow clipped on '+w+'px viewport');
+      await page.screenshot({path:join('artifacts/visual-qa','ios-roadmap-'+w+'.png'),animations:'disabled',fullPage:true});
+      console.log('PASS iOS visual roadmap and interactive checklist '+w+'px');
+    }catch(e){record('iOS roadmap visual '+w,e);}
   }
   if(w===1440){
     try{
