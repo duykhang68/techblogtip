@@ -233,7 +233,7 @@ test('only authenticated editor can allocate system ID in column A',async()=>{
 test('authenticated markdown preview is read-only and never changes Google Sheets',async()=>{
   const f=await fixture(),token=await f.sign();
   const original=JSON.stringify(f.state.values);
-  const body='## Bằng chứng\\n\\n| Cột | Kết quả |\\n| --- | --- |\\n| M:O | Verified |';
+  const body='## Bằng chứng\n\n| Cột | Kết quả |\n| --- | --- |\n| M:O | Verified |';
   const publicAttempt=await f.call('/api/preview','','POST',{body});
   assert.equal(publicAttempt.status,401);
   const crossOrigin=await f.call('/api/preview',token,'POST',{body},
