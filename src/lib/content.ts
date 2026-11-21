@@ -7,12 +7,18 @@ export function slugify(input: string): string {
     .replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-export function articleUrl(article: Article): string {
-  return '/bai-viet/' + article.id.replace(/\.md$/, '') + '/';
+// GitHub Pages uses /techblogtip/ while Cloudflare staging stays at /.
+export function withBase(path: string): string {
+  const normalized = path.startsWith('/') ? path : '/' + path;
+  const base = String(import.meta.env.BASE_URL || '/').replace(/\/+$/, '');
+  return base + normalized;
 }
-export const categoryUrl = (name: string) => '/chuyen-muc/' + slugify(name) + '/';
-export const tagUrl = (name: string) => '/the/' + slugify(name) + '/';
-export const seriesUrl = (name: string) => '/chu-de/' + slugify(name) + '/';
+export function articleUrl(article: Article): string {
+  return withBase('/bai-viet/' + article.id.replace(/\.md$/, '') + '/');
+}
+export const categoryUrl = (name: string) => withBase('/chuyen-muc/' + slugify(name) + '/');
+export const tagUrl = (name: string) => withBase('/the/' + slugify(name) + '/');
+export const seriesUrl = (name: string) => withBase('/chu-de/' + slugify(name) + '/');
 
 export async function getArticles(): Promise<Article[]> {
   const data = await getCollection('articles', ({ data }) => !data.draft);
