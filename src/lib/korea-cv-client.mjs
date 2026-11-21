@@ -33,6 +33,11 @@ export async function connectGoogle(clientId) {
     });
     tokenClient.requestAccessToken({prompt: 'consent'});
   });
+  // GIS may return a subset of requested permissions; fail closed if Drive access was not granted.
+  const scopes=String(response.scope||'').split(/\s+/);
+  if (!response.access_token || !scopes.includes(CV_DRIVE_SCOPE)) {
+    throw new Error('Google Drive appData permission not granted. Accept the Drive access request.');
+  }
   bearer = response.access_token;
   expiresAt = Date.now() + Math.max(30, Number(response.expires_in || 3600) - 60) * 1000;
   return true;
