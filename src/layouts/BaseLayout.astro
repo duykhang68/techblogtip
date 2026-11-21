@@ -26,8 +26,17 @@ const jsonLd = {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#f8f7f4" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fbfaf8" />
+    <script is:inline>
+      (() => {
+        let preferred = null;
+        try { preferred = localStorage.getItem('techblogtip-theme'); } catch {}
+        const dark = preferred === 'dark' || (preferred !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        if (dark) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#101419');
+      })();
+    </script>
     <meta name="description" content={description} />
     <meta name="robots" content={indexable ? 'index,follow' : 'noindex,nofollow'} />
     {searchConsoleToken && <meta name="google-site-verification" content={searchConsoleToken} />}

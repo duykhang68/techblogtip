@@ -118,3 +118,69 @@
   .article-top h1{font-size:clamp(1.9rem,7.8vw,2.65rem);line-height:1.29;letter-spacing:-.035em}
   .prose p{text-align:start}
 }
+
+/* Accessible site-wide theme tokens. Applied before first paint by BaseLayout. */
+:root {
+  --surface: #ffffff;
+  --header-bg: rgba(251,250,248,.96);
+  --subtle-ink: #62666b;
+  --code-bg: #f1eee8;
+  --quote-bg: #fff8f2;
+  --quote-ink: #555e67;
+  --link-ink: #ab4c2a;
+  --footer-bg: #1a1d23;
+  --footer-ink: #c8cbd1;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #f2f5f7;
+  --muted: #bbc5cf;
+  --paper: #101419;
+  --white: #1a222b;
+  --surface: #1a222b;
+  --line: #394553;
+  --accent: #ffad78;
+  --soft: #222d38;
+  --header-bg: rgba(16,20,25,.96);
+  --subtle-ink: #bbc5cf;
+  --code-bg: #28333f;
+  --quote-bg: #242d38;
+  --quote-ink: #d4dde5;
+  --link-ink: #ffc095;
+  --footer-bg: #0b0e13;
+  --footer-ink: #d0d6df;
+}
+.site-header { background: var(--header-bg); }
+.nav-link,.issue-label,.topic-chips a span,.card-meta,.breadcrumb,.article-byline,.toc-link { color:var(--subtle-ink); }
+.home-search-link,.topic-chips a,.pagination a,.directory-item,.related-links a,.article-taxonomy a,
+.search-results li a,.search-field {background:var(--surface);color:var(--ink)}
+.prose code{background:var(--code-bg)}
+.prose blockquote{background:var(--quote-bg);color:var(--quote-ink)}
+.prose a{color:var(--link-ink)}
+.site-footer{background:var(--footer-bg);color:var(--footer-ink)}
+.theme-toggle {
+  flex:0 0 auto; display:inline-grid; place-items:center;
+  width:46px;height:46px;border:1px solid #b54e16;border-radius:50%;
+  background:linear-gradient(145deg,#ff9b25,#e85a0b);color:#fff;
+  box-shadow:0 0 0 3px rgba(250,120,32,.12),0 0 21px rgba(249,106,19,.36);
+  cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;
+}
+.theme-toggle:hover{transform:translateY(-1px);box-shadow:0 0 0 4px rgba(250,120,32,.17),0 0 27px rgba(249,106,19,.5)}
+.theme-toggle:focus-visible{outline:3px solid #ffb873;outline-offset:4px}
+:root[data-theme="dark"] .brand-mark{background:#f2f5f7;color:#171b20}
+:root[data-theme="dark"] .brand-mark span{color:#aa430e}
+:root[data-theme="dark"] .prose pre{background:#080c12;color:#f7f7fa;border:1px solid var(--line)}
+:root[data-theme="dark"] .search-field{border-color:#667788}
+:root[data-theme="dark"] .card-art{background:#344453}
+:root[data-theme="dark"] .footer-layout nav a{color:#e7edf3}
+:root[data-theme="dark"] .footer-brand{color:#fff}
+:root[data-theme="dark"] .footer-bottom{color:#b5bfcb;border-color:#394553}
+:root[data-theme="dark"] .article-byline strong{color:var(--ink)}
+:root[data-theme="dark"] .site-header .nav-link.active{color:var(--accent)}
+:root[data-theme="dark"] .prose th{background:#27313c}
+:root[data-theme="dark"] .fallback-art>span,:root[data-theme="dark"] .fallback-art>b,:root[data-theme="dark"] .fallback-art>i{color:#20242b}
+:root[data-theme="dark"] .section-kicker{color:var(--accent)}
+/* Avoid leaving a blank search hero when the homepage entry point is removed. */
+.article-section{padding-top:28px}
+@media(max-width:520px){.theme-toggle{width:42px;height:42px}.article-section{padding-top:18px}}
+@media(prefers-reduced-motion:reduce){.theme-toggle{transition:none}}

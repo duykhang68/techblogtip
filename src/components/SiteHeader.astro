@@ -12,6 +12,32 @@ const currentPath = Astro.url.pathname;
     <nav aria-label="Điều hướng chính" class="main-nav">
       {navigation.map(item => <a class:list={['nav-link', { active: item.href === withBase('/') ? currentPath === withBase('/') : currentPath.startsWith(item.href) }]} href={item.href} aria-current={(item.href === withBase('/') ? currentPath === withBase('/') : currentPath.startsWith(item.href)) ? 'page' : undefined}>{item.label}</a>)}
     </nav>
-    <a class="header-search" href={withBase('/tim-kiem/')} aria-label="Tìm kiếm bài viết"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.7" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="1.9"/></svg><span>Tìm kiếm</span></a>
+    <button class="theme-toggle" type="button" aria-label="Bật chế độ tối" aria-pressed="false" title="Đổi giao diện sáng/tối" data-theme-toggle>
+      <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 18h6m-5.4 3h4.8M9 14.5C7.8 13.5 7 12.2 7 10.5a5 5 0 0 1 10 0c0 1.7-.8 3-2 4L14.5 17h-5L9 14.5Z"/>
+        <path d="M12 2v2M4.8 5.2l1.4 1.4M19.2 5.2l-1.4 1.4M3 11h2m14 0h2"/>
+      </svg>
+    </button>
   </div>
 </header>
+
+<script is:inline>
+  (() => {
+    const button = document.querySelector('[data-theme-toggle]');
+    if (!button) return;
+    function updateButton() {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      button.setAttribute('aria-pressed', String(dark));
+      button.setAttribute('aria-label', dark ? 'Bật chế độ sáng' : 'Bật chế độ tối');
+      button.setAttribute('title', dark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối');
+    }
+    updateButton();
+    button.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#101419' : '#fbfaf8');
+      try { localStorage.setItem('techblogtip-theme', next); } catch {}
+      updateButton();
+    });
+  })();
+</script>
