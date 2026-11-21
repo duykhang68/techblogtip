@@ -7,7 +7,7 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
 import { ADMIN_HTML, ADMIN_JS, ADMIN_CSS } from '../../workers/publisher/src/ui.mjs';
-import { EDITOR_HTML, EDITOR_JS, EDITOR_CSS } from '../../workers/publisher/src/editor-ui.mjs';
+import { EDITOR_HTML, EDITOR_JS, EDITOR_CSS, EDITOR_IMPORT_CSS, EDITOR_WORKSPACE_CSS } from '../../workers/publisher/src/editor-ui.mjs';
 import { PRODUCTION_HTML, PRODUCTION_JS, PRODUCTION_CSS } from '../../workers/publisher/src/production-ui.mjs';
 import { parsePublisherPreview } from '../../workers/publisher/src/markdown-preview.mjs';
 
@@ -62,17 +62,25 @@ const bodyOf=async request=>{
  return raw?JSON.parse(raw):{};
 };
 const html=ADMIN_HTML.replace('__GOOGLE_CLIENT_ID__','synthetic-browser-test-client')
-  .replace('</main>',EDITOR_HTML+PRODUCTION_HTML+'</main>')
-  .replace('</body>','<script src="/editor.js" defer></script><script src="/production-status.js" defer></script></body>');
+  .replace('</main>',PRODUCTION_HTML+'</main>')
+  .replace('</body>','<script src="/production-status.js" defer></script></body>');
+const editorHtml='<!doctype html><html lang="vi"><head><meta charset="utf-8">'+
+  '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+  '<title>Editor · TechBlogTip</title><link rel="stylesheet" href="/admin.css"></head>'+
+  '<body class="editor-workspace"><header class="editor-workspace-header">'+
+  '<a href="/admin">← Hàng đợi bài viết</a></header>'+
+  '<main class="editor-workspace-main">'+EDITOR_HTML+'</main>'+
+  '<script src="/editor.js" defer></script></body></html>';
 const server=createServer(async(req,res)=>{
   const url=new URL(req.url,'http://127.0.0.1');
   const route=url.pathname,auth=(req.headers.cookie||'').includes('publisher_fixture_session=1');
   try{
    if(req.method==='GET'&&route==='/admin')return text(res,html,'text/html; charset=utf-8');
+    if(req.method==='GET'&&route==='/editor')return text(res,editorHtml,'text/html; charset=utf-8');
    if(req.method==='GET'&&route==='/admin.js')return text(res,ADMIN_JS,'application/javascript; charset=utf-8');
    if(req.method==='GET'&&route==='/editor.js')return text(res,EDITOR_JS,'application/javascript; charset=utf-8');
    if(req.method==='GET'&&route==='/production-status.js')return text(res,PRODUCTION_JS,'application/javascript; charset=utf-8');
-   if(req.method==='GET'&&route==='/admin.css')return text(res,ADMIN_CSS+EDITOR_CSS+PRODUCTION_CSS,'text/css; charset=utf-8');
+   if(req.method==='GET'&&route==='/admin.css')return text(res,ADMIN_CSS+EDITOR_CSS+EDITOR_IMPORT_CSS+EDITOR_WORKSPACE_CSS+PRODUCTION_CSS,'text/css; charset=utf-8');
    if(route==='/api/session'&&req.method==='POST'){
     const b=await bodyOf(req);
     if(b.credential!=='synthetic-browser-credential')return json(res,{message:'Invalid fixture credential'},401);
@@ -158,23 +166,36 @@ try{
   await page.waitForFunction(()=>document.querySelector('#account')?.textContent.includes('synthetic@example.test'));
   await page.waitForFunction(()=>document.querySelectorAll('.row').length===2);
   const draftCard=page.locator('article.row').filter({hasText:'Bản nháp xem trước'});
+  assert.equal(await page.locator('#editor-panel').count(),0,
+    'Editor must not be embedded underneath the admin queue');
+  const popupPromise=context.waitForEvent('page');
   await draftCard.getByRole('button',{name:'Sửa trực quan'}).click();
-  const previewButton=page.locator('#editor-preview-toggle');
-  // Opening the draft is async; the element exists before its API read
-  // completes. Wait for the control to be enabled, not merely mounted.
-  await page.waitForFunction(()=>document.querySelector('#editor-preview-toggle')?.disabled===false);
+  const editor=await popupPromise;
+  await editor.waitForLoadState('load');
+  assert.equal(new URL(editor.url()).pathname,'/editor','Editor must open in a separate tab');
+  assert.equal(new URL(editor.url()).searchParams.get('sourceId'),draft.sourceId);
+  assert.equal(await editor.locator('#editor-panel').count(),1);
+  const previewButton=editor.locator('#editor-preview-toggle');
+  // The new tab must reuse the existing session cookie for protected draft data.
+  await editor.waitForFunction(()=>document.querySelector('#editor-preview-toggle')?.disabled===false);
   assert.equal(await previewButton.isDisabled(),false);
-  assert.equal(await page.locator('#editor-body').getAttribute('contenteditable'),'false',
+  assert.equal(await editor.locator('#editor-body').getAttribute('contenteditable'),'false',
     'Advanced Markdown must remain read-only in visual editor');
   await previewButton.click();
-  await page.waitForFunction(()=>document.querySelector('#editor-preview-status')?.textContent.includes('Bản xem trước chỉ đọc'));
-  assert.ok(await page.locator('#editor-preview-content table').count()>0,'Markdown table missing');
-  assert.ok(await page.locator('#editor-preview-content pre').count()>0,'Code block missing');
-  assert.equal(await page.evaluate(()=>window.__publisherInjected),undefined,'Preview ran untrusted script');
-  assert.equal(await page.locator('#editor-preview-content script').count(),0,'Unsafe script element created');
-  assert.equal(await page.locator('#editor-save').isDisabled(),true);
-  await page.screenshot({path:join(screenshotPath,'publisher-editor-preview-'+width+'.png'),fullPage:true,animations:'disabled'});
-  await page.locator('#editor-close').click();
+  await editor.waitForFunction(()=>document.querySelector('#editor-preview-status')?.textContent.includes('Bản xem trước chỉ đọc'));
+  assert.ok(await editor.locator('#editor-preview-content table').count()>0,'Markdown table missing');
+  assert.ok(await editor.locator('#editor-preview-content pre').count()>0,'Code block missing');
+  assert.equal(await editor.evaluate(()=>window.__publisherInjected),undefined,'Preview ran untrusted script');
+  assert.equal(await editor.locator('#editor-preview-content script').count(),0,'Unsafe script element created');
+  assert.equal(await editor.locator('#editor-save').isDisabled(),true);
+  await editor.screenshot({path:join(screenshotPath,'publisher-editor-preview-'+width+'.png'),fullPage:true,animations:'disabled'});
+  // A direct reload must restore the same workspace using URL and session.
+  await editor.reload({waitUntil:'load'});
+  await editor.waitForFunction(()=>document.querySelector('#editor-preview-toggle')?.disabled===false);
+  assert.equal(await editor.locator('#editor-body').getAttribute('contenteditable'),'false');
+  await editor.locator('#editor-close').click();
+  await editor.waitForURL('**/admin');
+  await editor.close();
   if(width===390){
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
    assert.ok(overflow<=1,'Publisher mobile horizontal overflow '+overflow);
