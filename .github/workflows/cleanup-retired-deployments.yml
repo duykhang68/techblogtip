@@ -1,10 +1,13 @@
 name: Cleanup retired GitHub Deployments (one-shot)
 
-# Runs once for the retirement PR merge. Manual rerun remains available if
-# GitHub's deployment API temporarily fails. It never deploys an application.
+# Runs when this file is first introduced on main, regardless of merge strategy.
+# Manual rerun remains available if GitHub's deployment API temporarily fails.
+# Subsequent changes to this file rerun idempotent cleanup; it never deploys an app.
 on:
   push:
     branches: [main]
+    paths:
+      - '.github/workflows/cleanup-retired-deployments.yml'
   workflow_dispatch:
 
 permissions:
@@ -13,7 +16,6 @@ permissions:
 
 jobs:
   delete-retired-deployments:
-    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'retire Cloudflare staging and Korea CV DEV deployment workflows') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     concurrency:
