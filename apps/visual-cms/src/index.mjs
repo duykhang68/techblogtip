@@ -1,6 +1,8 @@
 import {normalizePage, validatePage, safeFilename, BLOCK_TYPES} from './model.mjs';
 import {googleUser} from './google-auth.mjs';
 import {publishedHTML} from './published-page.mjs';
+import {advancedAPI,scopeUser,spaceFrom,expandedBlocks,publishPage,audit,scheduledTick} from './enterprise.mjs';
+import {graphql,schemaSDL} from './delivery-graphql.mjs';
 
 const HEADERS = {'content-type':'application/json; charset=utf-8','cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
 const now = () => new Date().toISOString();
@@ -23,15 +25,15 @@ async function bodyJson(req) {
   if (body.length>256*1024) throw new Error('payload_too_large');
   try {return JSON.parse(body);} catch {throw new Error('invalid_json');}
 }
-async function getPage(db,id) {return db.prepare('SELECT * FROM cms_pages WHERE id=?').bind(id).first();}
+async function getPage(db,id,space='default') {return db.prepare('SELECT * FROM cms_pages WHERE id=? AND space_id=?').bind(id,space).first();}
 function publicPage(row) {
-  return {id:row.id,slug:row.slug,locale:row.locale,title:row.title,description:row.description,status:row.status,revision:row.revision,updatedAt:row.updated_at,publishedAt:row.published_at,publishedSlug:row.published_slug,publishedLocale:row.published_locale,blocks:JSON.parse(row.draft_json)};
+  return {id:row.id,slug:row.slug,locale:row.locale,title:row.title,description:row.description,space:row.space_id,status:row.status,revision:row.revision,updatedAt:row.updated_at,publishedAt:row.published_at,publishedSlug:row.published_slug,publishedLocale:row.published_locale,blocks:JSON.parse(row.draft_json)};
 }
 async function record(db,row,actor) {
   await db.prepare('INSERT INTO cms_revisions (page_id,revision,document_json,actor,created_at) VALUES (?,?,?,?,?)')
     .bind(row.id,row.revision,JSON.stringify({slug:row.slug,title:row.title,description:row.description,locale:row.locale,blocks:JSON.parse(row.draft_json)}),actor,now()).run();
 }
-async function api(req,url,env,user) {
+async function api(req,url,env,user,space='default') {
   const db=env.CMS_DB;
   if (!db) return fail('database_not_bound',503);
   const parts=url.pathname.split('/').filter(Boolean),method=req.method;
@@ -39,7 +41,7 @@ async function api(req,url,env,user) {
   if (method==='GET' && url.pathname==='/api/schema') return json({blocks:BLOCK_TYPES});
   if (parts[1]==='pages' && parts.length===2) {
     if (method==='GET') {
-      const result=await db.prepare('SELECT id,slug,locale,title,status,revision,updated_at,published_at FROM cms_pages ORDER BY updated_at DESC LIMIT 100').all();
+      const result=await db.prepare('SELECT id,slug,locale,title,status,revision,updated_at,published_at FROM cms_pages WHERE space_id=? ORDER BY updated_at DESC LIMIT 100').bind(space).all();
       return json({items:result.results||[]});
     }
     if (method==='POST') {
@@ -48,15 +50,15 @@ async function api(req,url,env,user) {
       if(errors.length)return json({error:'validation_failed',details:errors},422);
       const id=crypto.randomUUID(),stamp=now();
       try {
-        await db.prepare('INSERT INTO cms_pages (id,slug,locale,title,description,draft_json,status,revision,created_at,updated_at) VALUES (?,?,?,?,?,?,?,1,?,?)')
-          .bind(id,input.slug,input.locale,input.title,input.description,JSON.stringify(input.blocks),'draft',stamp,stamp).run();
+        await db.prepare('INSERT INTO cms_pages (id,slug,locale,title,description,draft_json,status,revision,created_at,updated_at,space_id) VALUES (?,?,?,?,?,?,?,1,?,?,?)')
+          .bind(id,input.slug,input.locale,input.title,input.description,JSON.stringify(input.blocks),'draft',stamp,stamp,space).run();
       } catch {return fail('slug_already_exists',409);}
-      const row=await getPage(db,id); await record(db,row,user.email);
+      const row=await getPage(db,id,space); await record(db,row,user.email);await audit(db,space,user.email,'page.create',id,{title:row.title});
       return json({page:publicPage(row)},201);
     }
   }
   if (parts[1]==='pages' && idOk(parts[2])) {
-    const id=parts[2],row=await getPage(db,id);
+    const id=parts[2],row=await getPage(db,id,space);
     if (!row) return fail('not_found',404);
     if (parts.length===3 && method==='GET') return json({page:publicPage(row)});
     if (parts.length===3 && method==='PUT') {
@@ -68,26 +70,24 @@ async function api(req,url,env,user) {
         .bind(doc.slug,doc.locale,doc.title,doc.description,JSON.stringify(doc.blocks),now(),id,row.revision).run().catch(()=>null);
       if (!changed) return fail('slug_already_exists',409);
       if (!changed.meta?.changes) return fail('revision_conflict',409);
-      const fresh=await getPage(db,id);await record(db,fresh,user.email);
+      await db.prepare("UPDATE cms_page_stages SET stage='draft',updated_by=?,updated_at=? WHERE page_id=?").bind(user.email,now(),id).run();
+      const fresh=await getPage(db,id,space);await record(db,fresh,user.email);await audit(db,space,user.email,'page.update',id,{revision:fresh.revision,workflowReset:'draft'});
       return json({page:publicPage(fresh)});
     }
     if (parts.length===3 && method==='DELETE') {
       if(user.role!=='admin')return fail('forbidden',403);
-      await db.prepare('DELETE FROM cms_pages WHERE id=?').bind(id).run();
+      await audit(db,space,user.email,'page.delete',id,{slug:row.slug});
+      await db.prepare('DELETE FROM cms_pages WHERE id=? AND space_id=?').bind(id,space).run();
       return json({ok:true});
     }
     if (parts[3]==='publish' && parts.length===4 && method==='POST') {
       if(user.role!=='admin')return fail('forbidden',403);
-      const publishedDoc={slug:row.slug,locale:row.locale,title:row.title,description:row.description,blocks:JSON.parse(row.draft_json)};
-      const stamp=now();
-      const changed=await db.prepare("UPDATE cms_pages SET published_json=?,published_slug=?,published_locale=?,published_at=?,status='published',updated_at=? WHERE id=?")
-        .bind(JSON.stringify(publishedDoc),row.slug,row.locale,stamp,stamp,id).run().catch(()=>null);
-      if(!changed)return fail('published_slug_conflict',409);
-      return json({ok:!!changed.meta?.changes});
+      const published=await publishPage(db,row,space,user.email);
+      return published.ok?json({ok:true}):json({error:published.error,stage:published.stage||null},409);
     }
     if (parts[3]==='unpublish' && parts.length===4 && method==='POST') {
       if(user.role!=='admin')return fail('forbidden',403);
-      await db.prepare("UPDATE cms_pages SET published_json=NULL,published_slug=NULL,published_locale=NULL,published_at=NULL,status='draft',updated_at=? WHERE id=?").bind(now(),id).run();
+      await db.prepare("UPDATE cms_pages SET published_json=NULL,published_slug=NULL,published_locale=NULL,published_at=NULL,status='draft',updated_at=? WHERE id=? AND space_id=?").bind(now(),id,space).run();await audit(db,space,user.email,'unpublish',id);
       return json({ok:true});
     }
     if (parts[3]==='revisions' && parts.length===4 && method==='GET') {
@@ -104,7 +104,8 @@ async function api(req,url,env,user) {
       const change=await db.prepare('UPDATE cms_pages SET slug=?,locale=?,title=?,description=?,draft_json=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?')
         .bind(doc.slug,doc.locale,doc.title,doc.description,JSON.stringify(doc.blocks),now(),id,row.revision).run().catch(()=>null);
       if(!change?.meta?.changes)return fail('restore_conflict',409);
-      const fresh=await getPage(db,id);await record(db,fresh,user.email);
+      await db.prepare("UPDATE cms_page_stages SET stage='draft',updated_by=?,updated_at=? WHERE page_id=?").bind(user.email,now(),id).run();
+      const fresh=await getPage(db,id,space);await record(db,fresh,user.email);await audit(db,space,user.email,'page.restore',id,{revision:version,workflowReset:'draft'});
       return json({page:publicPage(fresh)});
     }
     if (parts[3]==='comments' && parts.length===4) {
@@ -123,7 +124,7 @@ async function api(req,url,env,user) {
   }
   if(parts[1]==='assets' && parts.length===2) {
     if(method==='GET') {
-      const r=await db.prepare('SELECT id,filename,mime,size,created_at FROM cms_assets ORDER BY created_at DESC LIMIT 100').all();
+      const r=await db.prepare('SELECT id,filename,mime,size,created_at FROM cms_assets WHERE space_id=? ORDER BY created_at DESC LIMIT 100').bind(space).all();
       return json({items:(r.results||[]).map(x=>({...x,src:'/media/'+x.id}))});
     }
     if(method==='POST') {
@@ -145,8 +146,8 @@ async function api(req,url,env,user) {
       if(!valid)return fail('invalid_image_signature',415);
       const id=crypto.randomUUID(),filename=safeFilename(req.headers.get('x-file-name')||'image');
       await env.CMS_MEDIA.put(id,data,{httpMetadata:{contentType:mime,cacheControl:'public, max-age=31536000, immutable'}});
-      await db.prepare('INSERT INTO cms_assets (id,filename,mime,size,created_at) VALUES (?,?,?,?,?)')
-        .bind(id,filename,mime,data.byteLength,now()).run();
+      await db.prepare('INSERT INTO cms_assets (id,filename,mime,size,created_at,space_id) VALUES (?,?,?,?,?,?)')
+        .bind(id,filename,mime,data.byteLength,now(),space).run();await audit(db,space,user.email,'asset.upload',id,{filename,size:data.byteLength});
       return json({item:{id,filename,mime,size:data.byteLength,src:'/media/'+id}},201);
     }
   }
@@ -154,12 +155,13 @@ async function api(req,url,env,user) {
 }
 async function published(url,env) {
   if(!env.CMS_DB)return fail('database_not_bound',503);
-  const p=url.pathname.split('/').filter(Boolean),locale=p[2],slug=p[3];
-  if(!/^[a-z]{2}(?:-[A-Z]{2})?$/.test(locale||'')||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug||''))return fail('not_found',404);
-  const row=await env.CMS_DB.prepare("SELECT published_at,published_json FROM cms_pages WHERE published_slug=? AND published_locale=? AND status='published'")
-    .bind(slug,locale).first();
+  const p=url.pathname.split('/').filter(Boolean),locale=p[2],slug=p[3],space=spaceFrom(url);
+  if(!space||!/^[a-z]{2}(?:-[A-Z]{2})?$/.test(locale||'')||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug||''))return fail('not_found',404);
+  const row=await env.CMS_DB.prepare("SELECT published_at,published_json FROM cms_pages WHERE space_id=? AND published_slug=? AND published_locale=? AND status='published'")
+    .bind(space,slug,locale).first();
   if(!row?.published_json)return fail('not_found',404);
-  return json({...JSON.parse(row.published_json),publishedAt:row.published_at},200,{'Access-Control-Allow-Origin':'*','Cache-Control':'public,max-age=60'});
+  const doc=JSON.parse(row.published_json);doc.blocks=await expandedBlocks(env.CMS_DB,space,doc.blocks||[]);
+  return json({...doc,publishedAt:row.published_at},200,{'Access-Control-Allow-Origin':'*','Cache-Control':'public,max-age=60'});
 }
 const handler = {
   async fetch(req,env) {
@@ -168,6 +170,8 @@ const handler = {
     if(url.pathname==='/api/config'&&method==='GET')return json({googleClientId:String(env.GOOGLE_CLIENT_ID||''),apiBase:url.origin});
     if(url.pathname==='/admin'||url.pathname==='/admin/'||url.pathname==='/')return Response.redirect('https://duykhang68.github.io/techblogtip/tools/cms/',302);
     if(url.pathname.startsWith('/api/published/')&&method==='GET')return published(url,env);
+    if(url.pathname==='/graphql'&&['GET','POST'].includes(method))return graphql(req,url,env);
+    if(url.pathname==='/graphql/schema'&&method==='GET')return new Response(schemaSDL,{headers:{'content-type':'text/plain; charset=utf-8','cache-control':'public,max-age=300'}});
     if(url.pathname.startsWith('/p/')&&method==='GET'){
       const parts=url.pathname.split('/');const locale=parts[2],slug=parts[3];
       if(parts.length!==4||!/^[a-z]{2}(?:-[A-Z]{2})?$/.test(locale||'')||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug||''))return fail('not_found',404);
@@ -189,7 +193,13 @@ const handler = {
     catch(e){return fail(e.message==='not_allowed'?'forbidden':e.message==='google_oauth_not_configured'?'google_oauth_not_configured':'unauthorized',e.message==='google_oauth_not_configured'?503:e.message==='not_allowed'?403:401);}
     if(method!=='GET'&&!sameOrigin(req,url))return fail('origin_denied',403);
     try{
-      if(url.pathname.startsWith('/api/'))return await api(req,url,env,user);
+      const space=spaceFrom(url);
+      if(!space)return fail('invalid_space',422);
+      const extension=await advancedAPI(req,url,env,user,space);
+      if(extension)return extension;
+      const scoped=await scopeUser(env.CMS_DB,user,space);
+      if(!scoped)return fail('space_forbidden_or_missing',403);
+      if(url.pathname.startsWith('/api/'))return await api(req,url,env,scoped,space);
       return fail('not_found',404);
     }catch(e){
       if(e.message==='payload_too_large')return fail('payload_too_large',413);
@@ -211,6 +221,7 @@ function addCors(response,request){
  return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
 }
 export default {
+ async scheduled(controller,env,ctx){ctx.waitUntil(scheduledTick(env));},
  async fetch(req,env){
    if(req.method==='OPTIONS'){
      if(req.headers.get('origin')!=='https://duykhang68.github.io')return fail('origin_denied',403);
