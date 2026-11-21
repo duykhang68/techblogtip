@@ -53,7 +53,7 @@ function main(){
  if(pages)assert(robots.includes(origin+'sitemap.xml'),'wrong public sitemap URL');
  else assert(!root.includes('name="google-site-verification"'),'staging verification token leak');
  const token=String(process.env.PUBLIC_GSC_VERIFICATION||'');
- if(pages&&token && /^[A-Za-z0-9_-]{12,160}={0,2}$/.test(token))
+ if(pages&&token && /^[A-Za-z0-9+/_-]{12,160}={0,2}$/.test(token))
    assert(root.includes('name="google-site-verification" content="'+token+'"'),'configured Search Console token absent');
  console.log('SEO gate PASS: '+files.length+' HTML pages and '+count+' sitemap URLs; '+(pages?'GitHub Pages indexable':'staging noindex'));
 }
