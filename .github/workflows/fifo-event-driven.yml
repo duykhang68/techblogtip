@@ -6,7 +6,6 @@ on:
       - Quality
       - Security · Gitleaks PR Gate
       - Workflow Security Audit
-      - Publisher Worker · Bundle & Auth Contract
       - Deploy · GitHub Pages production
     types: [completed]
   pull_request_target: # zizmor: ignore[dangerous-triggers] no untrusted PR checkout or code execution

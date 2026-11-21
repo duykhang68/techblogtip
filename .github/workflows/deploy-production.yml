@@ -1,6 +1,4 @@
 name: Deploy · GitHub Pages production
-# IMPORTANT: Publisher Worker validates workflow_runs.name exactly for M:O writeback.
-# Keep main branch title equal to workflow name; only non-main skips get a custom title.
 run-name: >-
   ${{ github.ref == 'refs/heads/main'
       && 'Deploy · GitHub Pages production'
@@ -61,9 +59,6 @@ jobs:
     env:
       SOURCE_SHA: ${{ github.sha }}
       PRODUCTION_URL: https://duykhang68.github.io/techblogtip/
-      TBT_PRODUCTION_SYNC_TOKEN: ${{ secrets.TBT_PRODUCTION_SYNC_TOKEN }}
-      PRODUCTION_RUN_ID: ${{ github.run_id }}
-      PRODUCTION_RELEASE_SHA: ${{ github.sha }}
     steps:
       - name: Checkout exact source SHA for verification scripts
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -75,7 +70,7 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
       - name: Verify live GitHub Pages release SHA, canonical and public robots
-        run: node scripts/publisher/verify-production-deploy.mjs
+        run: node scripts/verify-production-deploy.mjs
       - name: Verify live sitemap, robots, canonical and sampled articles
         run: node scripts/verify-live-sitemap.mjs
       - name: Inspect Google indexing after verified production deploy (read-only)
@@ -83,16 +78,3 @@ jobs:
           GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
           GSC_SITE_URL: ${{ vars.GSC_SITE_URL }}
         run: node scripts/monitor-google-index.mjs
-      - name: Reconcile verified Sheets M:O (when service secret is provisioned)
-        if: ${{ env.TBT_PRODUCTION_SYNC_TOKEN != '' }}
-        run: node scripts/publisher/reconcile-from-actions.mjs
-      - name: Explain skipped Sheets writeback when sync token is missing
-        if: ${{ env.TBT_PRODUCTION_SYNC_TOKEN == '' }}
-        run: |
-          echo '::notice title=Sheets writeback skipped::Pages verified, but TBT_PRODUCTION_SYNC_TOKEN is missing. Configure it in the github-pages environment and Publisher DEV to enable M:O writeback.'
-          {
-            echo '### SKIP · Sheets production writeback'
-            echo ''
-            echo 'Reason: TBT_PRODUCTION_SYNC_TOKEN is not configured for github-pages.'
-            echo 'GitHub Pages deployment and live SHA verification remain separate from Sheets writeback.'
-          } >> "$GITHUB_STEP_SUMMARY"

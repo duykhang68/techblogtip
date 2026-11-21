@@ -35,7 +35,7 @@ test('staging stays Cloudflare while production is protected GitHub Pages',()=>{
  assert.match(deployJob,/persist-credentials: false/);
  assert.match(deployJob,/git rev-parse HEAD/);
  assert.ok(deployJob.indexOf('actions/checkout@')<deployJob.indexOf('verify-production-deploy.mjs'));
- assert.match(deployJob,/reconcile-from-actions\.mjs/);
+ assert.doesNotMatch(deployJob,/reconcile-from-actions|TBT_PRODUCTION_SYNC_TOKEN/);
  assert.match(pages,/branches: \[main\]/);
  assert.doesNotMatch(pages,/cf deploy|CLOUDFLARE_API_TOKEN/);
 });
