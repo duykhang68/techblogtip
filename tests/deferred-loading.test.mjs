@@ -20,12 +20,6 @@ test('non-article or non-media HTML is unchanged', () => {
   const input = '<main><article class="article-card"><img src="/above.webp"></article></main>';
   assert.equal(deferArticleMedia(input), input);
 });
-test('search downloads its index on demand, not on page entry', () => {
-  const source=read('src/pages/tim-kiem/index.astro');
-  assert.match(source, /const ensureIndex/);
-  assert.match(source, /await ensureIndex\(\)/);
-  assert.doesNotMatch(source, /const items: SearchItem\[\] = await fetch/);
-});
 test('cards retain eager high-priority LCP cover and native lazy thumbnails', () => {
   const card=read('src/components/ArticleCard.astro');
   const runtime=read('src/scripts/deferred-media.ts');

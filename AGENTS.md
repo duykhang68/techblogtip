@@ -7,7 +7,7 @@
 - Do not merge a Draft PR, bypass quality checks or claim deployed just because CI passed.
 - Deployment only from validated `main` commit via GitHub Actions, serialized; the public `/release.json` SHA must equal the deployed SHA.
 - Staging must remain `noindex` and must never be treated as a production SEO launch.
-- Static pages must not call GitHub API from the browser; search is generated at build.
+- Static pages must not call GitHub API from the browser. Retired search, RSS, knowledge-map and public branding routes must not be reintroduced without an explicit product decision.
 - Editorial images: WebP, descriptive alt, no hotlinked Google Drive URLs or JPG/PNG content assets.
 - Do not expose OAuth credentials, GitHub tokens, service account keys or API secrets in the repo.
 - Preserve trailing-slash paths and canonical URLs. Redirects are required before changing public URLs after launch.
@@ -17,15 +17,15 @@
 
 ## Branding contract (mandatory for all UI/UX changes)
 
-- Read `docs/BRANDING.md` and the public `/branding/` guidelines before changing UI, layout, colors, typography, components or interaction patterns.
-- Keep the Markdown and Astro branding page synchronized when design rules change. Reuse existing design tokens and preserve accessibility, mobile-first layouts and site branding.
+- Read `docs/BRANDING.md` before changing UI, layout, colors, typography, components or interaction patterns.
+- Keep the internal Markdown branding contract current when design rules change. Reuse existing design tokens and preserve accessibility, mobile-first layouts and site branding. The public branding route is intentionally retired.
 
 ## No decorative hero / banner (mandatory, site-wide)
 
 - **Absolute default: never add or reintroduce a decorative hero on ANY TechBlogTip route**, including homepage, branding, archives, tools, editor, search, categories and article pages. No oversized display headlines, split-screen marketing mastheads, large decorative brand cards, slogan/illustration covers, gratuitous above-the-fold empty space or banner-like promotional blocks.
 - Page openings must be compact and content-first: an accessible, naturally wrapping H1, a short description only where needed, then primary navigation, controls or actual content. Reuse existing page headings rather than inserting a new visual intro.
 - Illustrations, diagrams and pastel panels remain allowed **inside substantive article/content sections** when they communicate information; do not turn them into a top-of-page hero. Do not remove site-wide navigation or functional controls when removing a hero.
-- For each UI PR, review both mobile and desktop first viewport and reject added decorative hero/banner structures. Keep this rule synchronized with `docs/BRANDING.md` and the public branding page.
+- For each UI PR, review both mobile and desktop first viewport and reject added decorative hero/banner structures. Keep this rule synchronized with `docs/BRANDING.md`.
 
 ## Typography & reading layout (mandatory)
 
