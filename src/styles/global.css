@@ -112,3 +112,30 @@
   .article-top h1{font-size:clamp(1.9rem,7.8vw,2.65rem);line-height:1.29;letter-spacing:-.035em}
   .prose p{text-align:start}
 }
+
+
+/* Article listings: quieter editorial hierarchy without breaking Vietnamese words.
+   Keep the site's single Be Vietnam Pro family to avoid extra network/font swaps. */
+.article-card h3{
+  font-family:inherit;
+  font-weight:600;
+  font-size:.96rem;
+  line-height:1.48;
+  letter-spacing:-.012em;
+  text-wrap:pretty;
+  text-align:start;
+}
+.article-card .card-desc{
+  text-align:justify;
+  text-align-last:start;
+  text-justify:inter-word;
+  text-wrap:wrap;
+  word-spacing:normal;
+  letter-spacing:normal;
+}
+@media(max-width:860px){
+  .article-card .card-desc{text-align:start}
+}
+@media(max-width:520px){
+  .article-card h3{font-size:.86rem;line-height:1.45;letter-spacing:0}
+}
