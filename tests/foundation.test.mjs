@@ -39,7 +39,7 @@ test('retired Cloudflare staging cannot redeploy while production GitHub Pages s
 
 test('only the five explicitly authorized articles remain, with valid content assets',()=>{
  const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));
- assert.deepEqual(names.sort(), ['lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md','techblogtip-100-diem-google-pagespeed-insights.md','vibe-code-app-ios-macos-kiem-tien-2026.md','tu-ma-nguon-ios-den-app-store-dong-goi-ipa-apple-review.md','xoa-nhieu-repository-github-cli-an-toan.md']);
+ assert.deepEqual(names.sort(), ['lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md','techblogtip-100-diem-google-pagespeed-insights.md','tu-ma-nguon-ios-den-app-store-dong-goi-ipa-apple-review.md','vibe-code-app-ios-macos-kiem-tien-2026.md','xoa-nhieu-repository-github-cli-an-toan.md']);
  assert.equal(new Set(names).size,names.length);
  for(const name of names){
   const data=read('src/content/articles/'+name);
