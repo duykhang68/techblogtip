@@ -8,8 +8,12 @@ import { finalizeVerifiedArticle,requireProductionSync,reconcileProductionBatch 
 import { readProductionStatus } from './production-status.mjs';
 import { loadEditableDraft,saveEditableDraft } from './editorial.mjs';
 import { parsePublisherPreview } from './markdown-preview.mjs';
+import { notionPagePreview } from './notion-import.mjs';
+import { obsidianPreview } from './obsidian-import.mjs';
+import { driveImageMetadata } from './drive-import.mjs';
+import { getSheetsToken } from './google-api.mjs';
 import { withSourceWriteLock,withRowWriteLock } from './source-lock.mjs';
-import { EDITOR_HTML,EDITOR_JS,EDITOR_CSS } from './editor-ui.mjs';
+import { EDITOR_HTML,EDITOR_JS,EDITOR_CSS,EDITOR_IMPORT_CSS } from './editor-ui.mjs';
 import { prepareSheetArticle } from '../../../scripts/publisher/sheets.mjs';
 import { ADMIN_HTML, ADMIN_JS, ADMIN_CSS } from './ui.mjs';
 import { PRODUCTION_HTML, PRODUCTION_JS, PRODUCTION_CSS } from './production-ui.mjs';
@@ -90,7 +94,7 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
     if(request.method==='GET'&&path==='/admin.js')
       return staticResponse(ADMIN_JS,'application/javascript; charset=utf-8');
     if(request.method==='GET'&&path==='/admin.css')
-      return staticResponse(ADMIN_CSS+EDITOR_CSS+PRODUCTION_CSS,'text/css; charset=utf-8');
+      return staticResponse(ADMIN_CSS+EDITOR_CSS+EDITOR_IMPORT_CSS+PRODUCTION_CSS,'text/css; charset=utf-8');
     if(request.method==='GET'&&path==='/editor.js')
       return staticResponse(EDITOR_JS,'application/javascript; charset=utf-8');
     if(request.method==='GET'&&path==='/production-status.js')
@@ -173,6 +177,19 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         // write Sheets, call GitHub, or return untrusted HTML to the browser.
         const payload=await jsonRequest(request,110000);
         return respond(parsePublisherPreview(payload.body));
+      }
+      if(request.method==='POST'&&path==='/api/import/notion'){
+        const payload=await jsonRequest(request,2048);
+        return respond(await notionPagePreview({id:payload.id,token:env.NOTION_INTEGRATION_TOKEN,fetcher}));
+      }
+      if(request.method==='POST'&&path==='/api/import/obsidian'){
+        const payload=await jsonRequest(request,180000);
+        return respond(obsidianPreview(payload));
+      }
+      if(request.method==='POST'&&path==='/api/import/drive/inspect'){
+        const payload=await jsonRequest(request,2048);
+        const token=await getSheetsToken(env,fetcher,'https://www.googleapis.com/auth/drive.readonly');
+        return respond(await driveImageMetadata({id:payload.id,token,fetcher}));
       }
       if(path==='/api/draft'){
         if(request.method==='GET'){
