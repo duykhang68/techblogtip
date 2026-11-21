@@ -126,6 +126,10 @@ async function fixture(){
           }
           state.values[1][10]=body.values[0][0];
           state.values[1][11]=body.values[0][1];
+        }else if(rawRange==='VN!A3:O3'){
+          state.values[2]=body.values[0];
+        }else if(rawRange==='VN!I3'){
+          state.values[2][8]=body.values[0][0];
         }else return Response.json({error:'bad range '+rawRange},{status:400});
         return Response.json({updatedRange:rawRange});
       }
@@ -980,4 +984,41 @@ test('delete queue: requires authentication and same origin',async()=>{
   },{Origin:'https://bad.example.test'});
   assert.equal(crossOrigin.status,403);
   assert.equal(f.state.calls.filter(c=>c.url.endsWith(':clear')).length,0);
+});
+
+test('Studio v2 creates a source-locked blank DRAFT without changing existing rows',async()=>{
+ const f=await fixture(),token=await f.sign();
+ const denied=await f.call('/api/articles','','POST',{});
+ assert.equal(denied.status,401);
+ const initial=JSON.stringify(f.state.values[1]);
+ const created=await f.call('/api/articles',token,'POST',{});
+ assert.equal(created.status,201);
+ assert.match(created.data.sourceId,/^TBT-[a-f0-9-]{36}$/);
+ assert.equal(created.data.rowNumber,3);
+ assert.equal(f.state.values[2][8],'DRAFT');
+ assert.equal(JSON.stringify(f.state.values[1]),initial);
+ const draft=await f.call('/api/draft?sourceId='+created.data.sourceId,token);
+ assert.equal(draft.data.editable,true);
+ assert.equal(draft.data.fields.title,'');
+ assert.equal(draft.data.snapshot,created.data.snapshot);
+});
+test('Studio v2 requires fresh snapshot and content validation before READY',async()=>{
+ const f=await fixture(),token=await f.sign();
+ const created=await f.call('/api/articles',token,'POST',{});
+ const id=created.data.sourceId;
+ const empty=await f.call('/api/approve',token,'POST',{sourceId:id,expectedSnapshot:created.data.snapshot});
+ assert.equal(empty.status,422);
+ assert.equal(f.state.values[2][8],'DRAFT');
+ // Simulate an owner-approved, already saved draft in the existing Sheet schema.
+ f.state.values[2]=[id,...f.state.values[1].slice(1,8),'DRAFT',f.state.values[1][9],'','','','',''];
+ const latest=await f.call('/api/draft?sourceId='+id,token);
+ const wrong=await f.call('/api/approve',token,'POST',{sourceId:id,expectedSnapshot:created.data.snapshot});
+ assert.equal(wrong.status,409);
+ const approved=await f.call('/api/approve',token,'POST',{sourceId:id,expectedSnapshot:latest.data.snapshot});
+ assert.equal(approved.status,200);
+ assert.equal(approved.data.status,'READY');
+ assert.equal(approved.data.sourceRevision.length,64);
+ assert.deepEqual(f.state.values[2].slice(10,15),['','','','','']);
+ const repeated=await f.call('/api/approve',token,'POST',{sourceId:id,expectedSnapshot:latest.data.snapshot});
+ assert.equal(repeated.status,409);
 });
