@@ -11,3 +11,12 @@
 - Preserve trailing-slash paths and canonical URLs. Redirects are required before changing public URLs after launch.
 - Minimize CI/Cloudflare operations. No polling or cron for ordinary delivery; avoid redundant API calls.
 - Notion/Obsidian/Sheets integrations belong to later milestones and must never directly mutate live content.
+
+
+## Automatic editorial visualization gate
+
+- Every new long-form blog post must receive a meaningful visualization before production. The shared ArticleVisualMap component is generated automatically from H2 headings for all eligible articles, without manual prompts or external APIs.
+- When a post describes a pipeline, architecture, comparison or sequence, add a topic-specific original pastel Astro/SVG diagram like PublisherStoryVisual or EngineeringRulesVisual; the generic map is a baseline, not a substitute for meaningful engineering diagrams.
+- Keep visuals responsive, semantically labeled, keyboard-accessible and static-first. Use locally rendered inline Lucide-style vector iconography and do not hotlink third-party assets or expose secrets.
+- The existing Quality build verification must reject published articles with multiple H2 sections if their automatic visual story map is missing. Reuse existing event-triggered CI rather than introducing polling or periodic workflows.
+- Ensure visual callouts, headings, tables and code remain naturally aligned and never justify with artificial word spacing. Typography changes from Draft PR #83 should be reconciled before release.
