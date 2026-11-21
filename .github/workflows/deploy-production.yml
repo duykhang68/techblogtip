@@ -24,6 +24,7 @@ jobs:
       SITE_URL: https://duykhang68.github.io/techblogtip/
       DEPLOY_TARGET: github-pages
       PUBLIC_INDEXABLE: "true"
+      PUBLIC_RESUME_GOOGLE_CLIENT_ID: ${{ vars.PUBLIC_RESUME_GOOGLE_CLIENT_ID }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

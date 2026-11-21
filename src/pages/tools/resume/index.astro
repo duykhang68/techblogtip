@@ -1,0 +1,141 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Resume Studio" description="Tạo CV và quản lý hồ sơ trực tiếp trên Google Drive.">
+<section class="rs container">
+  <header class="rs-top"><div><p class="rs-kicker">TECHBLOGTIP / CAREER WORKSPACE</p><h1>Resume Studio <span>Beta · Local-first</span></h1><p>Tạo CV, quản lý phiên bản, so khớp tin tuyển dụng và theo dõi ứng tuyển — không cần thuê bao.</p></div><div class="rs-actions"><button id="new-resume">+ Tạo CV</button><button id="export-data" class="secondary">Xuất dữ liệu</button><label class="rs-import">Nhập bản sao<input id="import-data" type="file" accept="application/json,.json" hidden /></label></div></header>
+  <p id="privacy-note" role="note">🔒 Dữ liệu CV được lưu trên thư mục Google Drive cá nhân, không lưu vào localStorage hoặc đưa lên GitHub. Ứng dụng yêu cầu quyền Drive để lưu tập tin; chỉ dùng tài khoản Google đáng tin cậy.</p>
+  <div class="rs-auth"><button id="connect-drive" type="button">Kết nối Google Drive</button><button id="disconnect-drive" type="button" class="secondary" hidden>Ngắt kết nối</button><span id="drive-status">Chưa kết nối Google Drive</span></div>
+  <nav class="rs-tabs" aria-label="Resume Studio"><button data-tab="library" aria-current="page">Thư viện CV</button><button data-tab="editor">Trình soạn thảo</button><button data-tab="match">Job Match</button><button data-tab="jobs">Ứng tuyển</button></nav>
+  <p id="status" role="status" aria-live="polite"></p>
+  <section id="library" class="rs-panel"><div class="rs-title"><h2>CV của tôi</h2><span id="count"></span></div><div id="resume-list" class="rs-cards"></div></section>
+  <section id="editor" class="rs-panel" hidden><div class="rs-title"><h2>Visual Resume Editor</h2><div class="rs-actions"><button id="duplicate" class="secondary">Nhân bản</button><button id="print">In / Xuất PDF</button></div></div>
+    <div class="rs-columns"><form id="resume-form" class="rs-fields">
+      <label>Tên bản CV<input name="title" required maxlength="100" placeholder="VD: Software Engineer — Công ty A" /></label>
+      <label>Họ và tên<input name="name" maxlength="120" placeholder="Nguyễn Văn A" /></label>
+      <label>Chức danh<input name="role" maxlength="120" placeholder="Software Engineer" /></label>
+      <label>Email<input name="email" type="email" maxlength="180" placeholder="email@example.com" /></label>
+      <label>Số điện thoại<input name="phone" maxlength="60" /></label>
+      <label>Địa điểm<input name="location" maxlength="140" /></label>
+      <label>Website / Portfolio<input name="website" maxlength="250" /></label>
+      <label>Giới thiệu bản thân<textarea name="summary" rows="4" maxlength="2500" placeholder="Tóm tắt kỹ năng và thành tựu thực tế"></textarea></label>
+      <label>Kinh nghiệm làm việc<textarea name="experience" rows="6" maxlength="8000" placeholder="Mỗi dòng một thành tựu, có thể bắt đầu bằng •"></textarea></label>
+      <label>Học vấn<textarea name="education" rows="3" maxlength="4000"></textarea></label>
+      <label>Kỹ năng (phân tách bằng dấu phẩy)<textarea name="skills" rows="3" maxlength="3000" placeholder="TypeScript, Astro, SQL"></textarea></label>
+      <label>Dự án nổi bật<textarea name="projects" rows="4" maxlength="5000"></textarea></label>
+      <label>Chứng chỉ<textarea name="certificates" rows="3" maxlength="3000"></textarea></label>
+      <div class="rs-actions"><button type="submit">Lưu CV</button><button id="delete-resume" type="button" class="danger">Xóa CV</button></div><small>Thay đổi được tự lưu trên thiết bị sau khi bạn dừng gõ. Chọn Lưu CV để lưu ngay.</small>
+    </form><aside><h3>Xem trước A4</h3><div id="preview" class="rs-paper" aria-live="polite"></div></aside></div>
+  </section>
+  <section id="match" class="rs-panel" hidden><h2>Job Match · Đối chiếu theo JD</h2><p>So sánh các từ khóa kỹ năng từ hồ sơ với mô tả tuyển dụng. Đây không phải điểm ATS hay xếp hạng ứng viên của LinkedIn.</p><label>CV để so sánh<select id="match-resume"></select></label><label>Mô tả công việc<textarea id="job-description" rows="10" maxlength="30000" placeholder="Dán nội dung JD vào đây. Dữ liệu không gửi đến máy chủ."></textarea></label><button id="analyze">Phân tích kỹ năng</button><div id="match-result" class="rs-result" aria-live="polite"></div></section>
+  <section id="jobs" class="rs-panel" hidden><div class="rs-title"><h2>Application Tracker</h2><span id="job-count"></span></div><form id="job-form" class="rs-job-form"><label>Công ty<input name="company" maxlength="160" required /></label><label>Vị trí<input name="position" maxlength="180" required /></label><label>Đường dẫn JD<input name="url" type="url" maxlength="500" placeholder="https://..." /></label><label>Trạng thái<select name="stage"><option>Saved</option><option>Applied</option><option>Interview</option><option>Offer</option><option>Rejected</option></select></label><label>CV sử dụng<select name="resumeId" id="job-resume"></select></label><label>Ghi chú<input name="notes" maxlength="800" /></label><button type="submit">+ Thêm ứng tuyển</button></form><div id="job-list" class="rs-job-list"></div></section>
+</section>
+<style>
+.rs{padding-block:2.5rem 5rem;max-width:1280px}.rs h1{font-size:clamp(2rem,4vw,3.3rem);line-height:1.2;margin:.35rem 0}.rs h1 span{font-size:.75rem;background:#e6f3e9;border-radius:99px;padding:.45rem .75rem;color:#236042;vertical-align:middle;white-space:nowrap}.rs h2{font-size:1.3rem}.rs p{max-width:850px}.rs-kicker{color:#487f60;font-weight:800;font-size:.75rem;letter-spacing:.13em}.rs-top,.rs-title{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}.rs-actions{display:flex;gap:.65rem;flex-wrap:wrap;align-items:center}.rs button,.rs-import{cursor:pointer;border:1px solid #205f4a;background:#236e52;color:#fff;border-radius:10px;font:inherit;font-size:.85rem;font-weight:700;padding:.7rem 1rem;display:inline-block}.rs button:hover,.rs-import:hover{filter:brightness(.92)}.rs button:focus-visible,.rs input:focus-visible,.rs textarea:focus-visible,.rs select:focus-visible{outline:3px solid #86bfe0;outline-offset:2px}.rs .secondary,.rs-import{background:#fff;color:#245841;border-color:#b7c9bd}.rs .danger{background:#fff2f0;color:#9d3030;border-color:#edbbbb}#privacy-note{padding:1rem 1.2rem;border:1px solid #e6dbac;background:#fffbed;border-radius:12px;font-size:.86rem;line-height:1.7;margin:1.5rem 0}.rs-auth{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;padding:1rem;border:1px solid #dce8de;border-radius:12px;margin-bottom:.8rem}.rs-auth span{font-size:.85rem;color:#466851}.rs [hidden]{display:none!important}.rs-tabs{display:flex;border-bottom:1px solid #dbe4dd;gap:.4rem;overflow-x:auto;margin:1.5rem 0}.rs-tabs button{border:0;border-radius:9px 9px 0 0;color:#335846;background:#eef4ef;white-space:nowrap}.rs-tabs button[aria-current=page]{background:#28694f;color:#fff}.rs-panel[hidden]{display:none}.rs-panel{min-height:340px}.rs-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem}.rs-card{border:1px solid #d9e4dc;border-radius:16px;padding:1.2rem;background:#fff;min-width:0}.rs-card h3{font-size:1rem;overflow-wrap:anywhere;margin:.5rem 0}.rs-card p{font-size:.85rem;color:#567064}.rs-card-actions{display:flex;gap:.5rem;flex-wrap:wrap}.rs-card-actions button{font-size:.78rem;padding:.5rem .65rem}.rs-columns{display:grid;grid-template-columns:minmax(300px,.9fr) minmax(320px,1.1fr);align-items:start;gap:1.5rem}.rs-fields,.rs-job-form{border:1px solid #dce5df;border-radius:16px;padding:1.2rem;display:grid;gap:1rem;background:#fff}.rs label{font-size:.84rem;font-weight:700;display:grid;gap:.4rem}.rs input,.rs textarea,.rs select{border:1px solid #c9d6cf;background:#fff;border-radius:9px;width:100%;padding:.7rem .8rem;font:inherit;font-size:.95rem;min-width:0}.rs textarea{resize:vertical}.rs-paper{background:white;border:1px solid #e2e2e2;box-shadow:0 8px 28px #1b372312;padding:clamp(1rem,3vw,2.6rem);aspect-ratio:210/297;min-height:500px;color:#1c2621;overflow-wrap:anywhere}.rs-paper h2{font-size:1.8rem;letter-spacing:-.03em;margin:0}.rs-paper h3{font-size:.9rem;color:#20553c;border-bottom:1px solid #bbd0c1;padding-bottom:.3rem;margin:1.3rem 0 .5rem}.rs-paper p{font-size:.78rem;white-space:pre-wrap;line-height:1.65;margin:.35rem 0}.rs-paper .meta{color:#567064}.rs-result{padding:1rem 0}.rs-result .chip{display:inline-block;background:#edf5f0;border:1px solid #d2e6d8;border-radius:99px;padding:.3rem .6rem;margin:.2rem;font-size:.84rem}.rs-job-list{display:grid;gap:.75rem;margin-top:1.25rem}.rs-job{border:1px solid #d5e3d9;border-radius:12px;padding:1rem;background:#fff;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}.rs-job p{margin:.25rem 0;color:#52685a}.rs-job select{max-width:155px}.rs-job-form{grid-template-columns:repeat(2,minmax(0,1fr))}#status:not(:empty){color:#246447;font-size:.85rem;padding:.3rem 0}@media(max-width:820px){.rs-columns{grid-template-columns:1fr}.rs-job-form{grid-template-columns:1fr}.rs{padding-top:1.2rem}.rs-paper{min-height:400px}}@media print{body>*:not(main){display:none!important}main>*:not(.rs){display:none!important}.rs-top,.rs-tabs,#privacy-note,#status,.rs-title,.rs-fields,.rs-panel:not(#editor),#editor aside>h3{display:none!important}.rs{padding:0!important;max-width:none!important}.rs-columns{display:block!important}#editor{display:block!important;min-height:0!important}#editor aside{display:block!important}.rs-paper{box-shadow:none!important;border:0!important;padding:0!important;min-height:0!important;aspect-ratio:auto!important}@page{size:A4;margin:15mm}}
+</style>
+<script is:inline src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+  type Resume = { id:string;title:string;name:string;role:string;email:string;phone:string;location:string;website:string;summary:string;experience:string;education:string;skills:string;projects:string;certificates:string;updatedAt:string };
+  type Job = {id:string;company:string;position:string;url:string;stage:string;resumeId:string;notes:string;createdAt:string};
+  const FOLDER_ID='1y0QzF2onlUrVdaQv8I-pu3L8T2d0CE19';
+  const CLIENT_ID=import.meta.env.PUBLIC_RESUME_GOOGLE_CLIENT_ID || '';
+  const DRIVE_SCOPE='https://www.googleapis.com/auth/drive';
+  let accessToken='';let expires=0;let fileId='';let version='';let connected=false;let busy=false;let pending=false;let snapshot='';
+  type TokenClient={requestAccessToken:(v:{prompt:string})=>void};
+  declare const google:{accounts:{oauth2:{initTokenClient:(o:{client_id:string;scope:string;callback:(r:{access_token?:string;expires_in?:number;error?:string})=>void})=>TokenClient;revoke:(token:string,fn:()=>void)=>void}}};
+  let tokenClient:TokenClient|null=null;
+  async function requestDrive(url:string,init:RequestInit={}){
+    if(!accessToken||Date.now()>=expires)throw Error('Phiên Drive đã hết hạn, vui lòng đăng nhập lại');
+    const headers=new Headers(init.headers);headers.set('Authorization','Bearer '+accessToken);
+    const res=await fetch(url,{...init,headers,cache:'no-store'});
+    if(!res.ok)throw Error('Drive HTTP '+res.status);
+    return res.json();
+  }
+  const state=()=>({version:1,resumes,jobs});
+  async function loadDrive(){
+    const params=new URLSearchParams({q:"'"+FOLDER_ID+"' in parents and name = 'resume-studio-state.json' and trashed = false",fields:'nextPageToken,files(id,version)',pageSize:'10'});
+    const result=await requestDrive('https://www.googleapis.com/drive/v3/files?'+params);
+    if(result.nextPageToken||result.files?.length>1)throw Error('Nhiều bản sao dữ liệu trên Drive, cần kiểm tra thủ công');
+    const file=result.files?.[0];fileId=file?.id||'';version=String(file?.version||'');
+    if(!fileId){resumes=[];jobs=[];}else{
+      const data=await requestDrive('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fileId)+'?alt=media');
+      if(data.version!==1||!Array.isArray(data.resumes)||!Array.isArray(data.jobs))throw Error('Cấu trúc dữ liệu Drive không hợp lệ');
+      resumes=data.resumes;jobs=data.jobs;
+    }
+    snapshot=JSON.stringify(state());
+  }
+  async function saveDrive(){
+    if(!connected){status('Kết nối Google Drive trước khi sử dụng.');return;}
+    if(busy){pending=true;return;}
+    busy=true;
+    try{
+      do{
+        pending=false;const data=JSON.stringify(state());
+        if(data===snapshot)break;
+        if(data.length>5000000)throw Error('Hồ sơ vượt giới hạn 5 MB; vui lòng xuất bản sao và tinh gọn dữ liệu');
+        if(!fileId){
+          const form=new FormData();
+          form.append('metadata',new Blob([JSON.stringify({name:'resume-studio-state.json',parents:[FOLDER_ID],mimeType:'application/json'})],{type:'application/json'}));
+          form.append('file',new Blob([data],{type:'application/json'}),'resume-studio-state.json');
+          const result=await requestDrive('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,version',{method:'POST',body:form});
+          fileId=result.id;version=String(result.version||'');
+        }else{
+          const metadata=await requestDrive('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fileId)+'?fields=version');
+          if(version&&String(metadata.version)!==version)throw Error('Hồ sơ trên Drive đã thay đổi. Xuất bản sao JSON rồi tải lại để tránh ghi đè.');
+          const result=await requestDrive('https://www.googleapis.com/upload/drive/v3/files/'+encodeURIComponent(fileId)+'?uploadType=media&fields=id,version',{method:'PATCH',headers:{'Content-Type':'application/json'},body:data});
+          version=String(result.version||'');
+        }
+        snapshot=data;status('Đã lưu lên Google Drive lúc '+new Date().toLocaleTimeString('vi-VN'));
+      }while(pending);
+    }catch(e){status('Không thể lưu trên Drive: '+String(e));}finally{busy=false;}
+  }
+  function requireDrive(){if(connected)return true;status('Vui lòng kết nối Google Drive trước.');return false;}
+  function loginDrive(){
+    if(!CLIENT_ID){status('Chưa cấu hình PUBLIC_RESUME_GOOGLE_CLIENT_ID cho Google OAuth.');return;}
+    if(typeof google==='undefined'){status('Không tải được Google Identity Services.');return;}
+    tokenClient ||= google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:DRIVE_SCOPE,callback:async r=>{
+      if(!r.access_token){status('Google không cấp quyền: '+(r.error||'unknown'));return;}
+      accessToken=r.access_token;expires=Date.now()+(r.expires_in||3500)*1000-60000;
+      try{await loadDrive();connected=true;el('connect-drive').hidden=true;el('disconnect-drive').hidden=false;el('drive-status').textContent='Đã kết nối Google Drive';render();status('Đã tải CV từ Google Drive.');}
+      catch(e){accessToken='';connected=false;status('Không đọc được dữ liệu Drive: '+String(e));}
+    }});
+    tokenClient.requestAccessToken({prompt:'consent'});
+  }
+  
+  const fields=['title','name','role','email','phone','location','website','summary','experience','education','skills','projects','certificates'] as const;
+  const blank=():Resume=>({id:crypto.randomUUID(),title:'CV chưa đặt tên',name:'',role:'',email:'',phone:'',location:'',website:'',summary:'',experience:'',education:'',skills:'',projects:'',certificates:'',updatedAt:new Date().toISOString()});
+  let resumes:Resume[]=[];let jobs:Job[]=[];let selected='';let timer:ReturnType<typeof setTimeout>|undefined;
+  const el=(id:string)=>document.getElementById(id)!;
+  const form=el('resume-form') as HTMLFormElement;
+  const status=(message:string)=>{el('status').textContent=message;};
+  function persist(){void saveDrive();}
+  function tab(name:string){document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b=>{if(b.dataset.tab===name)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});document.querySelectorAll<HTMLElement>('.rs-panel').forEach(p=>p.hidden=p.id!==name);}
+  function inputValues(){const r=resumes.find(r=>r.id===selected);if(!r)return;for(const f of fields)r[f]=String((form.elements.namedItem(f) as HTMLInputElement).value||'').slice(0,f==='experience'?8000:5000);r.updatedAt=new Date().toISOString();}
+  function openResume(id:string){if(!requireDrive())return;const r=resumes.find(r=>r.id===id);if(!r)return;selected=id;for(const f of fields)(form.elements.namedItem(f) as HTMLInputElement).value=r[f];preview();tab('editor');}
+  function create(){if(!requireDrive())return;const r=blank();resumes.unshift(r);persist();render();openResume(r.id);}
+  function duplicate(){if(!requireDrive())return;inputValues();const r=resumes.find(r=>r.id===selected);if(!r)return;const copy={...r,id:crypto.randomUUID(),title:r.title+' (bản sao)',updatedAt:new Date().toISOString()};resumes.unshift(copy);persist();render();openResume(copy.id);}
+  function render(){const list=el('resume-list');list.replaceChildren();el('count').textContent=resumes.length+' CV';for(const r of resumes){const card=document.createElement('article');card.className='rs-card';const h=document.createElement('h3');h.textContent=r.title;const p=document.createElement('p');p.textContent=(r.role||'Chưa có chức danh')+' · '+new Date(r.updatedAt).toLocaleDateString('vi-VN');const actions=document.createElement('div');actions.className='rs-card-actions';const edit=document.createElement('button');edit.textContent='Chỉnh sửa';edit.onclick=()=>openResume(r.id);const clone=document.createElement('button');clone.textContent='Nhân bản';clone.className='secondary';clone.onclick=()=>{selected=r.id;duplicate();};actions.append(edit,clone);card.append(h,p,actions);list.append(card);}if(!resumes.length){const p=document.createElement('p');p.textContent='Chưa có CV. Chọn “Tạo CV” để bắt đầu.';list.append(p);}const options=(select:HTMLSelectElement)=>{const previous=select.value;select.replaceChildren();for(const r of resumes){const o=document.createElement('option');o.value=r.id;o.textContent=r.title;select.append(o);}if(resumes.some(r=>r.id===previous))select.value=previous;};options(el('match-resume') as HTMLSelectElement);options(el('job-resume') as HTMLSelectElement);renderJobs();}
+  function addText(parent:Element,tag:string,value:string,className=''){if(!value.trim())return;const node=document.createElement(tag);node.textContent=value;node.className=className;parent.append(node);}
+  function preview(){const r=resumes.find(r=>r.id===selected);if(!r)return;const p=el('preview');p.replaceChildren();addText(p,'h2',r.name||'Họ và tên');addText(p,'p',r.role);addText(p,'p',[r.email,r.phone,r.location,r.website].filter(Boolean).join('  ·  '),'meta');const sections:[string,string][]=[['Giới thiệu',r.summary],['Kinh nghiệm',r.experience],['Học vấn',r.education],['Kỹ năng',r.skills],['Dự án',r.projects],['Chứng chỉ',r.certificates]];for(const [title,body] of sections)if(body.trim()){addText(p,'h3',title);addText(p,'p',body);}}
+  function renderJobs(){const list=el('job-list');list.replaceChildren();el('job-count').textContent=jobs.length+' đơn';for(const j of jobs){const card=document.createElement('article');card.className='rs-job';const box=document.createElement('div');addText(box,'strong',j.position+' — '+j.company);addText(box,'p',(resumes.find(r=>r.id===j.resumeId)?.title||'CV đã xóa')+' · '+j.notes);if(j.url){try{const url=new URL(j.url);if(['https:','http:'].includes(url.protocol)){const a=document.createElement('a');a.href=url.href;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Mở JD';box.append(a);}}catch{}}const controls=document.createElement('div');const select=document.createElement('select');select.setAttribute('aria-label','Trạng thái đơn '+j.company);for(const stage of ['Saved','Applied','Interview','Offer','Rejected']){const o=document.createElement('option');o.value=stage;o.textContent=stage;select.append(o);}select.value=j.stage;select.onchange=()=>{j.stage=select.value;persist();};const remove=document.createElement('button');remove.className='danger';remove.textContent='Xóa';remove.onclick=()=>{if(confirm('Xóa đơn ứng tuyển này?')){jobs=jobs.filter(x=>x.id!==j.id);persist();renderJobs();}};controls.append(select,remove);card.append(box,controls);list.append(card);}if(!jobs.length)addText(list,'p','Chưa có đơn ứng tuyển.');}
+  document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b=>b.addEventListener('click',()=>tab(b.dataset.tab!)));
+  el('new-resume').addEventListener('click',create);
+  el('duplicate').addEventListener('click',duplicate);
+  el('print').addEventListener('click',()=>{inputValues();preview();window.print();});
+  form.addEventListener('input',()=>{if(!requireDrive())return;inputValues();preview();clearTimeout(timer);timer=setTimeout(()=>{persist();render();},1400);});
+  form.addEventListener('submit',e=>{e.preventDefault();if(!requireDrive())return;clearTimeout(timer);inputValues();persist();render();});
+  el('delete-resume').addEventListener('click',()=>{if(!requireDrive()||!selected||!confirm('Xóa vĩnh viễn CV này khỏi thiết bị?'))return;resumes=resumes.filter(r=>r.id!==selected);selected='';persist();render();tab('library');});
+  el('analyze').addEventListener('click',()=>{const r=resumes.find(r=>r.id===(el('match-resume') as HTMLSelectElement).value);const jd=(el('job-description') as HTMLTextAreaElement).value.toLocaleLowerCase();const skills=[...new Set((r?.skills||'').split(/[,;\n]/).map(s=>s.trim()).filter(Boolean))];const result=el('match-result');result.replaceChildren();if(!r||!jd.trim()||!skills.length){addText(result,'p','Chọn CV có kỹ năng và dán JD để phân tích.');return;}const hits=skills.filter(s=>jd.includes(s.toLocaleLowerCase()));addText(result,'h3',hits.length+'/'+skills.length+' kỹ năng trong CV xuất hiện trong JD ('+Math.round(hits.length/skills.length*100)+'%)');addText(result,'p','Đã tìm thấy:');for(const s of hits){const chip=document.createElement('span');chip.className='chip';chip.textContent=s;result.append(chip);}addText(result,'p','Không tìm thấy trong JD: '+skills.filter(s=>!hits.includes(s)).join(', '));addText(result,'small','Chỉ so sánh chuỗi văn bản, không phản ánh cơ hội tuyển dụng thực tế.');});
+  el('job-form').addEventListener('submit',e=>{e.preventDefault();if(!requireDrive())return;const f=e.currentTarget as HTMLFormElement;const d=new FormData(f);const job={id:crypto.randomUUID(),company:String(d.get('company')||''),position:String(d.get('position')||''),url:String(d.get('url')||''),stage:String(d.get('stage')||'Saved'),resumeId:String(d.get('resumeId')||''),notes:String(d.get('notes')||''),createdAt:new Date().toISOString()};jobs.unshift(job);persist();f.reset();renderJobs();});
+  el('export-data').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({version:1,resumes,jobs},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='techblogtip-resume-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status('Bản sao đã xuất. File JSON chứa dữ liệu cá nhân, hãy giữ kín.');});
+  el('import-data').addEventListener('change',async e=>{const file=(e.currentTarget as HTMLInputElement).files?.[0];if(!file)return;if(file.size>2_000_000){status('File quá lớn (tối đa 2MB).');return;}try{const d=JSON.parse(await file.text());if(d.version!==1||!Array.isArray(d.resumes)||!Array.isArray(d.jobs)||d.resumes.length>300||d.jobs.length>1000||!d.resumes.every((x:unknown)=>x&&typeof x==='object'&&fields.every(k=>typeof (x as Record<string,unknown>)[k]==='string'))||!d.jobs.every((x:unknown)=>x&&typeof x==='object'&&typeof (x as Job).company==='string'))throw Error('invalid');if(!requireDrive())return;if(!confirm('Nhập bản sao sẽ thay thế toàn bộ dữ liệu trên Google Drive. Tiếp tục?'))return;resumes=d.resumes;jobs=d.jobs;selected='';persist();render();tab('library');}catch{status('File sao lưu không hợp lệ.');}});
+  el('connect-drive').addEventListener('click',loginDrive);
+  el('disconnect-drive').addEventListener('click',()=>{
+    if(accessToken&&typeof google!=='undefined')google.accounts.oauth2.revoke(accessToken,()=>{});
+    accessToken='';connected=false;resumes=[];jobs=[];fileId='';version='';snapshot='';
+    el('connect-drive').hidden=false;el('disconnect-drive').hidden=true;el('drive-status').textContent='Chưa kết nối Google Drive';
+    render();tab('library');status('Đã ngắt kết nối. Không lưu CV trên trình duyệt.');
+  });
+  render();
+</script>
+</BaseLayout>

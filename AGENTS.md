@@ -11,3 +11,19 @@
 - Preserve trailing-slash paths and canonical URLs. Redirects are required before changing public URLs after launch.
 - Minimize CI/Cloudflare operations. No polling or cron for ordinary delivery; avoid redundant API calls.
 - Notion/Obsidian/Sheets integrations belong to later milestones and must never directly mutate live content.
+
+## Typography & reading layout (mandatory)
+
+- Body prose paragraphs use editorial text-align: justify with natural last-line alignment. Never justify the last line, force word spacing, or insert spaces through JavaScript.
+- Never split Vietnamese words: disallow word-break: break-all, overflow-wrap: anywhere and automatic hyphenation on prose. Prefer word-break: normal, overflow-wrap: normal, hyphens: none, word-spacing: normal and letter-spacing: normal. Only code, URLs and genuinely unbroken tokens may have scoped emergency overflow handling.
+- Short snippets, navigation, buttons, metadata, headings, code, blockquotes, lists and tables must not be stretched to achieve justification. Use natural alignment on compact/mobile layouts where justification would produce excessive gaps.
+- Full article headings use available content width, responsive font sizes and text-wrap: balance. Do not insert manual line breaks, nowrap or truncation for full article titles.
+- Test 320px mobile and wide desktop for horizontal overflow, broken Vietnamese diacritics, excessive word gaps and abrupt one-word title lines; use the Google Sheets Publisher story as the regression sample.
+
+## Automatic editorial visualization gate
+
+- Every new long-form blog post must receive a meaningful visualization before production. The shared ArticleVisualMap component is generated automatically from H2 headings for all eligible articles, without manual prompts or external APIs.
+- When a post describes a pipeline, architecture, comparison or sequence, add a topic-specific original pastel Astro/SVG diagram like PublisherStoryVisual or EngineeringRulesVisual; the generic map is a baseline, not a substitute for meaningful engineering diagrams.
+- Keep visuals responsive, semantically labeled, keyboard-accessible and static-first. Use locally rendered inline Lucide-style vector iconography and do not hotlink third-party assets or expose secrets.
+- The existing Quality build verification must reject published articles with multiple H2 sections if their automatic visual story map is missing. Reuse existing event-triggered CI rather than introducing polling or periodic workflows.
+- Ensure visual callouts, headings, tables and code remain naturally aligned and never justify with artificial word spacing. Follow the mandatory Typography & reading layout rules above; keep all visual callouts naturally aligned.
