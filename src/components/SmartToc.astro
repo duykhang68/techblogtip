@@ -55,9 +55,18 @@ const visibleHeadings = headings.filter(heading => heading.depth === 2 || headin
       // Read slightly below the fixed site header, not at the viewport's bottom.
       const readingLine = Math.min(240, Math.max(120, window.innerHeight * 0.28));
       const readingPosition = window.scrollY + readingLine;
-      const completion = Math.round(
+      // With a reading line near the header, even scrolling to the absolute
+      // document bottom can leave the line above the end of the article.
+      // Complete when the article's end is visible or the reader reaches the
+      // bottom of the document. Otherwise keep percentages strictly below 100.
+      const viewportBottom = window.scrollY + window.innerHeight;
+      const articleEndVisible = articleBottom <= viewportBottom - 48;
+      const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const documentEndReached = window.scrollY > 0 && window.scrollY >= maxScrollY - 2;
+      const computed = Math.round(
         Math.max(0, Math.min(100, (readingPosition - articleTop) / Math.max(1, articleBottom - articleTop) * 100))
       );
+      const completion = articleEndVisible || documentEndReached ? 100 : Math.min(99, computed);
 
       if (progress) progress.value = completion;
       if (percentage) percentage.textContent = completion + '%';
