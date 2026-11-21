@@ -178,7 +178,7 @@ try{
       const footerLinks=await page.locator('.site-footer nav a').allTextContents();
       assert.deepEqual(footerLinks.map(s=>s.trim()),['Archive','Sitemap','Visual CMS'],'Footer must link Archive, Sitemap and Visual CMS');
       const cmsHref=await page.locator('.site-footer nav a').last().getAttribute('href');
-      assert.match(cmsHref,/^(?:\\/techblogtip)?\\/tools\\/cms\\/$/,'Visual CMS footer href must respect the configured base path');
+      assert.match(cmsHref,/^(?:\/techblogtip)?\/tools\/cms\/$/,'Visual CMS footer href must respect the configured base path');
       const cmsResponse=await page.request.get(base+'/tools/cms/');
       assert.equal(cmsResponse.status(),200,'Visual CMS static entry page must load successfully');
       assert.match(await cmsResponse.text(),/<title>Visual CMS/,'Visual CMS entry page title must be present');
