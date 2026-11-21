@@ -5,7 +5,7 @@
 ## 0. Những gì đã có sẵn trong code (không cần cấu hình để CI chạy)
 
 - **P6 Notion:** authenticated `GET /api/import/notion/pages` liệt kê tối đa 50 trang được chia sẻ (chỉ ID và tiêu đề); `POST /api/import/notion` trả preview, không ghi Sheets. Có kiểm tra ID, giới hạn 500 block, phân trang không lặp, giới hạn định dạng an toàn. Block lồng nhau, H1, numbered list, code, quote, rich formatting hoặc media yêu cầu review. Nếu thiếu token, API trả lỗi rõ ràng thay vì báo thành công.
-- **P7 Obsidian:** authenticated `POST /api/import/obsidian` nhận một tệp .md ≤150 KB, kiểm tra path traversal, frontmatter, wikilink, embed, Markdown phức tạp. Các trường hợp dễ mất dữ liệu yêu cầu review.
+- **P7 Obsidian:** authenticated `POST /api/import/obsidian` nhận một tệp .md ≤150 KB trong mỗi lần import (UI cho phép chọn tối đa 50 tệp và chọn một tệp để đưa vào DRAFT), kiểm tra path traversal, frontmatter, wikilink, embed, Markdown phức tạp. Các trường hợp dễ mất dữ liệu yêu cầu review.
 - **Editor:** chỉ cho nhập vào DRAFT đang mở; không ghi Sheet khi preview; có xác nhận trước khi thay nội dung bản nháp. Người dùng bấm **Lưu vào Sheets** riêng. READY/PUBLISHED, K:O và quy tắc Draft PR/FIFO không bị thay đổi.
 - **SEO:** deploy production chạy exact SHA, kiểm tra sitemap/robots/canonical và số trang mẫu; GSC URL Inspection chỉ đọc, báo SKIP khi thiếu cấu hình. Không submit URL hàng loạt và không cron.
 - **QA:** Quality, Gitleaks, Publisher tests, visual QA và source-import regression tests chạy trên PR head SHA.
@@ -37,9 +37,9 @@
    - Ý thứ nhất
    - Ý thứ hai
    ```
-2. Trong Editor DRAFT của Publisher DEV, chọn tệp ở **Obsidian Markdown**, bấm **Nhập ghi chú**. Nội dung chỉ được đưa vào WYSIWYG sau bước xác nhận; kiểm tra title, dấu tiếng Việt, đoạn văn và danh sách.
+2. Trong Editor DRAFT của Publisher DEV, chọn tối đa 50 tệp ở **Obsidian Markdown**, chọn **một** ghi chú trong dropdown rồi bấm **Nhập ghi chú**. Chỉ tệp được chọn được gửi đến API; các tệp khác không bị upload hay ghi Sheets. Lặp lại thủ công với từng bản DRAFT nếu cần. Nội dung chỉ được đưa vào WYSIWYG sau bước xác nhận; kiểm tra title, dấu tiếng Việt, đoạn văn và danh sách.
 3. Bấm **Lưu vào Sheets**, tải lại và so nội dung. Sau đó kiểm tra một tệp phức tạp chứa `[[wikilink]]`, `![[media]]`, H1, Markdown link, table hoặc code fence: phải **chặn nhập tự động và yêu cầu review**. Không được làm mất nội dung cũ hoặc tự đưa media private lên URL công khai.
-4. Chỉ khi được duyệt mới thực hiện READY → Draft PR → exact-head CI. Việc import nhiều file/vault và ánh xạ attachment đầy đủ **chưa được xem là hoàn chỉnh** chỉ vì single-file preview đã PASS.
+4. Chỉ khi được duyệt mới thực hiện READY → Draft PR → exact-head CI. Việc tự động tạo nhiều bản DRAFT từ toàn bộ vault và ánh xạ attachment đầy đủ **chưa được xem là hoàn chỉnh** chỉ vì single-file preview đã PASS.
 
 ## 3. Google Search Console Indexing — cấu hình một lần
 
