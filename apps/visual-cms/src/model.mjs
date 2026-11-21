@@ -1,5 +1,5 @@
-export const BLOCK_TYPES=['heading','paragraph','image','quote','button','feature'];
-const fields=['text','src','alt','url','label','eyebrow','size'];
+export const BLOCK_TYPES=['heading','paragraph','image','quote','button','feature','global'];
+const fields=['text','src','alt','url','label','eyebrow','size','componentId'];
 export function safeFilename(value) {return String(value||'image').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,128)||'image';}
 export function normalizePage(input={}) {
   const src=input&&typeof input==='object'&&!Array.isArray(input)?input:{};
@@ -26,7 +26,8 @@ export function validatePage(page) {
     for(const [key,val] of Object.entries(block.props)){
       if(!fields.includes(key)||typeof val!=='string'||val.length>10000)errors.push('block_field');
     }
-    if(block.props.src&&!/^\/media\/[a-f0-9-]{36}$/i.test(block.props.src))errors.push('image_source');
+    if(block.type==='global'&&!/^[a-f0-9-]{36}$/i.test(block.props.componentId||''))errors.push('global_component_id');
+    if(block.props.src&&/^\/media\/[a-f0-9-]{36}$/i.test(block.props.src))errors.push('image_source');
     if(block.props.url&&!(/^\/(?!\/)[^<>]*$/.test(block.props.url)||/^https:\/\/[^<>\s]+$/i.test(block.props.url)))errors.push('button_url');
   }
   return [...new Set(errors)];

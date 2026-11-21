@@ -33,7 +33,12 @@ export async function googleUser(req,env){
   if(!verified)throw Error('invalid_identity');
   const email=String(payload.email||'').toLowerCase().trim();
   const admins=emails(env.CMS_ADMINS),editors=emails(env.CMS_EDITORS),reviewers=emails(env.CMS_REVIEWERS);
-  const role=admins.includes(email)?'admin':editors.includes(email)?'editor':reviewers.includes(email)?'reviewer':null;
+  const owner=admins.includes(email),baseRole=owner?'admin':editors.includes(email)?'editor':reviewers.includes(email)?'reviewer':null;
+  let role=baseRole;
+  if(!role&&env.CMS_DB){
+    const membership=await env.CMS_DB.prepare('SELECT role FROM cms_space_members WHERE email=? LIMIT 1').bind(email).first().catch(()=>null);
+    role=membership?.role||null;
+  }
   if(!role)throw Error('not_allowed');
-  return {email,role};
+  return {email,role,owner,baseRole};
 }
