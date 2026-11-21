@@ -97,7 +97,7 @@ const essays = [['growth','성장과정 · Quá trình trưởng thành'],['pers
   q('#review-input')?.addEventListener('click',()=>{
     const data: Record<string,unknown> = {personal:{},essays:{}, label:'',targetCompany:'',targetRole:'',locale:'ko'};
     for(const control of inputPanel.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>('[name]')){
-      const [group,key]=control.name.split('.');
+      const [group = '',key]=control.name.split('.');
       if(key) (data[group] as Record<string,string>)[key]=control.value;
       else data[group]=control.value;
     }
