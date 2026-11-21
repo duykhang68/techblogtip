@@ -41,9 +41,22 @@ async function lookup(id, token) {
   return payload.files?.[0] || null;
 }
 async function list(token) {
-  const params=new URLSearchParams({spaces:'appDataFolder',q:"name contains 'korea-cv-' and 'appDataFolder' in parents and trashed = false",fields:'nextPageToken,files(id,name,modifiedTime,appProperties)',pageSize:'100'});
-  const data=await googleJson(DRIVE+'?'+params,{headers:fetchHeaders(token)});
-  return (data.files||[]).filter(f=>/^korea-cv-[0-9a-f-]{36}\.json$/i.test(f.name)).map(f=>({id:f.name.slice(9,-5),updatedAt:f.modifiedTime,label:f.appProperties?.label||'',targetCompany:f.appProperties?.targetCompany||'',targetRole:f.appProperties?.targetRole||''}));
+  const found=[];let nextPageToken='';
+  do {
+    const params=new URLSearchParams({
+      spaces:'appDataFolder',
+      q:"name contains 'korea-cv-' and 'appDataFolder' in parents and trashed = false",
+      fields:'nextPageToken,files(id,name,modifiedTime,appProperties)',pageSize:'100',
+    });
+    if(nextPageToken)params.set('pageToken',nextPageToken);
+    const data=await googleJson(DRIVE+'?'+params,{headers:fetchHeaders(token)});
+    found.push(...(data.files||[]));
+    nextPageToken=data.nextPageToken||'';
+  } while(nextPageToken && found.length<500);
+  return found.filter(f=>/^korea-cv-[0-9a-f-]{36}\\.json$/i.test(f.name)).map(f=>({
+    id:f.name.slice(9,-5),updatedAt:f.modifiedTime,label:f.appProperties?.label||'',
+    targetCompany:f.appProperties?.targetCompany||'',targetRole:f.appProperties?.targetRole||'',
+  }));
 }
 async function readFile(googleId,token) { return googleJson(DRIVE+'/'+encodeURIComponent(googleId)+'?alt=media',{headers:fetchHeaders(token)}); }
 async function writeFile(id, json, token, existing) {
