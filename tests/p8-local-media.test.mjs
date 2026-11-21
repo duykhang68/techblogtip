@@ -53,3 +53,26 @@ test('P8 local PNG converts to WebP, stages on media branch and deduplicates re-
  assert.equal(second.items[0].created,false);
  assert.equal(putCount,1);
 });
+
+
+test('P8 locked editor disables file selection instead of silently clearing a chosen file',()=>{
+ assert.match(EDITOR_JS,/imageInput\.disabled=locked;/);
+ assert.match(EDITOR_JS,/Đã chọn '\+files\.length\+' ảnh:/);
+ assert.doesNotMatch(EDITOR_JS,/status\.textContent='Bài READY hoặc chỉ đọc: hãy mở một bản DRAFT để tải ảnh\.';input\.value=''/);
+ assert.match(EDITOR_JS,/finally\{input\.disabled=false;\}/);
+});
+
+
+test('P8 locked READY article exposes a revision action instead of pretending upload is writable',()=>{
+ assert.match(EDITOR_HTML,/id="editor-fork"[^>]*hidden/);
+ assert.match(EDITOR_JS,/\/api\/draft\/fork/);
+ assert.match(EDITOR_JS,/forkButton\.hidden=!locked/);
+ assert.match(EDITOR_JS,/location\.assign\('\/editor\?sourceId='/);
+});
+
+
+test('P8 keeps advanced Markdown intact when appending an image',()=>{
+ assert.match(EDITOR_JS,/active\?\.complex\?\(active\.sourceBody/);
+ assert.match(EDITOR_JS,/active\.appendedMedia\.push/);
+ assert.match(EDITOR_JS,/active\.appendedMedia=\[\]/);
+});
