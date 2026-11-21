@@ -141,3 +141,15 @@ export async function putEditorialCells(env,token,rowNumber,values,fetcher=fetch
   if(!response.ok)
     fail(502,'sheet_write_failed','Could not write TechBlogTip editorial cells');
 }
+
+
+// Allocate a new independent editorial row without touching the published source.
+export async function writeRevisionRow(env,token,rowNumber,cells,fetcher=fetch){
+ if(!Number.isInteger(rowNumber)||rowNumber<2||rowNumber>200||!Array.isArray(cells)||cells.length!==15)
+  fail(400,'row_invalid','Invalid destination row');
+ const {spreadsheetId}=sheetConfig(env),range='VN!A'+rowNumber+':O'+rowNumber;
+ const url=API+encodeURIComponent(spreadsheetId)+'/values/'+encodeURIComponent(range)+'?valueInputOption=RAW';
+ const response=await fetcher(url,{method:'PUT',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+  body:JSON.stringify({range,majorDimension:'ROWS',values:[cells]}),signal:AbortSignal.timeout(12000)});
+ if(!response.ok)fail(502,'sheet_write_failed','Cannot create revision DRAFT row');
+}

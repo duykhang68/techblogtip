@@ -218,7 +218,8 @@ try{
   assert.ok(await editor.locator('#editor-preview-content pre').count()>0,'Code block missing');
   assert.equal(await editor.evaluate(()=>window.__publisherInjected),undefined,'Preview ran untrusted script');
   assert.equal(await editor.locator('#editor-preview-content script').count(),0,'Unsafe script element created');
-  assert.equal(await editor.locator('#editor-save').isDisabled(),true);
+  assert.equal(await editor.locator('#editor-save').isDisabled(),false,
+    'Advanced Markdown must allow safe media-only append while its text stays read-only');
   await editor.screenshot({path:join(screenshotPath,'publisher-editor-preview-'+width+'.png'),fullPage:true,animations:'disabled'});
   // A direct reload must restore the same workspace using URL and session.
   await editor.reload({waitUntil:'load'});
