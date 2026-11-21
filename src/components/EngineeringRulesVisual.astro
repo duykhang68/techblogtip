@@ -1,0 +1,35 @@
+---
+interface Props {variant?:'principles'|'release'}
+const {variant='principles'}=Astro.props;
+const rules=[
+{n:'01',title:'Repo boundary',info:'Không trộn nguồn lực giữa các blog',color:'#ece5ff',symbol:'folder'},
+{n:'02',title:'Draft-first',info:'Mã nguồn, config và workflow qua PR',color:'#fce7d9',symbol:'git'},
+{n:'03',title:'Quality gate',info:'Không merge Draft hoặc bypass CI',color:'#dbf5ea',symbol:'shield'},
+{n:'04',title:'Exact SHA',info:'Deploy đúng main và kiểm chứng release',color:'#dcecff',symbol:'hash'},
+{n:'05',title:'Noindex staging',info:'Preview không được giả dạng production',color:'#fff0cf',symbol:'eye'},
+{n:'06',title:'Zero GitHub API',info:'Tìm kiếm tĩnh, không gọi GitHub từ client',color:'#ffe5ed',symbol:'cloud'},
+{n:'07',title:'WebP + alt',info:'Hình gọn, dễ tiếp cận, không hotlink Drive',color:'#dfedff',symbol:'image'},
+{n:'08',title:'Protect secrets',info:'Không commit token và credential',color:'#e1f7e8',symbol:'lock'},
+{n:'09',title:'Stable URLs',info:'Trailing slash, canonical, redirect',color:'#ffebe1',symbol:'link'},
+{n:'10',title:'Event-driven CI',info:'Không polling hay cron dư thừa',color:'#f1e7ff',symbol:'zap'},
+{n:'11',title:'Integration gates',info:'Nguồn bên ngoài không được tự sửa live',color:'#e4f4f5',symbol:'layers'},
+];
+---
+{variant==='principles'?<section class="rules-visual" aria-label="Bảng trực quan 11 nguyên tắc engineering của TechBlogTip">
+<div class="header"><span class="eyeline">✦ ENGINEERING CONTRACT</span><span class="count">11 RULES</span><h2>Không phải checklist để ngắm. Đây là hàng rào an toàn.</h2><p>11 quy tắc gốc trong AGENTS.md được nhóm thành những ô có trách nhiệm cụ thể.</p></div>
+<ol class="rules-grid">{rules.map(item=><li style={`--tint:${item.color}`}><div class="top"><span class="symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/>{item.symbol==='git'?<><circle cx="9" cy="9" r="1.4"/><circle cx="15" cy="15" r="1.4"/><path d="M10 10l4 4"/></>:<><path d="M8 10h8M8 14h6"/></>}</svg></span><span class="rule-num">{item.n}</span></div><h3>{item.title}</h3><p>{item.info}</p></li>)}</ol>
+<p class="credit">Lucide-style inline SVG · Static / no third-party requests · Trích ý từ AGENTS.md</p></section>
+:<section class="rules-visual release" aria-label="Chuỗi xác minh GitHub Pages production">
+<div class="header"><span class="eyeline">✦ RELEASE TRUST CHAIN</span><h2>Chạy xong CI chưa có nghĩa là đã lên production</h2><p>Đối chiếu lần lượt các bằng chứng — không được nhảy thẳng từ màu xanh workflow đến nhãn Published.</p></div>
+<div class="flow">{[{id:'01',title:'Draft PR',description:'Review trước khi Ready',c:'#efe7ff'},{id:'02',title:'Exact CI SHA',description:'Test đúng mã commit',c:'#e0efff'},{id:'03',title:'Validated main',description:'Merge sau quality gate',c:'#e0f7ed'},{id:'04',title:'Public release.json',description:'SHA thực tế trên website',c:'#ffeadc'}].map(x=><div class="step" style={`--tint:${x.c}`}><span>{x.id}</span><strong>{x.title}</strong><small>{x.description}</small></div>)}</div>
+<div class="proof"><span class="dot"></span><strong>Production verified</strong><span> chỉ khi bằng chứng public khớp commit phát hành</span></div></section>}
+<style>
+.rules-visual{margin:1.2rem 0 2.1rem;padding:1.3rem;border:1px solid #e7eaf4;background:linear-gradient(135deg,#fcfaff,#f8fcff,#fffaf5);border-radius:22px;color:#273958;box-shadow:0 10px 25px #26395809}
+.header{margin:0 0 1.1rem}.eyeline{font-size:.67rem;letter-spacing:.16em;color:#8863a2;font-weight:900}.count{float:right;font-size:.67rem;font-weight:900;color:#8f9caf}.header h2{font-size:clamp(1.15rem,2.4vw,1.65rem);line-height:1.3;letter-spacing:-.03em;margin:.4rem 0!important}.header p{font-size:.85rem;color:#68768b;line-height:1.55;margin:0!important}
+.rules-grid{padding:0!important;margin:0!important;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;list-style:none!important}.rules-grid li{list-style:none;background:#fff;padding:.85rem;border:1px solid #e9eaf2;border-radius:15px;min-width:0;text-align:left!important}
+.top{display:flex;justify-content:space-between;align-items:start}.symbol{width:39px;height:39px;display:grid;place-items:center;color:#54708f;background:var(--tint);border-radius:11px}.symbol svg{width:22px;height:22px}.rule-num{color:#8b97a9;font-weight:900;font-size:.7rem}.rules-grid h3{font-size:.85rem;line-height:1.3;margin:.7rem 0 .3rem!important;letter-spacing:-.015em}.rules-grid p{font-size:.71rem;line-height:1.52;color:#647189;margin:0!important;text-align:left!important}
+.credit{text-align:right!important;color:#91a0b1;font-size:.61rem;margin:.75rem 0 0!important}
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.6rem}.step{min-width:0;background:var(--tint);padding:1rem .8rem;border-radius:15px;display:flex;flex-direction:column;gap:.4rem}.step>span{font-size:.7rem;font-weight:900;color:#63738c}.step strong{font-size:.86rem;line-height:1.4}.step small{font-size:.7rem;color:#576983;line-height:1.5}.proof{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;margin-top:1rem;font-size:.8rem;color:#477665}.dot{width:10px;height:10px;border-radius:100%;background:#64ba91;box-shadow:0 0 0 4px #dcf6e9}
+@media(max-width:650px){.rules-visual{padding:.95rem;border-radius:17px}.rules-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.flow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:350px){.rules-grid{grid-template-columns:1fr}}
+</style>
