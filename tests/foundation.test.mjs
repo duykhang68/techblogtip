@@ -71,6 +71,8 @@ test('retired deployment cleanup is tightly scoped and cannot delete production'
  assert.deepEqual(names,['techblogtip-publisher-dev','techblogtip-korea-cv-dev','techblogtip-staging']);
  assert.match(cleanup,/deployments: write/);
  assert.match(cleanup,/workflow_dispatch:/);
+ assert.ok(cleanup.includes("      - '.github/workflows/cleanup-retired-deployments.yml'"),'run on file addition to main');
+ assert.doesNotMatch(cleanup,/github\.event\.head_commit\.message/,'cleanup must not depend on merge message');
  assert.match(cleanup,/process\.env\.GITHUB_REF !== 'refs\/heads\/main'/);
  assert.match(cleanup,/deployment\.environment !== environment/);
  assert.match(cleanup,/deployment\.production_environment === true/);
