@@ -15,4 +15,6 @@ npm run dev
 
 No old Publisher credentials or Drive editorial spreadsheet are needed for static site deployment. Historical public articles are unchanged.
 
-After the retirement PR merges, the scoped `cleanup-retired-deployments.yml` action will delete GitHub deployment **records** only for three retired environments. It cannot delete the Cloudflare Worker services or the GitHub Environment settings. If the cleanup action fails, rerun it manually, then manage any remaining environments under GitHub repository Settings → Environments. Do not delete the `github-pages` production environment. Environment deletion also removes environment-specific secrets and protection rules; review these before deletion.
+On 2026-11-22, [cleanup run 44931238961](https://github.com/duykhang68/techblogtip/actions/runs/44931238961) deleted **135 GitHub deployment records**: Publisher DEV 36, Korea CV DEV 1, staging 98. The Cloudflare `techblogtip-staging` Worker was then removed and verified absent. The Publisher DEV Worker was already absent. The Korea CV DEV Worker remains deployed because the production site's Korea CV code can still depend on its API URL.
+
+`cleanup-retired-deployments.yml` is now **manual-only** for recovery; it does not consume Actions runs on every push. GitHub Environment settings are a separate resource: review and optionally remove obsolete environments under Settings → Environments. Never delete `github-pages`. Deleting an environment also deletes its environment-scoped secrets and protection rules.
