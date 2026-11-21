@@ -1,0 +1,42 @@
+name: Performance Resource Audit
+on:
+  pull_request:
+    paths:
+      - 'src/components/ArticleCard.astro'
+      - 'src/layouts/BaseLayout.astro'
+      - 'src/styles/**'
+      - 'scripts/performance-audit.mjs'
+      - '.github/workflows/performance-resource-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+      - run: npm install --no-audit --no-fund
+      - name: Build pages to audit (no deployment)
+        run: npm run build
+      - name: Audit LCP images, CSS, JS and CDN cache policies
+        run: node scripts/performance-audit.mjs
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f artifacts/perf-audit/report.md ]; then
+            cat artifacts/perf-audit/report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: performance-resource-audit-${{ github.run_id }}
+          path: artifacts/perf-audit/
+          retention-days: 14
+          if-no-files-found: warn

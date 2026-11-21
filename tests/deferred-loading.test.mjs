@@ -26,12 +26,15 @@ test('search downloads its index on demand, not on page entry', () => {
   assert.match(source, /await ensureIndex\(\)/);
   assert.doesNotMatch(source, /const items: SearchItem\[\] = await fetch/);
 });
-test('cards retain eager first LCP cover and observer-deferred rest', () => {
+test('cards retain eager high-priority LCP cover and native lazy thumbnails', () => {
   const card=read('src/components/ArticleCard.astro');
   const runtime=read('src/scripts/deferred-media.ts');
   assert.match(card, /const eagerCover = position === 1/);
-  assert.match(card, /data-defer-src=/);
-  assert.match(card, /<noscript>/);
+  assert.match(card, /src=\{coverSrc\}/);
+  assert.match(card, /loading=\{eagerCover \? 'eager' : 'lazy'\}/);
+  assert.match(card, /fetchpriority=\{eagerCover \? 'high' : 'low'\}/);
+  assert.doesNotMatch(card, /data-defer-src=/);
+  assert.match(read('src/layouts/BaseLayout.astro'), /needsDeferredMedia/);
   assert.match(runtime, /new IntersectionObserver/);
   assert.match(runtime, /rootMargin: '160px 0px'/);
 });
