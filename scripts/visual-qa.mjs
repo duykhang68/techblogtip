@@ -62,7 +62,8 @@ try{
    assert.equal(response.status(),200);
    assert.equal(await page.locator('h1').count(),1);
    assert.equal(await page.locator('.home-intro, .topic-strip').count(),0,'Homepage hero and category strip must be removed');
-   assert.equal(await page.locator('.home-search-link').count(),1,'Homepage search entry must remain');
+   assert.equal(await page.locator('.home-search-link').count(),0,'Removed homepage search hero must not return');
+   assert.equal(await page.locator('[data-theme-toggle]').count(),1,'Lightbulb theme toggle must be available');
    const cards=await page.locator('.article-card').count();
    assert.equal(cards,8,'Exactly eight homepage article cards required');
    const metric=await page.evaluate(()=>{
@@ -71,7 +72,7 @@ try{
       scrollWidth:document.documentElement.scrollWidth,
       mainRight:rect('main')?.right??0,
       headerRight:rect('.site-header')?.right??0,
-      searchRight:rect('.home-search-link')?.right??0,
+      searchRight:rect('[data-theme-toggle]')?.right??0,
       articleStart:rect('.article-card')?.top??Infinity,
       columns:getComputedStyle(document.querySelector('.article-grid')).gridTemplateColumns.split(' ').filter(Boolean).length
     };
