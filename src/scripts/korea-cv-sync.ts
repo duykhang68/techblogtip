@@ -1,4 +1,5 @@
 import {configured,connectGoogle,connected,disconnectGoogle,driveRequest,createCVId} from '../lib/korea-cv-client.mjs';
+import {captureKoreaCvDraft} from '../lib/korea-cv-draft.mjs';
 
 const element = (id:string) => document.getElementById(id) as HTMLElement;
 const status = (value:string, tone:'neutral'|'info'|'success'|'error'='info') => {
@@ -22,22 +23,13 @@ function buttons(auth:boolean) {
   for(const id of ['kcv-open','kcv-copy','kcv-remove'])btn(id).disabled=!auth||!select().value;
 }
 function capture() {
-  const cv:any={schemaVersion:1,id:currentId||createCVId(),label:'',targetCompany:'',targetRole:'',locale:'ko',revision:revision < 0 ? 0 : revision + 1,createdAt:createdAt || new Date().toISOString(),updatedAt:new Date().toISOString(),content:{personal:{},essays:{},optionalSensitive:{},declarationOptional:null}};
-  document.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>('#input-panel [name]').forEach(field=>{
-    const [section = '',key]=field.name.split('.');
-    if(key)cv.content[section][key]=field.value;else cv[section]=field.value;
+  return captureKoreaCvDraft(document,{
+    id:currentId||undefined,
+    revision:revision<0?0:revision+1,
+    createdAt,
   });
-  document.querySelectorAll<HTMLElement>('[data-rows]').forEach(container=>{
-    const section=container.dataset.rows!;
-    cv.content[section]=Array.from(container.querySelectorAll<HTMLElement>('.kcv-row'),row=>{
-      if(!row.dataset.cvRowId)row.dataset.cvRowId=createCVId();
-      const data:any={id:row.dataset.cvRowId};
-      row.querySelectorAll<HTMLInputElement|HTMLTextAreaElement>('[data-field]').forEach(field=>{data[field.dataset.field!]=field.value;});
-      return data;
-    });
-  });
-  return cv;
 }
+
 function fill(cv:any) {
   document.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>('#input-panel [name]').forEach(field=>{
     const [section = '',key]=field.name.split('.');
