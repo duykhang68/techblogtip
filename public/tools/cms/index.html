@@ -176,6 +176,13 @@ body{background:var(--cms-bg)}
 }
 @media(max-width:380px){.top #signout{font-size:0;padding:7px}.top #signout:after{content:'Thoát';font-size:11px}}
 
+
+/* Preserve the primary Save/Publish actions on medium-width laptop screens. */
+@media(max-width:1150px){
+ .top .buttons{flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:thin}
+ .top #state-chip{display:none}
+ .top #save{order:-2}.top #publish{order:-1}
+}
 </style></head><body>
 <header class="top"><div class="brand"><b aria-hidden="true">V</b><span>Visual CMS<small>TechBlogTip Content Studio</small></span></div><span class="muted" id="breadcrumb">Content / Pages</span><div class="grow"></div><span id="state-chip" class="state-chip">Bản nháp</span><span id="identity" class="muted">Chưa đăng nhập</span><button class="btn" id="signout" hidden>Đăng xuất</button><div class="buttons"><button class="btn" id="undo" aria-label="Hoàn tác">↶</button><button class="btn" id="redo" aria-label="Làm lại">↷</button><button class="btn" id="preview-toggle">Xem trước</button><button class="btn" id="public-page">Xem trang live</button><button class="btn" id="save">Lưu nháp</button><button class="btn dark" id="publish">Xuất bản</button></div></header>
 <section id="auth-panel" class="auth-panel"><div class="auth-card"><div class="auth-logo">V</div><h1>Đăng nhập Visual CMS</h1><p>Biên tập nội dung TechBlogTip bằng Google. Không cần Cloudflare Zero Trust.</p><div id="google-login"></div><p id="auth-feedback" class="muted" role="status">Đang chuẩn bị đăng nhập…</p></div></section><div class="grid" id="workspace" hidden><button type="button" class="panel-scrim" id="panel-scrim" aria-label="Đóng bảng điều khiển" hidden></button><aside class="sidebar" id="side-panel" aria-label="Thư viện"><div class="head"><h1>Thư viện nội dung</h1><span class="muted">Pages · Assets · Revisions</span></div><div class="tabs" role="tablist"><button id="tab-pages" role="tab" aria-selected="true">Trang</button><button id="tab-assets" role="tab" aria-selected="false">Ảnh</button><button id="tab-history" role="tab" aria-selected="false">Lịch sử</button></div><div class="list" id="list"></div><div class="foot"><button class="btn soft" id="new">+ Trang mới</button><div id="status" class="status" role="status" aria-live="polite">Sẵn sàng</div></div></aside>
