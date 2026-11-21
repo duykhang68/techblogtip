@@ -1,6 +1,7 @@
 import { PublisherError,fail,requireSameOrigin,verifyGoogleIdToken } from './auth.mjs';
 import { issueSessionCookie,verifySession,expiredSessionCookie,SESSION_TTL_SECONDS } from './session.mjs';
 import { readSheet,putSystemCells,rowById,sheetConfig } from './google-api.mjs';
+import { deletionPreview,deleteQueuedArticle } from './article-delete.mjs';
 import { createDraftPR,githubRequest } from './github-api.mjs';
 import { inspectPublisherPR } from './pr-status.mjs';
 import { finalizeVerifiedArticle,requireProductionSync,reconcileProductionBatch } from './release-writeback.mjs';
@@ -151,6 +152,20 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
       if(request.method==='GET'&&path==='/api/rows'){
         const sheet=await readSheet(env,fetcher);
         return respond({editor:editor.email,rows:sheet.records.map(rowPreview)});
+      }
+      if(request.method==='GET'&&path==='/api/delete-check'){
+        const query=new URL(request.url).searchParams;
+        return respond(await deletionPreview(env,{
+          sourceId:query.get('sourceId')||'',
+          ...(query.has('rowNumber')?{rowNumber:Number(query.get('rowNumber'))}:{})
+        },fetcher));
+      }
+      if(request.method==='POST'&&path==='/api/delete-article'){
+        const payload=await jsonRequest(request,512);
+        const task=()=>deleteQueuedArticle(env,payload,fetcher);
+        return respond(await (payload.sourceId?
+          withSourceWriteLock(env,payload.sourceId,task):
+          withRowWriteLock(env,payload.rowNumber,task)));
       }
       if(path==='/api/draft'){
         if(request.method==='GET'){
