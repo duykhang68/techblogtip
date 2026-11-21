@@ -8,7 +8,7 @@ author: "TechBlogTip"
 draft: false
 ---
 
-Một developer có thể trả tiền để biết bản code nào **đang chạy thật trên production**. Nhưng nếu sản phẩm yêu cầu họ tải source code, file \`.env\` hoặc token cá nhân lên một website mới, câu trả lời hợp lý sẽ là: **không**. Đây là bài toán thiết kế cốt lõi của **ReleaseProof** — một ý tưởng web app theo dõi bằng chứng triển khai.
+Một developer có thể trả tiền để biết bản code nào **đang chạy thật trên production**. Nhưng nếu sản phẩm yêu cầu họ tải source code, file `.env` hoặc token cá nhân lên một website mới, câu trả lời hợp lý sẽ là: **không**. Đây là bài toán thiết kế cốt lõi của **ReleaseProof** — một ý tưởng web app theo dõi bằng chứng triển khai.
 
 Mục tiêu không phải “giữ mọi dữ liệu trong một chiếc két có nhãn bảo mật”, mà là **đừng thu thập những gì không cần**. ReleaseProof chỉ cần dữ liệu để đối chiếu commit kỳ vọng và phiên bản production; ứng dụng không cần đọc nội dung source code. Bài viết dưới đây là **bản thiết kế đề xuất**, không phải tuyên bố ReleaseProof đã triển khai, được chứng nhận an toàn hay có khách hàng thực tế.
 
@@ -29,7 +29,7 @@ Thay vì hỏi “GitHub cung cấp cho chúng ta những API nào?”, hãy h�
 | SHA do production công bố | Bằng chứng từ endpoint sản xuất | **Có**, cùng nguồn và thời gian kiểm tra |
 | Deployment status và timestamp | Hiểu quá trình phát hành | **Có**, chỉ các trường cần thiết |
 | Tên repo hoặc tên chủ sở hữu | Giúp người dùng nhận diện | **Tùy chọn**, hạn chế hiển thị công khai |
-| Source code, file \`.env\`, artifact và build output | Không cần để so sánh SHA | **Không thu thập** |
+| Source code, file `.env`, artifact và build output | Không cần để so sánh SHA | **Không thu thập** |
 | Raw GitHub Actions log | Dễ chứa thông tin vận hành nhạy cảm | **Không tải trong MVP** |
 | PR body, commit message, người commit | Không bắt buộc cho release proof | **Tránh thu thập** |
 
@@ -56,7 +56,7 @@ Mô hình đơn giản cho MVP: frontend tĩnh, Cloudflare Worker làm API, D1 l
   <div class="rpp-lane rpp-finish"><span>TRẢ KẾT QUẢ CHO NGƯỜI DÙNG</span><strong>Verified · Mismatch · Unverified</strong><small>Đính kèm nguồn bằng chứng, không đánh đồng “CI PASS” với “đã lên production”</small></div>
 </section>
 
-Có một đường dữ liệu khác cần xem xét: **Worker đọc endpoint production** như \`https://example.com/release.json\`. Endpoint này phải là địa chỉ đã được khách xác minh và được kiểm soát SSRF; không được biến ứng dụng thành proxy cho URL tùy ý.
+Có một đường dữ liệu khác cần xem xét: **Worker đọc endpoint production** như `https://example.com/release.json`. Endpoint này phải là địa chỉ đã được khách xác minh và được kiểm soát SSRF; không được biến ứng dụng thành proxy cho URL tùy ý.
 
 Tài liệu tham khảo: [Cloudflare Workers](https://developers.cloudflare.com/workers/), [Cloudflare D1](https://developers.cloudflare.com/d1/), [GitHub App permissions](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/choosing-permissions-for-a-github-app).
 
@@ -74,7 +74,7 @@ Một GitHub App có thể được cài trên **selected repositories** thay v�
   <div class="rpp-perm-denied"><span class="rpp-perm-name">Write / Admin</span><strong>Không xin</strong><small>Không merge, không sửa branch, không đổi secrets</small></div>
 </section>
 
-\`* Read\` **không phải quyền vô hại**. Ví dụ, một số endpoint tải GitHub Actions log chấp nhận quyền **Actions: Read**. ReleaseProof phải không gọi các endpoint đó, kiểm toán egress và xử lý token cẩn thận. Bạn nên giới hạn installation token thêm theo repository/quyền khi API cho phép; token cài đặt GitHub App có thời hạn khoảng **một giờ**. [GitHub — Workflow Runs API](https://docs.github.com/en/rest/actions/workflow-runs) · [Installation tokens](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-an-installation-access-token-for-a-github-app).
+`* Read` **không phải quyền vô hại**. Ví dụ, một số endpoint tải GitHub Actions log chấp nhận quyền **Actions: Read**. ReleaseProof phải không gọi các endpoint đó, kiểm toán egress và xử lý token cẩn thận. Bạn nên giới hạn installation token thêm theo repository/quyền khi API cho phép; token cài đặt GitHub App có thời hạn khoảng **một giờ**. [GitHub — Workflow Runs API](https://docs.github.com/en/rest/actions/workflow-runs) · [Installation tokens](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-an-installation-access-token-for-a-github-app).
 
 **Cam kết trung thực:** hiển thị màn hình quyền thực tế trước khi khách đồng ý; chỉ dùng câu “ReleaseProof không cần quyền đọc source code” khi manifest GitHub App và toàn bộ các lệnh gọi API đúng như thiết kế.
 
@@ -108,22 +108,22 @@ Bảng quyết định nhanh:
 | Private Repo | Có, chỉ repo đã chọn | GitHub API + production manifest | Trung bình |
 | Push-only | Không | CI đã xác thực + manifest độc lập nếu có | Trung bình |
 
-**Chú ý:** một \`release.json\` công khai chứa SHA chưa tự chứng minh toàn bộ hệ thống backend đang phục vụ đúng version. Bằng chứng cần nói rõ **đo được điều gì, từ endpoint nào, vào lúc nào**. Đối với nhiều service/microservice, phải kiểm tra đúng service hoặc tập hợp service liên quan.
+**Chú ý:** một `release.json` công khai chứa SHA chưa tự chứng minh toàn bộ hệ thống backend đang phục vụ đúng version. Bằng chứng cần nói rõ **đo được điều gì, từ endpoint nào, vào lúc nào**. Đối với nhiều service/microservice, phải kiểm tra đúng service hoặc tập hợp service liên quan.
 
 ## 5. Threat model: sáu lỗi nguy hiểm phải chặn từ ngày đầu
 
 Dữ liệu ít hơn giúp giảm hậu quả, nhưng không thay thế bảo mật. Đây là sáu tình huống cần đặt thành tiêu chí kiểm thử chứ không chỉ viết trong Privacy Policy.
 
 <section class="rpp-threats" data-rpp-threats aria-label="Sáu lớp phòng vệ an ninh ReleaseProof">
-  <div><span>01 · Identity</span><strong>Đọc chéo tenant</strong><p>Không bao giờ nhận \`repo_id\` từ URL rồi trả record mà chưa kiểm tra tài khoản, installation và membership còn hiệu lực.</p></div>
+  <div><span>01 · Identity</span><strong>Đọc chéo tenant</strong><p>Không bao giờ nhận `repo_id` từ URL rồi trả record mà chưa kiểm tra tài khoản, installation và membership còn hiệu lực.</p></div>
   <div><span>02 · Input</span><strong>SSRF / DNS rebinding</strong><p>Chỉ xác minh domain do khách kiểm soát; chặn IP nội bộ, redirect ra mạng riêng, URL lạ và phản hồi quá lớn.</p></div>
-  <div><span>03 · Webhook</span><strong>Giả mạo & replay</strong><p>Xác thực HMAC \`X-Hub-Signature-256\` trên raw body, chống trùng \`X-GitHub-Delivery\`, không tin header chưa xác minh.</p></div>
+  <div><span>03 · Webhook</span><strong>Giả mạo & replay</strong><p>Xác thực HMAC `X-Hub-Signature-256` trên raw body, chống trùng `X-GitHub-Delivery`, không tin header chưa xác minh.</p></div>
   <div><span>04 · Credential</span><strong>Lộ installation token</strong><p>Không đưa private key/token xuống trình duyệt, không log Authorization header, dùng secret store và thu hẹp thời gian/quyền token.</p></div>
   <div><span>05 · Data</span><strong>Metadata và log bị lộ</strong><p>Tránh raw payload/log, hạn chế quyền xem D1, lọc thông tin nhạy cảm khỏi telemetry và bản sao lỗi.</p></div>
   <div><span>06 · Proof</span><strong>Gắn nhãn “Verified” sai</strong><p>Nếu mất endpoint, không đối chiếu được SHA hoặc nguồn bằng chứng yếu: trả “Unverified”, không tô xanh mặc định.</p></div>
 </section>
 
-Theo GitHub, webhook cần được [xác thực chữ ký](https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries) và [chống replay/duplicate](https://docs.github.com/en/webhooks/using-webhooks/best-practices-for-using-webhooks). Đặc biệt, chặn SSRF không thể chỉ dùng regex để loại \`localhost\`; cần kiểm tra DNS, IP, redirect và cả kết nối đi ra.
+Theo GitHub, webhook cần được [xác thực chữ ký](https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries) và [chống replay/duplicate](https://docs.github.com/en/webhooks/using-webhooks/best-practices-for-using-webhooks). Đặc biệt, chặn SSRF không thể chỉ dùng regex để loại `localhost`; cần kiểm tra DNS, IP, redirect và cả kết nối đi ra.
 
 ## 6. Vòng đời dữ liệu: lưu gì, bao lâu, xóa bằng cách nào?
 
@@ -136,7 +136,7 @@ Dữ liệu phải có mục đích và vòng đời. Một ví dụ chính sác
   <div><strong>Disconnect</strong><span>Ngắt quyền, khóa webhook</span><small>Xóa dữ liệu theo quy trình; kiểm soát cả bản sao lưu</small></div>
 </section>
 
-\`* 30/90 ngày\` là **đề xuất thiết kế sản phẩm**, không phải thời hạn bắt buộc theo pháp luật. Một số dữ liệu tài khoản, hóa đơn hoặc hồ sơ bảo mật có thể có nghĩa vụ lưu khác. Muốn nói “đã xóa”, hệ thống phải thực sự thực thi, ghi nhận kết quả và giải thích thời gian xóa khỏi backup.
+`* 30/90 ngày` là **đề xuất thiết kế sản phẩm**, không phải thời hạn bắt buộc theo pháp luật. Một số dữ liệu tài khoản, hóa đơn hoặc hồ sơ bảo mật có thể có nghĩa vụ lưu khác. Muốn nói “đã xóa”, hệ thống phải thực sự thực thi, ghi nhận kết quả và giải thích thời gian xóa khỏi backup.
 
 Nên bổ sung trên dashboard: *Download my evidence*, *Disconnect repository*, *Delete stored data*, xem lại quyền GitHub App, và đường dẫn liên hệ yêu cầu hỗ trợ quyền riêng tư. Khi GitHub App bị uninstall, ngừng truy cập ngay và xác định chính sách xóa phần metadata còn lại.
 
