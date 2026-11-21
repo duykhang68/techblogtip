@@ -176,7 +176,12 @@ try{
   if(w===390){
     try{
       const footerLinks=await page.locator('.site-footer nav a').allTextContents();
-      assert.deepEqual(footerLinks.map(s=>s.trim()),['Archive'],'Only Archive should remain in footer');
+      assert.deepEqual(footerLinks.map(s=>s.trim()),['Archive','Sitemap'],'Footer must link Archive and the public HTML sitemap');
+      const sitemapResponse=await page.goto(base+'/sitemap/',{waitUntil:'load'});
+      assert.equal(sitemapResponse?.status(),200,'HTML sitemap must load successfully');
+      assert.equal((await page.locator('#sitemap-title').textContent())?.trim(),'Sitemap');
+      assert.ok((await page.locator('.text-sitemap a[href*="/bai-viet/"]').count())>=2,'HTML sitemap must include published articles');
+      assert.equal(await page.locator('.text-sitemap img').count(),0,'Sitemap content must remain text-only');
       await page.goto(base+'/chuyen-muc/',{waitUntil:'load'});
       assert.ok((await page.locator('.directory-item').count())>=1);
       await page.goto(base+'/chu-de/',{waitUntil:'load'});
