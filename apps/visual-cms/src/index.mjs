@@ -164,7 +164,7 @@ async function published(url,env) {
 const handler = {
   async fetch(req,env) {
     const url=new URL(req.url),method=req.method;
-    if(url.pathname==='/health'&&method==='GET')return json({service:'free-visual-cms',status:'ok',configured:!!(env.CMS_DB&&env.CMS_ADMINS&&env.GOOGLE_CLIENT_ID),authentication:'google-id-token'});
+    if(url.pathname==='/health'&&method==='GET')return json({service:'free-visual-cms',status:'ok',configured:!!(env.CMS_DB&&env.CMS_ADMINS&&env.GOOGLE_CLIENT_ID),authentication:'google-id-token',sourceSha:String(env.SOURCE_SHA||'unknown')});
     if(url.pathname==='/api/config'&&method==='GET')return json({googleClientId:String(env.GOOGLE_CLIENT_ID||''),apiBase:url.origin});
     if(url.pathname==='/admin'||url.pathname==='/admin/'||url.pathname==='/')return Response.redirect('https://duykhang68.github.io/techblogtip/tools/cms/',302);
     if(url.pathname.startsWith('/api/published/')&&method==='GET')return published(url,env);
