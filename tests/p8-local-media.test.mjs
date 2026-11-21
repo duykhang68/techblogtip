@@ -61,3 +61,11 @@ test('P8 locked editor disables file selection instead of silently clearing a ch
  assert.doesNotMatch(EDITOR_JS,/status\.textContent='Bài READY hoặc chỉ đọc: hãy mở một bản DRAFT để tải ảnh\.';input\.value=''/);
  assert.match(EDITOR_JS,/finally\{input\.disabled=false;\}/);
 });
+
+
+test('P8 locked READY article exposes a revision action instead of pretending upload is writable',()=>{
+ assert.match(EDITOR_HTML,/id="editor-fork"[^>]*hidden/);
+ assert.match(EDITOR_JS,/\/api\/draft\/fork/);
+ assert.match(EDITOR_JS,/forkButton\.hidden=!locked/);
+ assert.match(EDITOR_JS,/location\.assign\('\/editor\?sourceId='/);
+});
