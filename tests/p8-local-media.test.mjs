@@ -7,7 +7,7 @@ const scope={sourceId:'TBT-test-local-upload-1234',tag:'a'.repeat(16),branch:'me
 
 test('P8 editor exposes real local image chooser and Drive picker',()=>{
  assert.match(EDITOR_HTML,/id="local-image-files"[^>]*type="file"[^>]*accept="image\/jpeg,image\/png,image\/webp"[^>]*multiple/);
- assert.match(EDITOR_HTML,/id="open-drive-picker"/);
+ assert.match(EDITOR_HTML,/id="import-drive"/);
  assert.match(EDITOR_HTML,/Media Library · WebP tự động · Chống trùng/);
  assert.match(EDITOR_JS,/\/api\/media\/upload/);
  assert.match(EDITOR_JS,/\/api\/drive\/files/);
