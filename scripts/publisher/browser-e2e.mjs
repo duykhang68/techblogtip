@@ -228,7 +228,7 @@ try{
   await editor.reload({waitUntil:'load'});
   await editor.waitForFunction(()=>document.querySelector('#editor-preview-toggle')?.disabled===false);
   assert.equal(await editor.locator('#editor-body').getAttribute('contenteditable'),'false');
-  await editor.locator('#editor-close').click();
+  // Studio 2.0 intentionally hides the legacy close control; use its visible admin breadcrumb.\n  await editor.locator('.editor-workspace-header a[href="/admin"]').click();
   await editor.waitForURL('**/admin');
   await editor.close();
   if(width===390){
