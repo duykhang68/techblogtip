@@ -65,7 +65,7 @@ try{
    assert.equal(await page.locator('.home-search-link').count(),0,'Removed homepage search hero must not return');
    assert.equal(await page.locator('[data-theme-toggle]').count(),1,'Lightbulb theme toggle must be available');
    const cards=await page.locator('.article-card').count();
-   assert.equal(cards,4,'Homepage should show the four explicitly approved articles');
+   assert.equal(cards,5,'Homepage should show the five explicitly approved articles');
    const metric=await page.evaluate(()=>{
     const rect=selector=>document.querySelector(selector)?.getBoundingClientRect();
     return {

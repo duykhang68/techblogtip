@@ -37,9 +37,9 @@ test('retired Cloudflare staging cannot redeploy while production GitHub Pages s
  assert.doesNotMatch(pages,/cf deploy|CLOUDFLARE_API_TOKEN/);
 });
 
-test('only the four explicitly authorized articles remain, with valid content assets',()=>{
+test('only the five explicitly authorized articles remain, with valid content assets',()=>{
  const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));
- assert.deepEqual(names.sort(), ['lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md','techblogtip-100-diem-google-pagespeed-insights.md','vibe-code-app-ios-macos-kiem-tien-2026.md','xoa-nhieu-repository-github-cli-an-toan.md']);
+ assert.deepEqual(names.sort(), ['lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md','techblogtip-100-diem-google-pagespeed-insights.md','tu-ma-nguon-ios-den-app-store-dong-goi-ipa-apple-review.md','vibe-code-app-ios-macos-kiem-tien-2026.md','xoa-nhieu-repository-github-cli-an-toan.md']);
  assert.equal(new Set(names).size,names.length);
  for(const name of names){
   const data=read('src/content/articles/'+name);
@@ -67,6 +67,15 @@ test('app economics article contains five ideas and self-contained comparison vi
  assert.ok(enhancer.includes('data-econ-calc'));
  assert.ok(enhancer.includes('DOMContentLoaded'));
  assert.ok(route.includes('AppEconomicsEnhancer'));
+});
+test('iOS App Store publication guide ships original explanatory diagram and Apple references',()=>{
+ const article=read('src/content/articles/tu-ma-nguon-ios-den-app-store-dong-goi-ipa-apple-review.md');
+ const diagram=read('src/components/IOSReleasePipelineVisual.astro');
+ const route=read('src/pages/bai-viet/[slug].astro');
+ assert.equal((article.match(/^## /gm)||[]).length,8);
+ for(const token of ['.xcarchive','.ipa','TestFlight','App Review','Privacy Policy','Xcode Cloud','developer.apple.com']) assert.ok(article.includes(token),token);
+ assert.ok(diagram.includes('data-ios-release-flow'));
+ assert.ok(route.includes('IOSReleasePipelineVisual'));
 });
 test('retired footer features stay removed',()=>{
  for(const p of ['src/pages/ban-do-kien-thuc/index.astro','src/pages/tim-kiem/index.astro','src/pages/branding/index.astro','src/pages/rss.xml.ts','src/pages/search-index.json.ts'])

@@ -1,0 +1,65 @@
+---
+const steps = [
+ {n:'01',t:'Mã nguồn',sub:'Swift / Flutter / React Native',tint:'#e2e6e8'},
+ {n:'02',t:'Build Release',sub:'SDK iOS + Xcode',tint:'#d6e9fb'},
+ {n:'03',t:'Code Signing',sub:'Team · Bundle ID · entitlements',tint:'#dfdcfa'},
+ {n:'04',t:'Archive',sub:'Bản .xcarchive',tint:'#fce6ad'},
+ {n:'05',t:'Upload build',sub:'App Store Connect',tint:'#d5efd9'},
+ {n:'06',t:'Beta Test',sub:'TestFlight (khuyến nghị)',tint:'#d6e9fb'},
+ {n:'07',t:'Submit',sub:'Metadata + Review',tint:'#f7d8ca'},
+ {n:'08',t:'Release',sub:'Apple phê duyệt → phát hành',tint:'#d5efd9'}
+];
+---
+<section class="ios-publish-visual" data-ios-release-flow aria-label="Sơ đồ 8 bước từ mã nguồn iOS đến phát hành trên App Store">
+  <div class="figure-header"><span class="overline">BUILD TO STORE · EIGHT CHECKPOINTS</span><span class="count">08 CHẶNG</span></div>
+  <h3>Từ GitHub đến biểu tượng trên iPhone</h3>
+  <p class="summary">Mỗi bước tạo ra một bằng chứng khác nhau. Upload được bản build chưa đồng nghĩa Apple đã duyệt hoặc người dùng đã tải được.</p>
+  <ol class="flow">
+    {steps.map((s,i)=><li style={'--tile:'+s.tint}>
+      <span class="idx">{s.n}</span><strong>{s.t}</strong><small>{s.sub}</small>
+      {i<steps.length-1&&<span class="arrow" aria-hidden="true">→</span>}
+    </li>)}
+  </ol>
+  <div class="artifact-label">Ba hiện vật hay bị nhầm lẫn</div>
+  <div class="artifacts">
+    <div><span class="dot" aria-hidden="true"></span><code>source code</code><strong>Tài liệu để build</strong><p>Repo Swift, assets, dependencies, cấu hình dự án</p></div>
+    <div><span class="dot" aria-hidden="true"></span><code>.xcarchive</code><strong>Gói lưu trữ Xcode</strong><p>Bản build để ký, xác thực, upload hoặc xuất gói</p></div>
+    <div><span class="dot" aria-hidden="true"></span><code>.ipa</code><strong>Gói phân phối iOS</strong><p>Có thể export khi cần; không bắt buộc tạo riêng nếu upload archive bằng Xcode</p></div>
+  </div>
+  <div class="review">
+    <div class="review-title"><span aria-hidden="true">◇</span><strong>Apple App Review</strong><small>Đây mới là cổng duyệt chính thức</small></div>
+    <div class="outcomes">
+      <div class="approved"><span aria-hidden="true">✓</span><strong>Approved</strong><small>Phát hành tự động, thủ công hoặc theo lịch đã cấu hình</small></div>
+      <div class="rejected"><span aria-hidden="true">↺</span><strong>Rejected / cần sửa</strong><small>Đọc lý do → sửa → tăng build → gửi lại</small></div>
+    </div>
+  </div>
+  <p class="credit">Sơ đồ kỹ thuật tự dựng bởi TechBlogTip · HTML/CSS tĩnh · Không gọi dịch vụ ngoài</p>
+</section>
+<style>
+.ios-publish-visual{margin:1.2rem 0 2rem;padding:1.15rem;background:#fff;border:1px solid #e6e5e1;border-radius:16px;color:#191b20}
+.figure-header{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:space-between;align-items:center;margin-bottom:.3rem}
+.overline{font-size:.66rem;font-weight:800;letter-spacing:.1em;color:#ad492c}.count{font-size:.63rem;font-weight:800;color:#667078}
+.ios-publish-visual h3{font-size:clamp(1.13rem,2vw,1.38rem);line-height:1.33;margin:.15rem 0 .35rem!important;text-align:left}
+.summary{margin:0 0 .9rem!important;text-align:left!important;font-size:.83rem;line-height:1.55;color:#53616b}
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));list-style:none!important;gap:.62rem;margin:0!important;padding:0!important}
+.flow li{position:relative;list-style:none!important;margin:0!important;min-width:0;min-height:104px;padding:.72rem;background:var(--tile);border-radius:11px;display:flex;flex-direction:column;gap:.26rem;text-align:left!important}
+.idx{font-weight:900;font-size:.66rem;letter-spacing:.08em}.flow strong{font-size:.8rem;line-height:1.35}.flow small{font-size:.68rem;color:#34414b;line-height:1.4}
+.arrow{position:absolute;right:-.48rem;top:42%;z-index:1;background:white;width:1rem;height:1rem;border-radius:50%;display:grid;place-items:center;color:#59616b;font-size:.9rem;font-weight:800}
+.flow li:nth-child(4) .arrow{display:none}
+.artifact-label{font-size:.77rem;font-weight:800;margin:1rem 0 .55rem;text-align:left}
+.artifacts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55rem}
+.artifacts>div{min-width:0;padding:.73rem;border:1px solid #e6e5e1;border-radius:10px;background:#fbfaf8;display:flex;flex-direction:column;gap:.22rem;text-align:left}
+.artifacts code{display:inline-block;width:max-content;max-width:100%;background:#eeeae4;border-radius:6px;padding:.12rem .3rem;font-size:.71rem;overflow-wrap:normal;word-break:normal}
+.artifacts strong{font-size:.73rem;line-height:1.3}
+.artifacts p{font-size:.7rem;line-height:1.55;color:#53616b;margin:0!important;text-align:left!important}
+.review{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:.6rem;margin-top:.9rem;align-items:stretch}
+.review-title{border-radius:10px;border:1px solid #e6e5e1;padding:.8rem;display:flex;flex-direction:column;justify-content:center;gap:.17rem;text-align:left}
+.review-title>span{font-size:1.2rem;color:#ad492c}.review-title strong{font-size:.81rem}.review-title small{font-size:.68rem;color:#53616b}
+.outcomes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem}
+.outcomes>div{padding:.75rem;border-radius:10px;display:flex;flex-direction:column;gap:.17rem;text-align:left}
+.outcomes strong{font-size:.79rem}.outcomes small{font-size:.68rem;line-height:1.45;color:#34414b}.outcomes span{font-weight:800}
+.approved{background:#d5efd9}.rejected{background:#f7d8ca}
+.credit{font-size:.65rem;color:#667078;margin:.75rem 0 0!important;text-align:right!important}
+@media(max-width:680px){.flow{grid-template-columns:repeat(2,minmax(0,1fr))}.flow li:nth-child(even) .arrow{display:none}.flow li:nth-child(4) .arrow{display:none}.artifacts{grid-template-columns:1fr}.review{grid-template-columns:1fr}}
+@media(max-width:360px){.flow{grid-template-columns:1fr}.arrow{display:none}.outcomes{grid-template-columns:1fr}}
+</style>
