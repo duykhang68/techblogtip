@@ -6,6 +6,7 @@ import { createDraftPR,inspectSubmittedSourcePR,githubRequest } from './github-a
 import { inspectPublisherPR } from './pr-status.mjs';
 import { finalizeVerifiedArticle,requireProductionSync,reconcileProductionBatch } from './release-writeback.mjs';
 import { readProductionStatus } from './production-status.mjs';
+import { readEditorialOperations } from './editorial-operations.mjs';
 import { loadEditableDraft,saveEditableDraft,forkEditableRevision } from './editorial.mjs';
 import { parsePublisherPreview } from './markdown-preview.mjs';
 import { notionPagePreview } from './notion-import.mjs';
@@ -167,6 +168,9 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
           })},
           draftPrWritePermission:'not_tested',
         });
+      }
+      if(request.method==='GET'&&path==='/api/editorial-operations'){
+        return respond(await readEditorialOperations(env,fetcher));
       }
       if(request.method==='GET'&&path==='/api/production-status'){
         // Manual editor-triggered snapshot; read-only, never CI/production verification by inference.
