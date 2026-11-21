@@ -53,7 +53,7 @@ async function list(token) {
     found.push(...(data.files||[]));
     nextPageToken=data.nextPageToken||'';
   } while(nextPageToken && found.length<500);
-  return found.filter(f=>/^korea-cv-[0-9a-f-]{36}\\.json$/i.test(f.name)).map(f=>({
+  return found.filter(f=>/^korea-cv-[0-9a-f-]{36}\.json$/i.test(f.name)).map(f=>({
     id:f.name.slice(9,-5),updatedAt:f.modifiedTime,label:f.appProperties?.label||'',
     targetCompany:f.appProperties?.targetCompany||'',targetRole:f.appProperties?.targetRole||'',
   }));
