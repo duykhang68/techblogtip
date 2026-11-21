@@ -28,6 +28,8 @@ if(process.env.DEPLOY_TARGET==='github-pages'){
     throw new Error('Sitemap directive must reference GitHub Pages subpath');
 }
 
+// Resume Studio was retired; fail CI if its former public route reappears.
+if(existsSync(resolve('dist/tools/resume/index.html')))throw new Error('Retired Resume Studio route must not be published');
 const release=JSON.parse(readFileSync('dist/release.json','utf8'));
 const sha=process.env.SOURCE_SHA || process.env.GITHUB_SHA;
 if(process.env.GITHUB_ACTIONS==='true' && release.sha!==sha)throw new Error('Built release SHA mismatch');
