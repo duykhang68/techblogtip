@@ -1,13 +1,8 @@
 name: Cleanup retired GitHub Deployments (one-shot)
 
-# Runs when this file is first introduced on main, regardless of merge strategy.
-# Manual rerun remains available if GitHub's deployment API temporarily fails.
-# Subsequent changes to this file rerun idempotent cleanup; it never deploys an app.
+# Reusable manually only; no automatic job or run is created on each push.
+# Scope remains restricted to the three retired deployment environments.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/cleanup-retired-deployments.yml'
   workflow_dispatch:
 
 permissions:
