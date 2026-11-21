@@ -37,9 +37,9 @@ test('retired Cloudflare staging cannot redeploy while production GitHub Pages s
  assert.doesNotMatch(pages,/cf deploy|CLOUDFLARE_API_TOKEN/);
 });
 
-test('only the three explicitly authorized articles remain, with valid content assets',()=>{
+test('only the four explicitly authorized articles remain, with valid content assets',()=>{
  const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));
- assert.deepEqual(names.sort(), ['lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md','techblogtip-100-diem-google-pagespeed-insights.md','xoa-nhieu-repository-github-cli-an-toan.md']);
+ assert.deepEqual(names.sort(), ['lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md','techblogtip-100-diem-google-pagespeed-insights.md','vibe-code-app-ios-macos-kiem-tien-2026.md','xoa-nhieu-repository-github-cli-an-toan.md']);
  assert.equal(new Set(names).size,names.length);
  for(const name of names){
   const data=read('src/content/articles/'+name);
@@ -56,6 +56,17 @@ test('new iOS roadmap article provides the full visual interactive learning plan
  for(const token of ['iosr-previews','data-ios-roadmap-schedule','The Swift Programming Language','99 USD','Hello, SwiftUI','TestFlight']) assert.ok(article.includes(token),token);
  assert.ok(component.includes('localStorage'));
  assert.ok(route.includes('IOSRoadmapEnhancer'));
+});
+test('app economics article contains five ideas and self-contained comparison visuals',()=>{
+ const article=read('src/content/articles/vibe-code-app-ios-macos-kiem-tien-2026.md');
+ const enhancer=read('src/components/AppEconomicsEnhancer.astro');
+ const route=read('src/pages/bai-viet/[slug].astro');
+ assert.equal((article.match(/^## /gm)||[]).length,8);
+ for(const name of ['ReleaseProof','FieldQuote','DocFlow Pro','StoreLaunch QA','Korea Pocket'])assert.ok(article.includes(name),name);
+ for(const token of ['econ-ranking','econ-target','data-econ-calc','econ-funnel','RevenueCat','22/11/2026'])assert.ok(article.includes(token),token);
+ assert.ok(enhancer.includes('data-econ-calc'));
+ assert.ok(enhancer.includes('DOMContentLoaded'));
+ assert.ok(route.includes('AppEconomicsEnhancer'));
 });
 test('retired footer features stay removed',()=>{
  for(const p of ['src/pages/ban-do-kien-thuc/index.astro','src/pages/tim-kiem/index.astro','src/pages/branding/index.astro','src/pages/rss.xml.ts','src/pages/search-index.json.ts'])
