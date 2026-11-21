@@ -21,7 +21,20 @@ export async function mediaScope(env,sourceId,fetcher=fetch,{editable=false}={})
 async function getDriveToken(env,fetcher){return getSheetsToken(env,fetcher,DRIVE_SCOPE);}
 async function googleGet(url,token,fetcher){
  const res=await fetcher(url,{headers:{Authorization:'Bearer '+token,Accept:'application/json'},signal:AbortSignal.timeout(15000)});
- if(!res.ok)fail(res.status===403?403:502,'drive_access_denied','Drive folder is not shared with the Publisher service account');
+ if(!res.ok){
+  // Do not assume an HTTP 403 means missing folder sharing: API activation,
+  // OAuth scopes and IAM restrictions can produce the same status.
+  const error=await res.json().catch(()=>({}));
+  const reason=String(error?.error?.details?.find?.(item=>item?.reason)?.reason||error?.error?.errors?.[0]?.reason||'');
+  const message=String(error?.error?.message||'');
+  if(/SERVICE_DISABLED|accessNotConfigured/i.test(reason)||/API has not been used|API is disabled|has not been used in project/i.test(message))
+    fail(503,'drive_api_disabled','Google Drive API is disabled for the Publisher service-account Google Cloud project');
+  if(/insufficientPermissions|ACCESS_TOKEN_SCOPE_INSUFFICIENT/i.test(reason)||/insufficient authentication scopes/i.test(message))
+    fail(403,'drive_scope_denied','Publisher Google OAuth token lacks Drive read-only scope');
+  if(/rateLimitExceeded|userRateLimitExceeded|RESOURCE_EXHAUSTED/i.test(reason))
+    fail(429,'drive_rate_limit','Google Drive API rate limit reached');
+  fail(res.status===403?403:502,'drive_access_denied','Google Drive API denied this request (HTTP '+res.status+'); verify API activation and service-account access');
+ }
  return res;
 }
 export async function driveThumbnail(env,fileId,fetcher=fetch){
