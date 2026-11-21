@@ -26,14 +26,6 @@ export function auditHtml(html,canonical,production){
  const titles=[...html.matchAll(/<title>([^<]+)<\/title>/g)];
  assert(titles.length===1 && titles[0][1].trim().length>0,'missing or duplicated title');
 }
-export function auditCmsAdminHtml(html){
- assert(/<html[^>]+lang="vi"/.test(html),'CMS admin missing Vietnamese lang');
- const titles=[...html.matchAll(/<title>([^<]+)<\/title>/g)];
- assert(titles.length===1 && titles[0][1].trim().length>0,'CMS admin missing or duplicated title');
- assert(html.includes('name="robots" content="noindex,nofollow"'),'CMS admin must always be noindex');
- assert(html.includes('id="google-login"'),'CMS admin Google Sign-In missing');
- assert(!html.includes('name="google-site-verification"'),'CMS admin must not contain Search Console verification');
-}
 export function auditSitemap(xml,origin,paths){
  const entries=[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(x=>x[1].replaceAll('&amp;','&'));
  assert(entries.length>0,'empty sitemap');
@@ -57,15 +49,15 @@ function main(){
   // bypassing checks or being treated as public indexable blog articles.
   try{
    const html=readFileSync(path,'utf8');
-   if(rel==='tools/cms/index.html')auditCmsAdminHtml(html);
-   else auditHtml(html,new URL(route,origin).toString(),pages);
+   auditHtml(html,new URL(route,origin).toString(),pages);
   }catch(error){
    throw Error(rel+': '+error.message);
   }
  }
  const keyRoutes=['','chuyen-muc/','the/','chu-de/'];
  const count=auditSitemap(sitemap,origin,keyRoutes);
- assert(!sitemap.includes('<loc>'+new URL('tools/cms/',origin).toString()+'</loc>'),'CMS admin must not appear in sitemap');
+ assert(!existsSync(join(dist,'tools','cms','index.html')),'Retired Visual CMS must not be present in deployed output');
+ assert(!sitemap.includes('<loc>'+new URL('tools/cms/',origin).toString()+'</loc>'),'Retired CMS must not reappear in sitemap');
  // A sitemap can be syntactically valid but contain 404 pages. Verify each
  // declared absolute URL against the actual generated static HTML output.
  assert(sitemap.startsWith('<?xml version="1.0" encoding="UTF-8"?>'),'missing XML prolog');

@@ -53,8 +53,9 @@ test('retired footer features stay removed',()=>{
  const footer=read('src/components/SiteFooter.astro');
  for(const path of ['/ban-do-kien-thuc/','/tim-kiem/','/branding/','/rss.xml'])assert.ok(!footer.includes(path),'retired footer link: '+path);
  assert.ok(footer.includes('/archieve/'),'Archive must remain accessible');
- assert.ok(footer.includes("withBase('/tools/cms/')"),'Visual CMS must be accessible from the footer');
- assert.ok(existsSync('public/tools/cms/index.html'),'Visual CMS footer destination must be included in the public site');
+ assert.ok(!footer.includes('/tools/cms/'),'Retired CMS must not be linked from the footer');
+ assert.equal(existsSync('public/tools/cms/index.html'),false,'Retired CMS route must remain absent');
+ assert.equal(existsSync('apps/visual-cms'),false,'Old CMS source must not be restored accidentally');
  assert.doesNotMatch(read('src/layouts/BaseLayout.astro'),/application\/rss\+xml/);
  assert.doesNotMatch(read('src/pages/404.astro'),/\/tim-kiem\//);
  assert.doesNotMatch(read('src/pages/sitemap.xml.ts'),/ban-do-kien-thuc|tim-kiem/);
