@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {getArticles,articleUrl,categoryUrl,seriesUrl,tagUrl,withBase} from '../../lib/content';
+import type {Article} from '../../lib/content';
+
+const articles: Article[] = await getArticles();
+const count = articles.length;
+const monthKey = (date:Date) => date.toISOString().slice(0,7);
+const categoryCounts = new Map<string,number>();
+const sourceCounts = new Map<string,number>();
+const tagCounts = new Map<string,number>();
+const seriesCounts = new Map<string,number>();
+const monthlyCounts = new Map<string,number>();
+let withCover=0,withTags=0,withSeries=0,updated=0;
+for (const article of articles) {
+  const data=article.data;
+  categoryCounts.set(data.category,(categoryCounts.get(data.category)??0)+1);
+  const source=data.sourceType||'manual';
+  sourceCounts.set(source,(sourceCounts.get(source)??0)+1);
+  monthlyCounts.set(monthKey(data.published),(monthlyCounts.get(monthKey(data.published))??0)+1);
+  if(data.cover)withCover++;
+  if(data.tags.length)withTags++;
+  if(data.series){withSeries++;seriesCounts.set(data.series,(seriesCounts.get(data.series)??0)+1);}
+  if(data.updated)updated++;
+  for(const tag of new Set(data.tags))tagCounts.set(tag,(tagCounts.get(tag)??0)+1);
+}
+const orderedCategories=[...categoryCounts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'vi'));
+const orderedSources=[...sourceCounts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'vi'));
+const orderedSeries=[...seriesCounts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'vi'));
+const orderedTags=[...tagCounts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'vi')).slice(0,10);
+const months=[...monthlyCounts].sort((a,b)=>a[0].localeCompare(b[0])).slice(-6);
+const maxMonth=Math.max(1,...months.map(([,n])=>n));
+const percentage=(n:number,d:number)=>d===0?0:Math.round(n/d*100);
+const freshness=articles.length?articles[0].data.published.toISOString().slice(0,10):'—';
+const sourceLabel=(key:string)=>({'google-sheets':'Google Sheets',notion:'Notion',obsidian:'Obsidian',manual:'Thủ công'} as Record<string,string>)[key]||key;
+---
+<BaseLayout title="Editorial Dashboard" description="Bảng điều khiển biên tập tĩnh TechBlogTip: kiểm kê bài đã xuất bản, chuyên mục, nguồn, series và mức độ hoàn thiện metadata. Không thu thập dữ liệu người đọc.">
+  <div class="container editorial-dashboard">
+    <nav class="breadcrumb" aria-label="Đường dẫn"><a href={withBase('/')}>Trang chủ</a><span>/</span><span aria-current="page">Editorial Dashboard</span></nav>
+    <div class="ed-heading">
+      <div><p class="section-kicker">MILESTONE C · STATIC FIRST</p><h1>Editorial Dashboard</h1><p class="ed-description">Toàn cảnh nội dung TechBlogTip dựa trên các bài <strong>đã xuất bản</strong>. Số liệu được tạo lúc build — không phải lượt xem, lưu lượng truy cập hay thống kê Google Sheets đang chờ duyệt.</p></div>
+      <div class="ed-asof"><span>Thời điểm nội dung mới nhất</span><strong>{freshness}</strong><small>Dữ liệu tại thời điểm build</small></div>
+    </div>
+    <section class="ed-metrics" aria-label="Chỉ số nội dung">
+      <div class="ed-metric"><span>Bài đã xuất bản</span><strong>{count}</strong><small>Không tính bản nháp</small></div>
+      <div class="ed-metric"><span>Chuyên mục</span><strong>{categoryCounts.size}</strong><small>Phân loại nội dung</small></div>
+      <div class="ed-metric"><span>Thẻ chủ đề</span><strong>{tagCounts.size}</strong><small>Chỉ tính thẻ đã dùng</small></div>
+      <div class="ed-metric"><span>Series</span><strong>{seriesCounts.size}</strong><small>Chuỗi bài có nội dung</small></div>
+    </section>
+    <div class="ed-split">
+      <section class="ed-panel" aria-labelledby="ed-category-title">
+        <div class="ed-panel-head"><h2 id="ed-category-title">Phân bố theo chuyên mục</h2><a href={withBase('/chuyen-muc/')}>Xem tất cả →</a></div>
+        {orderedCategories.length===0?<p class="ed-empty">Chưa có bài viết công khai.</p>:
+          <ul class="ed-bars">{orderedCategories.map(([name,n])=><li><div class="ed-bar-label"><a href={categoryUrl(name)}>{name}</a><span>{n} bài · {percentage(n,count)}%</span></div><div class="ed-track" aria-hidden="true"><span style={'width:'+percentage(n,count)+'%'}></span></div></li>)}</ul>}
+      </section>
+      <section class="ed-panel" aria-labelledby="ed-monthly-title">
+        <div class="ed-panel-head"><h2 id="ed-monthly-title">Nhịp xuất bản gần đây</h2><span>6 tháng có bài gần nhất</span></div>
+        {months.length===0?<p class="ed-empty">Chưa có dữ liệu xuất bản.</p>:<div class="ed-months" role="list" aria-label="Số bài theo tháng">{months.map(([month,n])=><div class="ed-month" role="listitem"><div class="ed-month-plot" aria-hidden="true"><span style={'height:'+Math.max(8,Math.round(n/maxMonth*100))+'%'}></span></div><strong>{n}</strong><small>{month}</small></div>)}</div>}
+        <p class="ed-footnote">Chỉ đếm bài dựa vào ngày xuất bản trong frontmatter. Không sử dụng dữ liệu truy cập.</p>
+      </section>
+    </div>
+    <div class="ed-split">
+      <section class="ed-panel" aria-labelledby="ed-quality-title">
+        <div class="ed-panel-head"><h2 id="ed-quality-title">Độ đầy đủ metadata</h2><span>Kiểm kê, không phải điểm SEO</span></div>
+        <div class="ed-quality">
+          {[
+            {name:'Có ảnh bìa WebP',n:withCover},
+            {name:'Có ít nhất một thẻ',n:withTags},
+            {name:'Thuộc một series',n:withSeries},
+            {name:'Có ngày cập nhật',n:updated}
+          ].map(item=><div class="ed-quality-row"><div><span>{item.name}</span><strong>{item.n}/{count} · {percentage(item.n,count)}%</strong></div><div class="ed-track" aria-hidden="true"><span style={'width:'+percentage(item.n,count)+'%'}></span></div></div>)}
+        </div>
+        <p class="ed-footnote">Thiếu ảnh bìa hoặc series không đồng nghĩa bài viết có lỗi; đây là tín hiệu để biên tập ưu tiên cải thiện.</p>
+      </section>
+      <section class="ed-panel" aria-labelledby="ed-sources-title">
+        <div class="ed-panel-head"><h2 id="ed-sources-title">Nguồn bài đã xuất bản</h2><span>Source type</span></div>
+        {orderedSources.length===0?<p class="ed-empty">Chưa có nguồn nội dung.</p>:
+          <ul class="ed-source-list">{orderedSources.map(([key,n])=><li><span>{sourceLabel(key)}</span><strong>{n} bài</strong></li>)}</ul>}
+        <div class="ed-source-note">Chỉ thống kê bài công khai trong repository; không đọc dữ liệu riêng tư từ Google Sheets, Notion hay Obsidian.</div>
+      </section>
+    </div>
+    <div class="ed-split">
+      <section class="ed-panel" aria-labelledby="ed-series-title">
+        <div class="ed-panel-head"><h2 id="ed-series-title">Series đang có nội dung</h2><a href={withBase('/chu-de/')}>Khám phá series →</a></div>
+        {orderedSeries.length===0?<p class="ed-empty">Chưa có series nào.</p>:<ul class="ed-source-list">{orderedSeries.slice(0,8).map(([name,n])=><li><a href={seriesUrl(name)}>{name}</a><strong>{n} bài</strong></li>)}</ul>}
+      </section>
+      <section class="ed-panel" aria-labelledby="ed-tags-title">
+        <div class="ed-panel-head"><h2 id="ed-tags-title">Thẻ nổi bật theo số bài</h2><a href={withBase('/the/')}>Tất cả thẻ →</a></div>
+        {orderedTags.length===0?<p class="ed-empty">Chưa có thẻ nào.</p>:<div class="ed-tags">{orderedTags.map(([name,n])=><a href={tagUrl(name)}>{name}<span>{n}</span></a>)}</div>}
+      </section>
+    </div>
+    <section class="ed-panel ed-latest" aria-labelledby="ed-latest-title">
+      <div class="ed-panel-head"><h2 id="ed-latest-title">Bài đăng gần nhất</h2><a href={withBase('/')}>Về trang chủ →</a></div>
+      <ol>{articles.slice(0,5).map(article=><li><a href={articleUrl(article)}><strong>{article.data.title}</strong><span>{article.data.category} · {article.data.published.toISOString().slice(0,10)}</span></a></li>)}</ol>
+      {count===0&&<p class="ed-empty">Chưa có bài viết để hiển thị.</p>}
+    </section>
+  </div>
+</BaseLayout>
+<style>
+.editorial-dashboard{padding-block:32px 80px}.ed-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin:27px 0 30px}.ed-heading h1{max-width:none;font-size:clamp(2.1rem,4vw,3.7rem);text-wrap:balance}.ed-description{margin-top:14px;max-width:790px;color:var(--muted);line-height:1.8}.ed-asof{min-width:190px;padding:16px 19px;border-radius:16px;background:#fff7ec;border:1px solid #f1ddc4;display:flex;flex-direction:column;gap:4px}.ed-asof span,.ed-asof small{font-size:.72rem;color:#816c57}.ed-asof strong{font-variant-numeric:tabular-nums;font-size:1.3rem}
+.ed-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.ed-metric{display:flex;flex-direction:column;gap:6px;padding:20px 22px;background:#fff;border:1px solid var(--line);border-radius:17px}.ed-metric:nth-child(2){background:#f0f8ff}.ed-metric:nth-child(3){background:#f7f2ff}.ed-metric:nth-child(4){background:#effaf4}.ed-metric>span{font-size:.8rem;font-weight:650;color:#4f5e70}.ed-metric strong{font-size:clamp(1.7rem,3vw,2.5rem);font-variant-numeric:tabular-nums;line-height:1.2}.ed-metric small{color:#657181;font-size:.73rem}
+.ed-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}.ed-panel{min-width:0;border:1px solid var(--line);background:#fff;border-radius:18px;padding:24px}.ed-panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:22px}.ed-panel-head h2{font-size:clamp(1.08rem,1.7vw,1.32rem)}.ed-panel-head a,.ed-panel-head>span{color:#67768a;font-size:.75rem}.ed-panel-head a{text-decoration:underline;text-underline-offset:3px}.ed-bars,.ed-source-list{list-style:none;padding:0;margin:0;display:grid;gap:16px}.ed-bar-label,.ed-quality-row>div:first-child{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:.81rem;margin-bottom:7px}.ed-bar-label span,.ed-quality-row strong{font-size:.75rem;color:#697589;font-variant-numeric:tabular-nums;white-space:nowrap}.ed-track{height:10px;background:#edf1f6;border-radius:999px;overflow:hidden}.ed-track>span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#9fbee9,#b69bdc)}.ed-bars li:nth-child(3n+2) .ed-track>span{background:#9fd7b3}.ed-bars li:nth-child(3n+3) .ed-track>span{background:#efbe96}
+.ed-months{display:flex;justify-content:space-around;align-items:flex-end;gap:9px;min-height:194px}.ed-month{display:flex;flex:1;min-width:0;align-items:center;flex-direction:column;gap:7px}.ed-month-plot{width:70%;max-width:57px;height:120px;background:#f3f5fa;border-radius:9px 9px 2px 2px;display:flex;align-items:flex-end;overflow:hidden}.ed-month-plot>span{display:block;width:100%;background:#b4c7ee;border-radius:8px 8px 0 0}.ed-month:nth-child(even) .ed-month-plot>span{background:#b7dccc}.ed-month strong{font-size:.83rem}.ed-month small{color:#67768a;font-size:.68rem;white-space:nowrap}.ed-footnote{margin-top:19px;font-size:.74rem;color:#718094;line-height:1.7}.ed-quality{display:grid;gap:17px}.ed-source-list{gap:0}.ed-source-list li{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #ecedf2;font-size:.85rem}.ed-source-list li:last-child{border-bottom:0}.ed-source-list strong{white-space:nowrap;font-variant-numeric:tabular-nums;font-size:.77rem;color:#657386}.ed-source-note{padding:13px;border-radius:12px;background:#f3f8fd;color:#63738a;font-size:.73rem;line-height:1.7;margin-top:20px}
+.ed-tags{display:flex;flex-wrap:wrap;gap:8px}.ed-tags a{border:1px solid #dfe4ee;background:#fafbff;border-radius:999px;padding:8px 11px;display:flex;align-items:center;gap:9px;font-size:.8rem}.ed-tags span{color:#795f99;font-variant-numeric:tabular-nums}.ed-latest{margin-top:16px}.ed-latest ol{list-style:none;margin:0;padding:0;display:grid;gap:0}.ed-latest li{border-top:1px solid #e9ecf1}.ed-latest li a{display:flex;justify-content:space-between;gap:18px;align-items:baseline;padding:13px 0}.ed-latest strong{font-size:.89rem;font-weight:650}.ed-latest li span{white-space:nowrap;color:#657386;font-size:.74rem}.ed-empty{font-size:.85rem;color:#6b7584}
+@media(max-width:850px){.ed-split{grid-template-columns:1fr}.ed-heading{align-items:flex-start}.ed-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:590px){.editorial-dashboard{padding-block:22px 45px}.ed-heading{flex-direction:column;gap:16px}.ed-asof{width:100%}.ed-metrics{gap:8px}.ed-metric{padding:14px}.ed-panel{padding:17px}.ed-panel-head{align-items:flex-start;flex-direction:column;gap:6px;margin-bottom:15px}.ed-latest li a{flex-direction:column;gap:4px}.ed-description{text-align:left}.ed-month small{font-size:.59rem}}
+@media(prefers-reduced-motion:no-preference){.ed-tags a,.ed-latest a{transition:background .15s ease}.ed-tags a:hover,.ed-latest a:hover{background:#f4f7ff}}
+</style>
