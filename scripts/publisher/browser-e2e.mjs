@@ -9,7 +9,7 @@ import { chromium } from 'playwright-core';
 import { ADMIN_HTML, ADMIN_JS, ADMIN_CSS } from '../../workers/publisher/src/ui.mjs';
 import { EDITOR_HTML, EDITOR_JS, EDITOR_CSS, EDITOR_IMPORT_CSS, EDITOR_WORKSPACE_CSS } from '../../workers/publisher/src/editor-ui.mjs';
 import { PRODUCTION_HTML, PRODUCTION_JS, PRODUCTION_CSS } from '../../workers/publisher/src/production-ui.mjs';
-import { parsePublisherPreview } from '../../workers/publisher/src/markdown-preview.mjs';
+import { parsePublisherPreview } from '../../workers/publisher/src/markdown-preview.mjs';\nimport { STUDIO_EDITOR_JS,STUDIO_CSS } from '../../workers/publisher/src/studio-v2.mjs';
 
 const paths=[process.env.CHROME_PATH,process.env.CHROME_BIN,
   '/usr/bin/google-chrome','/usr/bin/google-chrome-stable',
@@ -80,9 +80,9 @@ const server=createServer(async(req,res)=>{
    if(req.method==='GET'&&route==='/admin')return text(res,html,'text/html; charset=utf-8');
     if(req.method==='GET'&&route==='/editor')return text(res,editorHtml,'text/html; charset=utf-8');
    if(req.method==='GET'&&route==='/admin.js')return text(res,ADMIN_JS,'application/javascript; charset=utf-8');
-   if(req.method==='GET'&&route==='/editor.js')return text(res,EDITOR_JS,'application/javascript; charset=utf-8');
+   if(req.method==='GET'&&route==='/editor.js')return text(res,EDITOR_JS+STUDIO_EDITOR_JS,'application/javascript; charset=utf-8');
    if(req.method==='GET'&&route==='/production-status.js')return text(res,PRODUCTION_JS,'application/javascript; charset=utf-8');
-   if(req.method==='GET'&&route==='/admin.css')return text(res,ADMIN_CSS+EDITOR_CSS+EDITOR_IMPORT_CSS+EDITOR_WORKSPACE_CSS+PRODUCTION_CSS,'text/css; charset=utf-8');
+   if(req.method==='GET'&&route==='/admin.css')return text(res,ADMIN_CSS+EDITOR_CSS+EDITOR_IMPORT_CSS+EDITOR_WORKSPACE_CSS+PRODUCTION_CSS+STUDIO_CSS,'text/css; charset=utf-8');
    if(route==='/api/session'&&req.method==='POST'){
     const b=await bodyOf(req);
     if(b.credential!=='synthetic-browser-credential')return json(res,{message:'Invalid fixture credential'},401);
@@ -209,6 +209,8 @@ try{
   const previewButton=editor.locator('#editor-preview-toggle');
   // The new tab must reuse the existing session cookie for protected draft data.
   await editor.waitForFunction(()=>document.querySelector('#editor-preview-toggle')?.disabled===false);
+  await editor.waitForFunction(()=>document.querySelector('.studio-status')?.textContent.includes('Bài đã khóa'));
+  assert.equal(await editor.locator('.studio-retry').isHidden(),true,'Healthy draft must not show retry action');
   assert.equal(await previewButton.isDisabled(),false);
   assert.equal(await editor.locator('#editor-body').getAttribute('contenteditable'),'false',
     'Advanced Markdown must remain read-only in visual editor');
