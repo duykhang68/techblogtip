@@ -153,6 +153,20 @@ test('writes exactly M:O after live proof, re-reads, and repeats idempotently',a
  assert.equal(again.created,false);
  assert.equal(f.runtime.writes.length,1);
 });
+test('published article remains verified after a later Pages release without rewriting M:O',async()=>{
+ const f=await fixture();
+ const published=await finalizeVerifiedArticle(f.env,sourceId,f.fetcher);
+ const oldSha=published.releaseSha;
+ const oldStamp=published.publishedAt;
+ const newSha='e'.repeat(40);
+ f.runtime.marker.sha=newSha;
+ assert.equal(await verifiedStoredRelease(f.env,f.row,f.snapshot,f.fetcher),true);
+ const checked=await finalizeVerifiedArticle(f.env,sourceId,f.fetcher);
+ assert.equal(checked.created,false);
+ assert.equal(checked.releaseSha,oldSha);
+ assert.equal(checked.publishedAt,oldStamp);
+ assert.equal(f.runtime.writes.length,1);
+});
 test('never writes stale, unavailable or incorrect production SHA; no manual overwrite',async()=>{
  const f=await fixture();
  f.runtime.marker.sha='d'.repeat(40);
