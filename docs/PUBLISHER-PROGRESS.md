@@ -74,3 +74,14 @@ Hàng vật lý được giữ trống để tránh dịch chuyển số hàng �
 biên tập/xuất bản khác sử dụng. Bài có dữ liệu K:O hoặc đã PUBLISHED không thể
 xóa tại đây. Mỗi lần xóa được khóa theo source ID hoặc số hàng và xác minh
 Google Sheets không còn dữ liệu sau khi xóa.
+
+
+## P5e — Xem trước bài an toàn (slice 1, 21/11/2026)
+
+- Thêm nút **Xem trước bài** trong Editorial Studio cho bản nháp chưa gửi, hiển thị bảng, code fence, blockquote, danh sách, heading, liên kết và WebP nội bộ trong một vùng đọc responsive.
+- Yêu cầu **Google session / same-origin** qua `POST /api/preview`. Parser trả cấu trúc token có giới hạn kích thước, **không trả HTML**, không gọi GitHub và không ghi Google Sheets; browser dựng DOM bằng `createElement` và `textContent` (không `innerHTML`).
+- Chỉ cho phép URL ảnh WebP trên chính GitHub Pages `/techblogtip/`; ảnh Drive, ảnh remote hoặc định dạng không phải WebP hiển thị cảnh báo thay vì tải vào Editor.
+- Những bản nháp Markdown nâng cao tiếp tục **chỉ đọc trong WYSIWYG** để không làm mất nội dung; xem trước không có nghĩa chỉnh sửa lossless và **không phải bản dựng Astro 100% pixel-perfect**. Hệ thống không thay đổi READY/PR/M:O.
+- Test bảo mật cover script/unsafe links, raw HTML literal, URL allowlist, giới hạn 100k ký tự và 600 khối; test xác thực Google và chống request cross-origin.
+- Để kích hoạt ở môi trường admin cần deploy lại Publisher DEV thủ công theo workflow `deploy-publisher-dev.yml`, confirmation `deploy-dev-only`, rồi xác minh `/health` exact SHA. Không tự mở quyền/secret, không cron.
+- **Vẫn còn**: chọn file Drive, import server-side, chuyển WebP, commit asset lên Draft PR và hỗ trợ chỉnh sửa Markdown nâng cao không mất dữ liệu; không coi những phần này là đã triển khai.
