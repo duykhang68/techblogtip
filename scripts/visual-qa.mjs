@@ -264,13 +264,14 @@ try{
         const rect=sel=>document.querySelector(sel).getBoundingClientRect();
         return {scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,
           top:rect('.top').height,workspace:rect('#workspace').height,toolbar:rect('.main-head').height,
-          stage:rect('.frame').height,canvas:rect('#canvas').width};
+          stage:rect('.frame').height,canvas:rect('#canvas').width,mainWidth:rect('.main').width};
       });
       assert.ok(measures.scrollWidth<=w+1,'CMS horizontal overflow at '+w+'px: '+measures.scrollWidth);
       assert.ok(measures.top<=60,'CMS header is too tall: '+measures.top);
       assert.ok(measures.workspace>=h-66,'CMS workspace must fill the viewport');
       assert.ok(measures.toolbar<=70,'CMS editor toolbar uses too much vertical height: '+measures.toolbar);
       assert.ok(measures.stage>=h-150,'CMS preview stage must own the remaining height');
+      assert.ok(measures.mainWidth>=w*0.52&&measures.canvas>=w*0.4,'CMS preview collapsed into a zero-width grid column');
       await page.screenshot({path:join('artifacts/visual-qa','cms-focus-'+w+'.png'),animations:'disabled'});
       if(w===390){
         assert.equal(await page.locator('#nav-toggle').getAttribute('aria-expanded'),'false');
