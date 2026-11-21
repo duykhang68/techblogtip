@@ -8,7 +8,7 @@ export async function getStaticPaths() {
 }
 const { post } = Astro.props as { post: Article };
 const { Content, headings } = await render(post);
-const showPublisherVisual = post.id === 'hanh-trinh-xay-dung-google-sheets-publisher-techblogtip' && post.data.sourceType === 'google-sheets';
+const showPublisherVisual = post.id.replace(/\.md$/, '') === 'hanh-trinh-xay-dung-google-sheets-publisher-techblogtip' && post.data.sourceType === 'google-sheets';
 const related = (await getArticles()).filter(item => item.id !== post.id && (item.data.category === post.data.category || item.data.tags.some(t => post.data.tags.includes(t)))).slice(0,3);
 const site = Astro.site || new URL(Astro.url.origin);
 const canonical = new URL(articleUrl(post), site).toString();
