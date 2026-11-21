@@ -1,26 +1,25 @@
 import {configured,connectGoogle,connected,disconnectGoogle,driveRequest,createCVId} from '../lib/korea-cv-client.mjs';
 
 const element = (id:string) => document.getElementById(id) as HTMLElement;
-const status = (value:string) => { element('service-status').textContent = value; };
+const status = (value:string, tone:'neutral'|'info'|'success'|'error'='info') => {
+  const node=element('service-status');
+  node.dataset.state=tone;
+  const dot=node.querySelector('.kcv-status-dot');
+  node.replaceChildren(...(dot?[dot]:[]),document.createTextNode(value));
+};
 const clientId=import.meta.env.PUBLIC_KOREA_CV_GOOGLE_CLIENT_ID || '';
 const api=import.meta.env.PUBLIC_KOREA_CV_API_URL || '';
 let currentId='';
 let revision=-1;
 let createdAt='';
-const controls=document.createElement('div');
-controls.className='kcv-actions';
-controls.innerHTML='<button type="button" id="kcv-connect">Kết nối Google Drive</button> <button type="button" id="kcv-new" disabled>CV mới</button> <button type="button" id="kcv-save" disabled>Lưu lên Drive</button> <button type="button" id="kcv-signout" hidden>Ngắt kết nối</button>';
-element('service-status').before(controls);
-const savedPanel=element('saved-panel');
-const manager=document.createElement('div');
-manager.className='kcv-panel';
-manager.innerHTML='<h2>CV theo từng công ty · Google Drive</h2><div class="kcv-actions"><button type="button" id="kcv-refresh" disabled>Tải danh sách</button><select id="kcv-select" aria-label="Chọn CV đã lưu"><option value="">Chưa có CV</option></select><button type="button" id="kcv-open" disabled>Mở bản lưu</button><button type="button" id="kcv-copy" disabled>Nhân bản CV</button><button type="button" id="kcv-remove" disabled>Xóa bản lưu</button></div>';
-savedPanel.prepend(manager);
+// Action controls and saved CV toolbar live in Astro markup, so scoped styles
+// apply consistently (previously JS-injected buttons appeared as browser defaults).
 const btn=(id:string)=>element(id) as HTMLButtonElement;
 const select=()=>element('kcv-select') as HTMLSelectElement;
 function buttons(auth:boolean) {
   btn('kcv-connect').hidden=auth;btn('kcv-signout').hidden=!auth;
   for(const name of ['kcv-save','kcv-new','kcv-refresh'])btn(name).disabled=!auth;
+  for(const id of ['kcv-open','kcv-copy','kcv-remove'])btn(id).disabled=!auth||!select().value;
 }
 function capture() {
   const cv:any={schemaVersion:1,id:currentId||createCVId(),label:'',targetCompany:'',targetRole:'',locale:'ko',revision:revision < 0 ? 0 : revision + 1,createdAt:createdAt || new Date().toISOString(),updatedAt:new Date().toISOString(),content:{personal:{},essays:{},optionalSensitive:{},declarationOptional:null}};
@@ -59,17 +58,38 @@ async function refresh(){
   const result=await driveRequest(api);
   select().replaceChildren(new Option('Chọn CV đã lưu',''));
   for(const item of result.items||[])select().add(new Option((item.label||item.targetCompany||'CV '+item.id.slice(0,8))+' · '+(item.updatedAt||''),item.id));
-  status('Đã tải '+(result.items||[]).length+' phiên bản từ Google Drive.');
+  status('Đã kết nối Google Drive · '+(result.items||[]).length+' phiên bản CV đã lưu.','success');
 }
-async function task(fn:()=>Promise<void>){try{await fn();}catch(e){status('Lỗi: '+(e instanceof Error?e.message:'Không xác định')+'. Dữ liệu đang nhập chưa bị xóa.');}}
-if(!configured(clientId,api)){btn('kcv-connect').disabled=true;status('Chưa cấu hình Google Client ID và Cloudflare API HTTPS. Không thể lưu CV.');}
+async function task(fn:()=>Promise<void>){
+  try{await fn();}
+  catch(e){
+    const message=e instanceof Error?e.message:'Lỗi không xác định';
+    status('Không thực hiện được: '+message+'. Nội dung đang nhập vẫn được giữ nguyên.','error');
+    if(!connected())buttons(false);
+  }
+}
+if(!configured(clientId,api)){
+  btn('kcv-connect').disabled=true;
+  status(!clientId
+    ? 'Chức năng lưu chưa được kích hoạt: thiếu Google OAuth Client ID ở bản build. Vẫn có thể nhập và xem CV.'
+    : 'Chức năng lưu chưa được kích hoạt: thiếu địa chỉ API Korea CV HTTPS ở bản build. Vẫn có thể nhập và xem CV.', 'error');
+}else{
+  status('Chưa kết nối · Nhấn “Kết nối Google” để lưu CV riêng tư. Có thể nhập hồ sơ trước.', 'neutral');
+}
 btn('kcv-connect').addEventListener('click',()=>task(async()=>{
-  await connectGoogle(clientId);buttons(true);status('Đã kết nối Google Drive.');await refresh();
+  btn('kcv-connect').disabled=true;
+  status('Đang yêu cầu quyền Google Drive appData…','info');
+  try{
+    await connectGoogle(clientId);
+    // Authentication is not complete until a real authenticated Drive API read succeeds.
+    await refresh();
+    buttons(true);
+  }finally{btn('kcv-connect').disabled=false;}
 }));
-btn('kcv-signout').addEventListener('click',()=>{disconnectGoogle();buttons(false);status('Đã ngắt kết nối.');});
+btn('kcv-signout').addEventListener('click',()=>{disconnectGoogle();buttons(false);status('Đã ngắt kết nối · CV đang nhập chưa được lưu.','neutral');});
 btn('kcv-new').addEventListener('click',()=>{
   if(!confirm('Tạo CV mới? Các thay đổi chưa lưu sẽ bị bỏ.'))return;
-  fill({content:{}});currentId='';revision=-1;createdAt='';btn('input-tab').click();status('Đang nhập CV mới, chưa lưu.');
+  fill({content:{}});currentId='';revision=-1;createdAt='';btn('input-tab').click();status('CV mới · Nội dung chưa được lưu.','info');
 });
 btn('kcv-save').addEventListener('click',()=>task(async()=>{
   if(!connected())throw new Error('Phiên Google đã hết hạn');
@@ -77,7 +97,7 @@ btn('kcv-save').addEventListener('click',()=>task(async()=>{
   const result=await driveRequest(api,'/'+cv.id,'PUT',cv);
   if(!result.saved)throw new Error('Google Drive chưa xác nhận lưu');
   currentId=cv.id;revision=cv.revision;createdAt=cv.createdAt;
-  status('Đã lưu thành công lên Google Drive · revision '+revision);
+  status('Đã lưu thành công lên Google Drive · phiên bản '+revision+'.','success');
   await refresh();
 }));
 btn('kcv-refresh').addEventListener('click',()=>task(refresh));
@@ -87,18 +107,18 @@ select().addEventListener('change',()=>{
 async function selected(){if(!select().value)throw new Error('Hãy chọn CV');return (await driveRequest(api,'/'+select().value)).cv;}
 btn('kcv-open').addEventListener('click',()=>task(async()=>{
   const cv=await selected();fill(cv);currentId=cv.id;revision=cv.revision;createdAt=cv.createdAt||'';
-  btn('input-tab').click();status('Đã đọc CV từ Google Drive.');
+  btn('input-tab').click();status('Đã mở CV từ Google Drive.','success');
 }));
 btn('kcv-copy').addEventListener('click',()=>task(async()=>{
   const cv=await selected();fill(cv);currentId='';revision=-1;createdAt='';
   const company=document.querySelector<HTMLInputElement>('[name="targetCompany"]');if(company)company.value='';
   const role=document.querySelector<HTMLInputElement>('[name="targetRole"]');if(role)role.value='';
-  btn('input-tab').click();status('Đã nhân bản bản lưu vào biểu mẫu. Nhập công ty mới rồi chọn lưu.');
+  btn('input-tab').click();status('Đã nhân bản · Hãy nhập công ty mới và chọn “Lưu CV”.','info');
 }));
 btn('kcv-remove').addEventListener('click',()=>task(async()=>{
   const id=select().value;if(!id||!confirm('Xóa vĩnh viễn CV này khỏi Google Drive?'))return;
   const result=await driveRequest(api,'/'+id,'DELETE');
   if(!result.deleted)throw new Error('Chưa xác nhận xóa');
   if(currentId===id){currentId='';revision=-1;createdAt='';}
-  await refresh();status('Đã xóa CV.');
+  await refresh();status('Đã xóa CV khỏi Google Drive.','success');
 }));
