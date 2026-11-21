@@ -9,6 +9,7 @@ export default defineConfig({
     compatibilityFlags: ['nodejs_compat'],
     workersDev: true,
     env: {
+      IMAGES: bindings.images(),
       SOURCE_LOCKS: bindings.durableObject({
         worker: 'techblogtip-publisher-dev',
         exportName: 'SourceWriteLock',

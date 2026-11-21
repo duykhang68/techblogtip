@@ -11,6 +11,7 @@ import { parsePublisherPreview } from './markdown-preview.mjs';
 import { notionPagePreview } from './notion-import.mjs';
 import { obsidianPreview } from './obsidian-import.mjs';
 import { driveImageMetadata } from './drive-import.mjs';
+import { mediaScope,listDriveFiles,libraryItems,importDriveFiles,serveDraftMedia } from './media-library.mjs';
 import { getSheetsToken } from './google-api.mjs';
 import { withSourceWriteLock,withRowWriteLock } from './source-lock.mjs';
 import { EDITOR_HTML,EDITOR_JS,EDITOR_CSS,EDITOR_IMPORT_CSS } from './editor-ui.mjs';
@@ -185,6 +186,26 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
       if(request.method==='POST'&&path==='/api/import/obsidian'){
         const payload=await jsonRequest(request,180000);
         return respond(obsidianPreview(payload));
+      }
+      if(request.method==='GET'&&path==='/api/drive/files')
+        return respond(await listDriveFiles(env,fetcher));
+      if(request.method==='GET'&&path==='/api/media-library'){
+        const id=new URL(request.url).searchParams.get('sourceId');
+        const scope=await mediaScope(env,id,fetcher);
+        return respond({sourceId:id,items:await libraryItems(env,scope,fetcher)});
+      }
+      if(request.method==='POST'&&path==='/api/media/import'){
+        const data=await jsonRequest(request,4096);
+        return respond(await withSourceWriteLock(env,data.sourceId,async()=>{
+          const scope=await mediaScope(env,data.sourceId,fetcher,{editable:true});
+          return importDriveFiles(env,scope,data.fileIds,fetcher);
+        }));
+      }
+      if(request.method==='GET'&&path.startsWith('/api/media/')){
+        const match=/^\/api\/media\/(TBT-[A-Za-z0-9-]{8,80})\/([a-f0-9]{32}\.webp)$/.exec(path);
+        if(!match)fail(400,'media_path_invalid','Invalid media path');
+        const scope=await mediaScope(env,match[1],fetcher);
+        return serveDraftMedia(env,scope,match[2],fetcher);
       }
       if(request.method==='POST'&&path==='/api/import/drive/inspect'){
         const payload=await jsonRequest(request,2048);
