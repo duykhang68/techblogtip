@@ -15,4 +15,4 @@ npm run dev
 
 No old Publisher credentials or Drive editorial spreadsheet are needed for static site deployment. Historical public articles are unchanged.
 
-GitHub deployment history and environments are separate from workflow files. After this PR merges, delete obsolete deployment records and environments through GitHub repository Settings → Environments (or GitHub REST API with deployments administration permissions) to remove them from the Deployments sidebar. Do not delete the `github-pages` production environment.
+After the retirement PR merges, the scoped `cleanup-retired-deployments.yml` action will delete GitHub deployment **records** only for three retired environments. It cannot delete the Cloudflare Worker services or the GitHub Environment settings. If the cleanup action fails, rerun it manually, then manage any remaining environments under GitHub repository Settings → Environments. Do not delete the `github-pages` production environment. Environment deletion also removes environment-specific secrets and protection rules; review these before deletion.
