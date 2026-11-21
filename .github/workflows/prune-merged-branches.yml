@@ -1,0 +1,53 @@
+name: Maintenance · Prune deployed merged branches
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && 'AUDIT · merged branches (manual)' || 'CLEANUP · merged branches after verified production' }}
+
+on:
+  workflow_run: # zizmor: ignore[dangerous-triggers] trusted main only; no untrusted PR checkout, scripts or artifacts
+    workflows:
+      - Deploy · GitHub Pages production
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Audit only, without deleting any branch"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: techblogtip-merged-deployed-branches
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Safe branch cleanup
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == 'duykhang68/techblogtip')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout trusted main with full history for merge ancestry checks
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+      - name: Audit verified deployment and remove only safe branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (inputs.dry_run && 'true' || 'false') || 'false' }}
+        run: node scripts/prune-merged-branches.mjs
