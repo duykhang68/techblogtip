@@ -14,21 +14,51 @@ The Worker then writes **only M:O** (canonical URL, public release SHA and UTC *
 
 The GET /api/pr-status route checks the current public evidence before returning productionVerified=true. Neither a status PUBLISHED in column I nor an existing M:O triple alone proves publication.
 
-## Activation prerequisites
+## GitHub Pages production — selected target
 
-The repository currently **has no separate production public site**, so nothing can be marked published yet. To activate:
+**Production:** https://duykhang68.github.io/techblogtip/
 
-1. Configure an approved HTTPS custom domain for the distinct Cloudflare assets Worker techblogtip-production (not a staging workers.dev/pages.dev URL). Add GitHub protected environment techblogtip-production, variable TBT_PRODUCTION_SITE_URL and CLOUDFLARE_ACCOUNT_ID, scoped secret CLOUDFLARE_API_TOKEN. GitHub environment approval should protect deployments.
-2. In protected techblogtip-publisher-dev environment, set the matching variable TBT_PRODUCTION_SITE_URL and secret TBT_PRODUCTION_SYNC_TOKEN (cryptographically random 48+ chars). Add the *same* secret in the production environment for post-deploy synchronization. Do not put this value in code or client JavaScript.
-3. Manually deploy the Publisher DEV Worker from main via deploy-dev-only and verify its health exact SHA.
-4. Manually dispatch **Deploy · Cloudflare production** on main, choosing deploy-production-only. It builds indexable Astro, targets only the production Worker using explicit cf mode, and verifies the custom public domain SHA, canonical and robots.
-5. **After its successful public release verification step**, the same protected production workflow calls the Publisher release synchronization endpoint. The callback token is validated against the actual active GitHub main production workflow run and release SHA; it scans Sheet rows in bounded batches, verifies each merged article and writes eligible M:O cells. No separate workflow_run trigger is used.
+**Publisher:** https://techblogtip-publisher-dev.tamsudev-com.workers.dev/admin/
+
+Cloudflare `techblogtip-staging` remains an independent noindex preview.
+The earlier suggested `seomoney.org` domain is not used, and no production
+Cloudflare assets Worker or Cloudflare production secret is required.
+
+The repository deploys the static Astro site from trusted `main` using the
+pinned GitHub Pages Actions: configure-pages, upload-pages-artifact and
+deploy-pages, within the standard protected **github-pages** environment.
+Production uses Astro `base=/techblogtip`, indexable HTML, project-prefixed
+navigation, sitemap and RSS. It verifies public `/techblogtip/release.json`
+and exact SHA before attempting article reconciliation.
+
+**Required once in GitHub UI** (Admin permission needed):
+1. In [Settings → Pages](https://github.com/duykhang68/techblogtip/settings/pages),
+   set **Build and deployment → Source: GitHub Actions** (not "Deploy from a
+   branch"). Confirm any previous GitHub Pages custom domain field is empty.
+2. Configure environment **github-pages** with a protection rule if desired.
+   Only `secrets.TBT_PRODUCTION_SYNC_TOKEN` is needed there for automated
+   writeback; public URL is fixed in repo and needs no Environment variable.
+3. Configure environment **techblogtip-publisher-dev** with the **same**
+   `secrets.TBT_PRODUCTION_SYNC_TOKEN` value, generated securely (32–256
+   characters). `TBT_PRODUCTION_SITE_URL` is pinned to the GitHub Pages
+   URL by the Publisher deployment workflow; no custom-domain variable needed.
+4. After merging this PR, manually deploy the **Publisher DEV** Worker once
+   via `deploy-dev-only` so it knows the Pages target and sync token.
+5. GitHub Pages production builds/deploys on every `main` push. It verifies
+   the public URL, release SHA, robots and canonical. The same protected job
+   calls signed, source-locked **M:O** reconciliation. If the sync secret is
+   not yet installed, Pages may deploy successfully, but automated writeback
+   is skipped and the Editor still offers manual verification when eligible.
+
+A real, approved Sheets article must have a merged PR and be present in a
+verified GitHub Pages release before any M:O cell is written. PR #35 was an
+unmerged test; do not publish it.
 
 ## Manual inspection
 
 The signed-in Editor exposes **Xác minh & ghi M:O** once its on-demand PR inspection confirms a merge. This calls POST /api/verify-release with same-origin protection and the Google editor session. It provides a safe manual recovery path but cannot bypass any proof.
 
-The automated route POST /api/reconcile-production is **not** a public webhook: it requires a private service token and a verified active or successfully completed main production workflow run, then uses the existing source locks. No cron or scheduled polling is introduced.
+The trusted post-GitHub-Pages-deployment route POST /api/reconcile-production is **not** a public webhook: it requires a private service token and a verified active or successfully completed main production workflow run, then uses the existing source locks. No cron or scheduled polling is introduced.
 
 **Safety:** staging, Publisher DEV, unmerged PRs, stale editorial revisions, missing CI evidence, missing production domain, wrong source ID, bad canonical, non-indexable content, incorrect ancestry, and conflicting release metadata all fail closed. The old test PR #35 stays closed and must never be merged.
 
