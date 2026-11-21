@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {STUDIO_CSS,STUDIO_EDITOR_JS,STUDIO_ADMIN_JS} from '../workers/publisher/src/studio-v2.mjs';
+import {STUDIO_CSS,STUDIO_EDITOR_JS,STUDIO_ADMIN_JS} from '../workers/publisher/src/studio-v2.mjs';\nimport {EDITOR_JS} from '../workers/publisher/src/editor-ui.mjs';
 import {handleRequest} from '../workers/publisher/src/index.mjs';
 
 test('Studio v2 scripts are standalone JavaScript without external UI dependencies',()=>{
@@ -39,3 +39,5 @@ test('new endpoints are not unauthenticated public write APIs',async()=>{
   assert.notEqual(result.status,201);
  }
 });
+
+test('Studio v2 waits for actual protected DRAFT load and never infers success from status text',()=>{\n assert.match(EDITOR_JS,/techblogtip:editor-loading/);\n assert.match(EDITOR_JS,/techblogtip:editor-loaded/);\n assert.match(EDITOR_JS,/techblogtip:editor-load-error/);\n assert.match(EDITOR_JS,/AbortSignal\.timeout\(20000\)/);\n assert.match(STUDIO_EDITOR_JS,/addEventListener\('techblogtip:editor-loaded'/);\n assert.match(STUDIO_EDITOR_JS,/addEventListener\('techblogtip:editor-load-error'/);\n assert.match(STUDIO_EDITOR_JS,/studio-retry/);\n assert.match(STUDIO_EDITOR_JS,/if\(!loaded\)\{blocked=true/);\n assert.doesNotMatch(STUDIO_EDITOR_JS,/availability\.observe\(root/);\n assert.doesNotMatch(STUDIO_EDITOR_JS,/setInterval\(/);\n});\n
