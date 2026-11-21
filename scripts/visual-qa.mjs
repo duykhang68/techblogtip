@@ -61,6 +61,8 @@ try{
    const response=await page.goto(base+'/',{waitUntil:'load'});
    assert.equal(response.status(),200);
    assert.equal(await page.locator('h1').count(),1);
+   assert.equal(await page.locator('.home-intro, .topic-strip').count(),0,'Homepage hero and category strip must be removed');
+   assert.equal(await page.locator('.home-search-link').count(),1,'Homepage search entry must remain');
    const cards=await page.locator('.article-card').count();
    assert.equal(cards,8,'Exactly eight homepage article cards required');
    const metric=await page.evaluate(()=>{
