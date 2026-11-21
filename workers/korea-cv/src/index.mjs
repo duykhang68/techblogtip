@@ -31,17 +31,17 @@ async function identity(token, env) {
   // Access tokens are short-lived and never written to Worker storage or logs.
   // Google's tokeninfo verifies token audience and its actual consented scope.
   const info = await googleJson('https://oauth2.googleapis.com/tokeninfo?access_token='+encodeURIComponent(token));
-  if (info.aud !== env.GOOGLE_OAUTH_CLIENT_ID || !String(info.scope||'').split(' ').includes(ACCESS_SCOPE)) throw new Error('TOKEN_SCOPE');
+  if ((info.aud || info.issued_to || info.audience) !== env.GOOGLE_OAUTH_CLIENT_ID || !String(info.scope||'').split(' ').includes(ACCESS_SCOPE)) throw new Error('TOKEN_SCOPE');
   return info;
 }
 async function lookup(id, token) {
   const q = "name = '" + fileName(id) + "' and 'appDataFolder' in parents and trashed = false";
-  const params = new URLSearchParams({spaces:'appDataFolder',q,fields:'files(id,name,modifiedTime),nextPageToken',page_size:'100'});
+  const params = new URLSearchParams({spaces:'appDataFolder',q,fields:'files(id,name,modifiedTime),nextPageToken',pageSize:'100'});
   const payload=await googleJson(DRIVE+'?'+params, {headers:fetchHeaders(token)});
   return payload.files?.[0] || null;
 }
 async function list(token) {
-  const params=new URLSearchParams({spaces:'appDataFolder',q:"name contains 'korea-cv-' and 'appDataFolder' in parents and trashed = false",fields:'nextPageToken,files(id,name,modifiedTime)',page_size:'100'});
+  const params=new URLSearchParams({spaces:'appDataFolder',q:"name contains 'korea-cv-' and 'appDataFolder' in parents and trashed = false",fields:'nextPageToken,files(id,name,modifiedTime)',pageSize:'100'});
   const data=await googleJson(DRIVE+'?'+params,{headers:fetchHeaders(token)});
   return (data.files||[]).filter(f=>/^korea-cv-[0-9a-f-]{36}\.json$/i.test(f.name)).map(f=>({id:f.name.slice(9,-5),updatedAt:f.modifiedTime}));
 }
