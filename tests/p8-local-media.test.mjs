@@ -27,7 +27,7 @@ test('P8 validates local image MIME, real signature and size',async()=>{
 
 test('P8 local PNG converts to WebP, stages on media branch and deduplicates re-import',async()=>{
  const png=Uint8Array.from([137,80,78,71,13,10,26,10,0,0,0,0]);
- const webp=Uint8Array.from([82,73,70,70,12,0,0,0,0,0,0,0,87,69,66,80,1,2,3,4]);
+ const webp=Uint8Array.from([82,73,70,70,12,0,0,0,87,69,66,80,1,2,3,4]);
  const paths=new Set();let branchExists=false,putCount=0;
  const fetcher=async(url,options={})=>{
   const u=new URL(url),method=options.method||'GET',path=u.pathname;
