@@ -1,5 +1,6 @@
 import { fail, PublisherError } from './auth.mjs';
 import { githubRequest, branchFor } from './github-api.mjs';
+import { verifiedStoredRelease } from './release-proof.mjs';
 
 const PR_LINK=/^https:\/\/github\.com\/duykhang68\/techblogtip\/pull\/([1-9][0-9]*)$/;
 const SHA=/^[a-f0-9]{40}$/;
@@ -53,5 +54,9 @@ export async function inspectPublisherPR(env,row,sourceId,fetcher=fetch){
         throw error;
     }
   }
-  return {sourceId,prUrl,number,stage,headSha,productionVerified:false,ci};
+  const mergeSha=pr.merged_at&&SHA.test(pr.merge_commit_sha||'')?pr.merge_commit_sha:null;
+  const snapshot={sourceId,prUrl,number,stage,headSha,mergeSha,ci};
+  const productionVerified=stage==='merged'&&row.cells.slice(12,15).every(x=>x.trim())&&
+    await verifiedStoredRelease(env,row,snapshot,fetcher);
+  return {...snapshot,productionVerified:!!productionVerified};
 }
