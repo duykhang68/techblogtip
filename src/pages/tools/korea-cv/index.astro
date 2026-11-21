@@ -84,10 +84,21 @@ const essays = [['growth','성장과정 · Quá trình trưởng thành'],['pers
         </div>
       </div>
       <div class="kcv-panel">
-        <h2>Kết quả đã lưu trên Google Drive</h2>
-        <p>Chọn phiên bản được lưu trong Google Drive. Xuất PDF A4 hoặc Excel từ bản đã lưu; dữ liệu đang nhập chưa lưu sẽ không được xuất.</p>
+        <h2>Xuất hồ sơ PDF / Excel</h2>
+        <p class="kcv-help">Có thể xuất trực tiếp hồ sơ vừa nhập, kể cả khi chưa lưu. Google Drive chỉ cần thiết khi chọn xuất một phiên bản đã lưu.</p>
+        <label class="kcv-choose" for="kcv-export-source">Nguồn dữ liệu xuất
+          <select id="kcv-export-source" aria-describedby="kcv-export-help">
+            <option value="draft" selected>Hồ sơ đang soạn (bao gồm thay đổi chưa lưu)</option>
+            <option value="saved">Phiên bản đã lưu trên Google Drive</option>
+          </select>
+        </label>
+        <p id="kcv-export-help" class="kcv-help">Đang chọn hồ sơ trên biểu mẫu. Chưa cần lưu để xuất file.</p>
         <p id="saved-empty" class="kcv-empty">Chưa có bản CV đã lưu.</p>
-        <div class="kcv-actions" id="kcv-export-actions"></div>
+        <div class="kcv-actions" id="kcv-export-actions">
+          <button type="button" id="kcv-export-pdf" class="kcv-btn kcv-btn-primary">In / lưu PDF A4</button>
+          <button type="button" id="kcv-export-xlsx" class="kcv-btn kcv-btn-accent">Tải Excel .xlsx</button>
+        </div>
+        <p id="kcv-export-status" class="kcv-export-status" role="status" aria-live="polite" data-state="neutral">Sẵn sàng xuất dữ liệu đang soạn. CV chưa lưu vẫn ở trên thiết bị này.</p>
       </div>
       <div class="kcv-panel" id="temporary-review" hidden><h2>Xem trước hồ sơ · Chưa lưu</h2><p class="kcv-help">Bản xem trước chỉ hiển thị trong phiên này. Để lưu, hãy kết nối Google và chọn Lưu CV.</p><div id="temporary-preview" class="kcv-preview-readable"></div></div>
     </section>
@@ -185,6 +196,8 @@ const essays = [['growth','성장과정 · Quá trình trưởng thành'],['pers
   @media(max-width:760px){.kcv-toolbar{align-items:stretch}.kcv-toolbar-actions{width:100%}.kcv-toolbar-actions .kcv-btn{flex:1 1 auto}}
   @media(max-width:600px){.kcv{padding-block:16px 62px}.kcv-head h1{font-size:clamp(2.1rem,10vw,2.8rem)}.kcv-fields{grid-template-columns:1fr}.kcv-tabs{gap:7px}.kcv-tabs button{font-size:.81rem;padding:10px 7px;min-height:54px}.kcv-tab-step{width:23px;height:23px;margin-right:3px}.kcv-panel{padding:17px}.kcv-toolbar{padding:15px}.kcv-toolbar-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kcv-toolbar-actions .kcv-btn{padding:10px 7px;font-size:.8rem}.kcv-toolbar-actions #kcv-connect{grid-column:span 2}.kcv-library-actions .kcv-btn{flex:1 1 130px}}
 
+  .kcv-export-status{font-size:.83rem;line-height:1.6;color:var(--muted);margin:8px 0 0}.kcv-export-status[data-state=error]{color:#8d3026}.kcv-export-status[data-state=success]{color:#235d38}.kcv-export-status[data-state=info]{color:#304f78}
+  .kcv :global(#kcv-export-actions){display:flex;flex-wrap:wrap;gap:10px}.kcv :global(#kcv-export-actions .kcv-btn){min-height:44px;font-size:.86rem}
   .kcv-preview-readable{display:grid;gap:7px}.kcv-preview-readable :global(h3){font-size:1rem;margin:16px 0 4px;padding-bottom:7px;border-bottom:1px solid var(--line);color:var(--ink)}.kcv-preview-readable :global(.kcv-preview-line){display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,2fr);gap:8px 16px;padding:7px 0;border-bottom:1px solid var(--line);line-height:1.6}.kcv-preview-readable :global(.kcv-preview-line span){white-space:pre-wrap;word-break:normal;overflow-wrap:break-word}.kcv-preview-readable :global(.kcv-preview-line strong){font-size:.83rem}
   @media(max-width:520px){.kcv-preview-readable :global(.kcv-preview-line){grid-template-columns:1fr;gap:3px}}
   .kcv-section-nav{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 12px;margin:0 0 15px;border:1px solid var(--line);border-radius:var(--radius);background:var(--soft);scroll-margin-top:100px}
