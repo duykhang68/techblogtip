@@ -11,7 +11,7 @@ import { parsePublisherPreview } from './markdown-preview.mjs';
 import { notionPagePreview } from './notion-import.mjs';
 import { obsidianPreview } from './obsidian-import.mjs';
 import { driveImageMetadata } from './drive-import.mjs';
-import { mediaScope,listDriveFiles,libraryItems,importDriveFiles,serveDraftMedia } from './media-library.mjs';
+import { mediaScope,listDriveFiles,driveThumbnail,libraryItems,importDriveFiles,serveDraftMedia } from './media-library.mjs';
 import { getSheetsToken } from './google-api.mjs';
 import { withSourceWriteLock,withRowWriteLock } from './source-lock.mjs';
 import { EDITOR_HTML,EDITOR_JS,EDITOR_CSS,EDITOR_IMPORT_CSS,EDITOR_WORKSPACE_CSS } from './editor-ui.mjs';
@@ -204,6 +204,8 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         const payload=await jsonRequest(request,180000);
         return respond(obsidianPreview(payload));
       }
+      if(request.method==='GET'&&path==='/api/drive/thumb')
+        return driveThumbnail(env,new URL(request.url).searchParams.get('id'),fetcher);
       if(request.method==='GET'&&path==='/api/drive/files')
         return respond(await listDriveFiles(env,fetcher));
       if(request.method==='GET'&&path==='/api/media-library'){

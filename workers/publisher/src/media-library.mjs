@@ -1,5 +1,5 @@
 import { fail } from './auth.mjs';
-import { driveImageWebp } from './drive-import.mjs';
+import { driveImageWebp,driveImageMetadata } from './drive-import.mjs';
 import { getSheetsToken, readSheet, rowById } from './google-api.mjs';
 import { githubRequest } from './github-api.mjs';
 
@@ -23,6 +23,16 @@ async function googleGet(url,token,fetcher){
  const res=await fetcher(url,{headers:{Authorization:'Bearer '+token,Accept:'application/json'},signal:AbortSignal.timeout(15000)});
  if(!res.ok)fail(res.status===403?403:502,'drive_access_denied','Drive folder is not shared with the Publisher service account');
  return res;
+}
+export async function driveThumbnail(env,fileId,fetcher=fetch){
+ const folder=String(env.DRIVE_MEDIA_FOLDER_ID||FOLDER),token=await getDriveToken(env,fetcher);
+ const meta=await driveImageMetadata({id:fileId,token,fetcher});
+ if(!Array.isArray(meta.parents)||!meta.parents.includes(folder))fail(403,'drive_folder_denied','Drive image outside authorized folder');
+ const response=await fetcher(ROOT+'/'+encodeURIComponent(fileId)+'?alt=media',{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(15000)});
+ if(!response.ok)fail(502,'drive_thumb_failed','Could not read Drive image');
+ const bytes=await response.arrayBuffer();
+ if(bytes.byteLength>10000000)fail(413,'drive_thumb_large','Drive thumbnail exceeds 10MB');
+ return new Response(bytes,{headers:{'Content-Type':meta.mimeType,'Cache-Control':'private,max-age=120','X-Content-Type-Options':'nosniff'}});
 }
 export async function listDriveFiles(env,fetcher=fetch){
  const folder=String(env.DRIVE_MEDIA_FOLDER_ID||FOLDER);

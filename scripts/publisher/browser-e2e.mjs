@@ -96,6 +96,9 @@ const server=createServer(async(req,res)=>{
    if(!auth&&route.startsWith('/api/'))return json(res,{message:'Not authenticated'},401);
    if(req.method==='GET'&&route==='/api/rows')
     return json(res,{editor:'synthetic@example.test',rows});
+   if(req.method==='GET'&&route==='/api/drive/thumb'){
+    res.writeHead(200,{'Content-Type':'image/webp'});res.end(Buffer.from('UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA','base64'));return;
+   }
    if(req.method==='GET'&&route==='/api/drive/files')
     return json(res,{files:[
      {id:'drive-image-001',name:'photo.jpg',mimeType:'image/jpeg',size:30000},

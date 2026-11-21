@@ -4,7 +4,7 @@ export function assertDriveId(id){if(typeof id!=='string'||!/^[\w-]{10,150}$/.te
 export async function driveImageMetadata({id,token,fetcher=fetch}){
  assertDriveId(id);
  if(!token)fail(503,'drive_token_missing','Drive read-only credential required');
- const url='https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(id)+'?fields=id,name,mimeType,size,trashed';
+ const url='https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(id)+'?fields=id,name,mimeType,size,trashed,parents';
  const res=await fetcher(url,{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(12000)});
  if(!res.ok)fail(502,'drive_read_failed','Drive metadata not accessible');
  const file=await res.json();
