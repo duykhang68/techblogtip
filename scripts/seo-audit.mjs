@@ -34,6 +34,14 @@ export function auditCmsAdminHtml(html){
  assert(html.includes('id="google-login"'),'CMS admin Google Sign-In missing');
  assert(!html.includes('name="google-site-verification"'),'CMS admin must not contain Search Console verification');
 }
+export function auditGcmsAdminHtml(html){
+ assert(/<html[^>]+lang="vi"/.test(html),'G-CMS admin missing Vietnamese lang');
+ assert(html.includes('name="robots" content="noindex,nofollow"'),'G-CMS admin must always be noindex');
+ assert(html.includes('id="signin"'),'G-CMS admin Google Sign-In missing');
+ assert(!html.includes('name="google-site-verification"'),'G-CMS admin must not contain Search Console verification');
+ const titles=[...html.matchAll(/<title>([^<]+)<\/title>/g)];
+ assert(titles.length===1 && titles[0][1].trim().length>0,'G-CMS admin missing or duplicated title');
+}
 export function auditSitemap(xml,origin,paths){
  const entries=[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(x=>x[1].replaceAll('&amp;','&'));
  assert(entries.length>0,'empty sitemap');
@@ -58,6 +66,7 @@ function main(){
   try{
    const html=readFileSync(path,'utf8');
    if(rel==='tools/cms/index.html')auditCmsAdminHtml(html);
+   else if(rel==='gcms/index.html')auditGcmsAdminHtml(html);
    else auditHtml(html,new URL(route,origin).toString(),pages);
   }catch(error){
    throw Error(rel+': '+error.message);
@@ -66,6 +75,7 @@ function main(){
  const keyRoutes=['','chuyen-muc/','the/','chu-de/'];
  const count=auditSitemap(sitemap,origin,keyRoutes);
  assert(!sitemap.includes('<loc>'+new URL('tools/cms/',origin).toString()+'</loc>'),'CMS admin must not appear in sitemap');
+ assert(!sitemap.includes('<loc>'+new URL('gcms/',origin).toString()+'</loc>'),'G-CMS admin must not appear in sitemap');
  // A sitemap can be syntactically valid but contain 404 pages. Verify each
  // declared absolute URL against the actual generated static HTML output.
  assert(sitemap.startsWith('<?xml version="1.0" encoding="UTF-8"?>'),'missing XML prolog');
