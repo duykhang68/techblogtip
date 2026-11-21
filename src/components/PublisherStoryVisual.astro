@@ -1,0 +1,89 @@
+---
+/**
+ * Original TechBlogTip editorial diagrams; SVG paths follow Lucide iconography
+ * already used in README artwork (ISC license under docs/assets/LUCIDE-LICENSE.txt).
+ * Pure, static Astro: no third-party icon CDN or client-side GitHub API.
+ */
+interface Props { variant?: 'flow' | 'proof' }
+const { variant = 'flow' } = Astro.props;
+const stages = [
+  {no:'01',name:'Google Sheets',desc:'Dòng dữ liệu có source ID',color:'lavender',paths:['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z','M14 2v6h6','M8 13h8','M8 17h8','M12 12v8']},
+  {no:'02',name:'READY',desc:'Biên tập viên chủ động duyệt',color:'peach',paths:['M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9','M8 3V1m8 2V1','M3 8h11','m9 16 2 2 8-8']},
+  {no:'03',name:'Draft PR',desc:'Nhánh riêng, có thể review',color:'sky',paths:['M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z','M18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6z','M6 9v12','M18 15V8a2 2 0 0 0-2-2h-3','m15 3-3 3 3 3']},
+  {no:'04',name:'Quality CI',desc:'Các checks đúng head SHA',color:'mint',paths:['M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z','m9 12 2 2 4-4']},
+  {no:'05',name:'Merge',desc:'Duyệt và nhập vào main',color:'butter',paths:['M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z','M18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6z','M6 9v4a5 5 0 0 0 5 5h4','M18 3v12','m15 6 3-3 3 3']},
+  {no:'06',name:'Public proof',desc:'GitHub Pages → ghi M:O',color:'rose',paths:['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z','M2 12h20','M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z','m9 12 2 2 4-4']},
+];
+const proofs = [
+  {name:'Editorial',label:'ĐÚNG NGUỒN',body:'Dòng VN · source ID · fingerprint SHA-256. Nội dung sửa sau khi nộp không được lén qua cổng.',color:'lavender',paths:['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z','M14 2v6h6','m8 16 2 2 5-5']},
+  {name:'Engineering',label:'ĐÚNG COMMIT',body:'Draft PR · Quality · exact head SHA · merge commit. CI của commit cũ không được xem là CI hiện tại.',color:'mint',paths:['M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z','m9 12 2 2 4-4']},
+  {name:'Production',label:'ĐÚNG PUBLIC',body:'Trang thật · canonical · release SHA · commit ancestry. Chỉ khi đủ bằng chứng mới ghi biên lai vào M:O.',color:'sky',paths:['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z','M2 12h20','M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z']},
+];
+---
+{variant === 'flow' && (
+  <section class="tbt-visual flow" aria-label="Sơ đồ hành trình xuất bản Google Sheets đến production">
+    <div class="visual-head">
+      <div class="overline"><span class="spark">✳</span> PUBLICATION JOURNEY</div>
+      <h2>Một dòng Sheet. Sáu cổng tin cậy.</h2>
+      <p>Mỗi chặng có dấu vết. Chỉ khi trang public chứng minh đúng bài, đồng hồ xuất bản mới chạy đến 100%.</p>
+    </div>
+    <ol class="journey-grid">
+      {stages.map((item) => <li class:list={['stage',item.color]}>
+        <div class="stage-top"><span class="stage-no">{item.no}</span><span class="icon-tile">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            {item.paths.map(d => <path d={d}/>)}
+          </svg>
+        </span></div>
+        <h3>{item.name}</h3><p>{item.desc}</p>
+      </li>)}
+    </ol>
+    <div class="receipt" role="note">
+      <span class="receipt-label">RELEASE RECEIPT</span>
+      <strong>A · source ID</strong><span class="receipt-arrow">→</span>
+      <strong>K · fingerprint</strong><span class="receipt-arrow">→</span>
+      <strong>M:O · public proof</strong>
+    </div>
+    <p class="visual-credit">Vector icons: Lucide (ISC) · original pastel visualization for TechBlogTip</p>
+  </section>
+)}
+{variant === 'proof' && (
+  <section class="tbt-visual proof" aria-label="Ba lớp kiểm chứng trước khi bài được công bố">
+    <div class="visual-head">
+      <div class="overline"><span class="spark">✦</span> THREE TRUST LAYERS</div>
+      <h2>Ba câu hỏi trước khi nói “đã đăng”</h2>
+      <p>Không lấy một dấu tích CI để thay thế bằng chứng xuất bản.</p>
+    </div>
+    <div class="proof-grid">
+      {proofs.map((item,i) => <div class:list={['proof-card',item.color]}>
+        <div class="proof-top">
+          <span class="proof-icon"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">{item.paths.map(d=><path d={d}/>)}</svg></span>
+          <span class="proof-index">0{i+1}/03</span>
+        </div>
+        <span class="proof-label">{item.label}</span>
+        <h3>{item.name}</h3>
+        <p>{item.body}</p>
+      </div>)}
+    </div>
+    <div class="proof-footer"><span class="pulse"></span><strong>Đã merge ≠ đã publish</strong><span>· Chỉ public proof xác nhận được bước cuối.</span></div>
+  </section>
+)}
+<style>
+  .tbt-visual{--ink:#253454;--muted:#5d6c83;margin:1.2rem 0 2.1rem;padding:1.35rem;border:1px solid #e5e9f3;border-radius:22px;background:linear-gradient(135deg,#fbfaff,#f8fcff 65%,#fffaf3);box-shadow:0 12px 26px rgba(45,58,94,.055);font-family:inherit;color:var(--ink)}
+  .visual-head{margin:0 0 1.35rem}.overline{display:flex;gap:.4rem;align-items:center;color:#8b68a9;font-size:.7rem;letter-spacing:.15em;font-weight:800}.spark{font-size:1rem;color:#bc87de}
+  .visual-head h2{font-size:clamp(1.16rem,2.7vw,1.65rem);line-height:1.25;letter-spacing:-.025em;margin:.4rem 0 .5rem;color:#253454}
+  .visual-head p{font-size:.88rem;line-height:1.6;color:var(--muted);margin:0}
+  .journey-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.68rem;padding:0;margin:0;list-style:none}
+  .stage{--accent:#7c65b3;--tint:#eee7ff;display:flex;flex-direction:column;min-width:0;border:1px solid #e8eaf0;background:white;border-radius:16px;padding:1rem .88rem .88rem;min-height:136px}
+  .peach{--accent:#a66e4c;--tint:#ffe6db}.sky{--accent:#467cb0;--tint:#e1efff}.mint{--accent:#278772;--tint:#daf7ec}.butter{--accent:#97733c;--tint:#fff0c8}.rose{--accent:#aa6680;--tint:#ffe4ed}
+  .stage-top{display:flex;justify-content:space-between;align-items:flex-start}.stage-no{font-weight:900;font-size:.72rem;color:#8791ab;letter-spacing:.1em}.icon-tile{width:44px;height:44px;display:grid;place-items:center;background:var(--tint);color:var(--accent);border-radius:13px}
+  svg{display:block;width:24px;height:24px;flex:none}.stage h3{font-size:.92rem;line-height:1.3;font-weight:800;letter-spacing:-.015em;margin:.6rem 0 .2rem;color:#273958}.stage p{font-size:.71rem;line-height:1.48;color:#647189;margin:0}
+  .receipt{margin-top:1rem;padding:.84rem 1rem;border:1px dashed #bdd9d3;border-radius:14px;background:#eff9f5;display:flex;flex-wrap:wrap;gap:.4rem .64rem;align-items:center;font-size:.7rem;line-height:1.4}
+  .receipt-label{width:100%;font-size:.62rem;color:#388775;font-weight:900;letter-spacing:.12em}.receipt strong{color:#346a61}.receipt-arrow{color:#8aaea6;font-weight:800}
+  .visual-credit{font-size:.61rem;color:#96a0b1;margin:.75rem 0 0;text-align:right}
+  .proof-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem}.proof-card{--accent:#7c65b3;--tint:#eee7ff;background:#fff;border:1px solid #e8eaf0;border-radius:16px;padding:1rem;min-width:0}
+  .proof-top{display:flex;justify-content:space-between;align-items:flex-start}.proof-icon{display:grid;place-items:center;background:var(--tint);color:var(--accent);width:44px;height:44px;border-radius:13px}.proof-index{font-size:.62rem;color:#9ba7b9;font-weight:800}
+  .proof-label{display:block;margin-top:1rem;color:var(--accent);font-size:.59rem;letter-spacing:.13em;font-weight:900}.proof-card h3{margin:.3rem 0 .52rem;font-size:1.12rem;font-weight:850;color:#273958}.proof-card p{margin:0;font-size:.78rem;line-height:1.64;color:#596c83}
+  .proof-footer{margin-top:1rem;display:flex;gap:.45rem;flex-wrap:wrap;align-items:center;color:#7b5662;font-size:.78rem}.pulse{display:inline-block;width:9px;height:9px;border-radius:50%;background:#dd9aaa;box-shadow:0 0 0 4px #fcecf0}
+  @media(max-width:640px){.tbt-visual{padding:1rem;border-radius:17px}.journey-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}.stage{padding:.7rem;min-height:120px}.stage h3{font-size:.84rem}.stage p{font-size:.68rem}.icon-tile{width:39px;height:39px}.receipt{padding:.75rem}.proof-grid{grid-template-columns:1fr}.proof-card{display:grid;grid-template-columns:44px 1fr;gap:0 .8rem}.proof-top{grid-row:1/4;grid-column:1;display:block}.proof-index{display:none}.proof-label,.proof-card h3,.proof-card p{grid-column:2}.proof-label{margin:0}.proof-card h3{font-size:1rem;margin:.2rem 0}.proof-card p{font-size:.76rem}}
+  @media(prefers-reduced-motion:no-preference){.stage,.proof-card{transition:transform .16s ease,box-shadow .16s ease}.stage:hover,.proof-card:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(65,78,116,.1)}}
+</style>
