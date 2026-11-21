@@ -37,7 +37,7 @@ test('article title and tagline use full header width with natural Vietnamese wr
   assert.match(title, /text-wrap:\s*wrap/);
   assert.match(title, /text-align:\s*start/);
   assert.doesNotMatch(title, /text-align:\s*justify|text-wrap:\s*balance/);
-  const lead = css.match(/\.article-lead\{([^}]+)\}/g)?.at(-1);
+  const lead = [...css.matchAll(/\.article-lead\{([^}]+)\}/g)].map(match=>match[1]).find(rule=>/max-width:\s*none/.test(rule));
   assert.ok(lead, 'Article tagline rule missing');
   assert.match(lead, /max-width:\s*none/);
   assert.match(lead, /width:\s*100%/);
