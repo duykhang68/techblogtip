@@ -25,8 +25,9 @@ jobs:
       DEPLOY_TARGET: github-pages
       PUBLIC_INDEXABLE: "true"
       PUBLIC_GSC_VERIFICATION: ${{ vars.PUBLIC_GSC_VERIFICATION }}
-      # Existing Publisher OAuth Web Client ID is public by design; no new Google credential.
-      PUBLIC_KOREA_CV_GOOGLE_CLIENT_ID: ${{ secrets.TBT_GOOGLE_OAUTH_CLIENT_ID }}
+      # Korea CV reuses the *existing Resume Studio Web OAuth client* (public ID).
+      # Never change Publisher's separate TBT_GOOGLE_OAUTH_CLIENT_ID authentication.
+      PUBLIC_KOREA_CV_GOOGLE_CLIENT_ID: 86180355982-ucstas5q9h5j10hedc1lruo3pg4v8h5f.apps.googleusercontent.com
       # Fail closed until operator sets the reviewed private Korea CV API origin.
       PUBLIC_KOREA_CV_API_URL: ${{ vars.PUBLIC_KOREA_CV_API_URL }}
     steps:
