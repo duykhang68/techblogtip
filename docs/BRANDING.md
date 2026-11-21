@@ -46,6 +46,13 @@
 - Breadcrumb: textual links. Desktop article TOC can float/stick; do not squeeze mobile prose with a permanent sidebar.
 - Interaction: visible hover, focus-visible and active states; keyboard access; ESC/outside-click to dismiss dialogs or dropdowns when applicable; never create a UI state with no obvious exit.
 
+## Form-based tool UX (Korea CV Maker reference)
+- Follow the existing TechBlogTip tokens (`--ink`, `--muted`, `--paper`, `--white`, `--line`, `--accent`, `--soft`). Keep the ink primary CTA, restrained terracotta accent for active/emphasis, and the established Sunny/Lavender/Mint/Sky/Peach backgrounds; do not introduce an unrelated SaaS gradient or new primary hue.
+- Render essential controls in the Astro component instead of injecting their markup at runtime: Astro's scoped styles must apply on first paint, avoiding browser-default unstyled buttons.
+- For long forms, offer in-page shortcuts by human-readable section name, 44px controls, labels close to inputs and predictable save/return paths. At 320px, section links may scroll horizontally but inputs must not overflow.
+- A signed-out state is normal information, not an alarming banner. Show errors only for verified failures (missing public build config, denied OAuth, failed authenticated API read). Never claim Google Drive connected until an authenticated read succeeds; never say saved until the write is acknowledged.
+- User-facing previews must use labeled, human-readable fields rather than raw JSON; avoid emitting applicant data to logs or public artifacts.
+
 ## Components and imagery
 - Reuse `SiteHeader`, `SiteFooter`, `BaseLayout`, `ArticleCard`, `SmartToc` and available visual components before making new variants.
 - Icons: Lucide-style, consistent stroke (~1.8–2px), usually 18–24px; use accessible labels for icon-only actions. Prefer self-hosted/inline SVG over runtime icon libraries.
