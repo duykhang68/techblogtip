@@ -1,0 +1,41 @@
+name: PR · Pastel Labels
+run-name: >-
+  ${{ github.event_name == 'pull_request_target'
+      && format('LABEL PR #{0} · pastel taxonomy', github.event.pull_request.number)
+      || 'BACKFILL PR labels · pastel taxonomy' }}
+
+# No cron, no untrusted PR code, and no repetitive status polling.
+on:
+  pull_request_target: # zizmor: ignore[dangerous-triggers] only trusted main is checked out; PR titles are data, never shell commands
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pr-pastel-labels.yml
+      - scripts/pr-pastel-labels.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: techblogtip-pastel-labels-${{ github.event.pull_request.number || 'backfill' }}
+  cancel-in-progress: false
+
+jobs:
+  label:
+    name: Apply pastel labels (additive and idempotent)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted main only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Update palette and label PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/pr-pastel-labels.mjs
