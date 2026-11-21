@@ -19,6 +19,9 @@ const googleScript="window.google={accounts:{id:{initialize:o=>window.__qa_cb=o.
 const ok=(data,status=200)=>({status,contentType:'application/json',body:JSON.stringify(data),headers:{'access-control-allow-origin':origin}});
 function mock(request){
  const url=new URL(request.url()),p=url.pathname,m=request.method();
+ if(m==='OPTIONS')return {status:204,headers:{
+   'access-control-allow-origin':origin,'access-control-allow-methods':'GET,POST,PUT,DELETE,OPTIONS',
+   'access-control-allow-headers':'Authorization,Content-Type,X-File-Name'},body:''};
  const body=()=>{try{return JSON.parse(request.postData()||'{}');}catch{return {};}};
  if(p==='/api/config')return ok({googleClientId:'12345-mock.apps.googleusercontent.com',apiBase:apiOrigin});
  if(p==='/api/me')return ok({email:'qa-admin@example.invalid',role:'admin'});
