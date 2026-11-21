@@ -1,0 +1,61 @@
+name: Font A/B Mobile Benchmark
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/font-ab-mobile.mjs'
+      - '.github/workflows/font-ab-mobile.yml'
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Target deployed page (default TechBlogTip homepage)'
+        required: false
+        type: string
+      runs:
+        description: 'Cold-cache runs per font (1-10)'
+        required: false
+        default: '3'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: font-ab-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  measure:
+    name: Mobile cold-cache font comparison
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      FONT_AB_URL: ${{ inputs.url || 'https://duykhang68.github.io/techblogtip/' }}
+      FONT_AB_RUNS: ${{ inputs.runs || '3' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - run: npm install --no-package-lock --no-audit --no-fund
+      - name: Install pinned Chromium for Playwright Core
+        run: npx playwright-core install --with-deps chromium
+      - name: Run mobile A/B (production site remains unchanged)
+        run: node scripts/font-ab-mobile.mjs
+      - name: Publish measurement summary
+        if: always()
+        run: |
+          if [ -f artifacts/font-ab/report.md ]; then
+            cat artifacts/font-ab/report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Font comparison did not produce a report; inspect logs.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: font-ab-mobile-${{ github.run_id }}
+          path: artifacts/font-ab/
+          if-no-files-found: warn
+          retention-days: 30
