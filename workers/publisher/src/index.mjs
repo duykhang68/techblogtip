@@ -9,7 +9,7 @@ import { readProductionStatus } from './production-status.mjs';
 import { readEditorialOperations } from './editorial-operations.mjs';
 import { loadEditableDraft,saveEditableDraft,forkEditableRevision } from './editorial.mjs';
 import { parsePublisherPreview } from './markdown-preview.mjs';
-import { notionPagePreview } from './notion-import.mjs';
+import { notionPagePreview, notionListPages } from './notion-import.mjs';
 import { obsidianPreview } from './obsidian-import.mjs';
 import { driveImageMetadata } from './drive-import.mjs';
 import { mediaScope,listDriveFiles,driveThumbnail,libraryItems,importDriveFiles,importLocalFiles,serveDraftMedia } from './media-library.mjs';
@@ -199,6 +199,9 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         // write Sheets, call GitHub, or return untrusted HTML to the browser.
         const payload=await jsonRequest(request,110000);
         return respond(parsePublisherPreview(payload.body));
+      }
+      if(request.method==='GET'&&path==='/api/import/notion/pages'){
+        return respond(await notionListPages({token:env.NOTION_INTEGRATION_TOKEN,fetcher}));
       }
       if(request.method==='POST'&&path==='/api/import/notion'){
         const payload=await jsonRequest(request,2048);

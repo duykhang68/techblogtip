@@ -14,5 +14,5 @@ test('rich Notion formatting and links require editorial review before import',(
 test('nested or unhandled blocks require review',()=>{
  assert.equal(notionNeedsReview([{...paragraph('Parent'),has_children:true}]),true);
  assert.equal(notionNeedsReview([{type:'image',image:{}}]),true);
- assert.equal(notionNeedsReview([{type:'quote',quote:{rich_text:[{plain_text:'Q'}]}}]),false);
+ assert.equal(notionNeedsReview([{type:'quote',quote:{rich_text:[{plain_text:'Q'}]}}]),true);
 });

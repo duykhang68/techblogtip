@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {assertDriveId} from '../workers/publisher/src/drive-import.mjs';
-import {notionId,notionMarkdown,notionPagePreview} from '../workers/publisher/src/notion-import.mjs';
+import {notionId,notionMarkdown,notionPagePreview,notionListPages} from '../workers/publisher/src/notion-import.mjs';
 import {safeVaultPath,obsidianPreview} from '../workers/publisher/src/obsidian-import.mjs';
 test('Drive IDs are restricted',()=>{assert.equal(assertDriveId('abcdef123456789'),'abcdef123456789');assert.throws(()=>assertDriveId('../secret'));});
 test('Notion blocks render basic content',()=>{assert.equal(notionId('0123456789abcdef0123456789abcdef'),'0123456789abcdef0123456789abcdef');assert.match(notionMarkdown([{type:'heading_2',heading_2:{rich_text:[{plain_text:'Hello'}]}}]),/## Hello/);});
@@ -28,4 +28,39 @@ test('Obsidian complex syntax remains in review until lossless support exists',(
  const safe=obsidianPreview({path:'notes/simple.md',markdown:'---\ntitle: Ví dụ tiếng Việt\n---\nĐoạn văn không mất dữ liệu'});
  assert.equal(safe.requiresReview,false);
  assert.match(safe.body,/Đoạn văn không mất dữ liệu/);
+});
+
+test('P6 review gate never treats lossy H1, numbered lists, quotes or code as editable',async()=>{
+ const {notionNeedsReview}=await import('../workers/publisher/src/notion-import.mjs');
+ const b=(type,value='Example')=>({type,[type]:{rich_text:[{plain_text:value}]}});
+ for(const type of ['heading_1','numbered_list_item','quote','code','divider'])assert.equal(notionNeedsReview([b(type)]),true,type);
+ for(const type of ['heading_2','heading_3','paragraph','bulleted_list_item'])assert.equal(notionNeedsReview([b(type)]),false,type);
+});
+test('P7 review gate blocks markup not faithfully round-trippable in visual editor',()=>{
+ for(const markdown of ['# Tựa đề','#### Heading 4','![ảnh](photo.png)','**in đậm**','~~gạch bỏ~~','`inline code`','---\ntags: [tech]\n---\nBody']){
+  assert.equal(obsidianPreview({path:'notes/unsafe.md',markdown}).requiresReview,true,markdown);
+ }
+ const safe=obsidianPreview({path:'notes/safe.md',markdown:'## Mục lớn\n\nĐoạn văn tiếng Việt'});
+ assert.equal(safe.requiresReview,false);
+});
+
+test('P6 page picker fails closed without token, lists only shared-page metadata',async()=>{
+ await assert.rejects(notionListPages({token:''}),/Notion integration token required/);
+ const seen=[];
+ const fetcher=async(url,init)=>{
+  seen.push({url,method:init.method,body:init.body,auth:init.headers.Authorization});
+  return {ok:true,json:async()=>({results:[
+   {object:'page',id:'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',properties:{Name:{type:'title',title:[{plain_text:'Bài thử nghiệm'}]}}},
+   {object:'database',id:'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'},
+   {object:'page',id:'cccccccc-cccc-cccc-cccc-cccccccccccc',archived:true}
+  ],has_more:false})};
+ };
+ const result=await notionListPages({token:'synthetic-private-token',fetcher});
+ assert.equal(result.pages.length,1);
+ assert.deepEqual(result.pages[0],{id:'a'.repeat(32),title:'Bài thử nghiệm'});
+ assert.equal(result.hasMore,false);
+ assert.equal(seen[0].method,'POST');
+ assert.ok(seen[0].url.endsWith('/v1/search'));
+ assert.equal(seen[0].auth,'Bearer synthetic-private-token');
+ assert.ok(!JSON.stringify(result).includes('synthetic-private-token'));
 });

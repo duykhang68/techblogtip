@@ -23,5 +23,11 @@ export function obsidianPreview({path,markdown,attachments=[]}){
  // but require explicit editorial review rather than silently flattening it.
  const complexMarkdown=/(^|\n)\s*(?:```|~~~|\|[^\n]*\||>\s| {4}\S|\d+\.\s)|\[[^\]]+\]\([^)]+\)|<\/?[a-z][^>]*>/im.test(body);
  const unclosedWiki=/!?\[\[|\]\]/.test(body);
- return {sourceType:'obsidian',sourceId,title:metadata.title||sourceId.split('/').at(-1).replace(/\.md$/i,''),body,metadata,attachments:assets,missingAttachments:assets.filter(a=>!known.has(a)),unresolvedLinks,requiresReview:assets.length>0||unresolvedLinks.length>0||needsFrontmatterReview||complexMarkdown||unclosedWiki};
+ // H1 is not represented as H1 by the current visual editor. Treat it as
+ // review-required rather than quietly converting it to an ordinary paragraph.
+ const unsupportedHeading=/(^|\n)\s*#{1}(?!#)\s|(^|\n)\s*#{4,6}\s/m.test(body);
+ const markdownImage=/!\[[^\]]*\]\([^)]+\)/.test(body);
+ const unsafeInlineStyle=/\*\*|(?<!\*)\*(?!\*)|~~|`/.test(body);
+ const rawFrontmatter=Object.entries(metadata).some(([key,value])=>key!=='title' || /[\[\]{}>&*!]|^['"]/.test(value));
+ return {sourceType:'obsidian',sourceId,title:metadata.title||sourceId.split('/').at(-1).replace(/\.md$/i,''),body,metadata,attachments:assets,missingAttachments:assets.filter(a=>!known.has(a)),unresolvedLinks,requiresReview:assets.length>0||unresolvedLinks.length>0||needsFrontmatterReview||complexMarkdown||unclosedWiki||unsupportedHeading||markdownImage||unsafeInlineStyle||rawFrontmatter};
 }
