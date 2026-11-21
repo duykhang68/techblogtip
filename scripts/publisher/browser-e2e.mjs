@@ -105,7 +105,7 @@ const server=createServer(async(req,res)=>{
     const input=await bodyOf(req);
     assert.equal(input.sourceId,draft.sourceId);
     assert.deepEqual(input.fileIds,['drive-image-001','drive-image-002','drive-image-003']);
-    const asset={filename:mediaFilename,path:'/media/tbt-'+'a'.repeat(16)+'/'+mediaFilename,
+    const asset={filename:mediaFilename,path:'/techblogtip/media/tbt-'+'a'.repeat(16)+'/'+mediaFilename,
       preview:'/api/media/'+draft.sourceId+'/'+mediaFilename,bytes:16000};
     if(!mediaItems.length)mediaItems.push(asset);
     return json(res,{items:[asset]});
@@ -124,7 +124,7 @@ const server=createServer(async(req,res)=>{
    if(req.method==='PUT'&&route==='/api/draft'){
     const input=await bodyOf(req);
     assert.equal(input.sourceId,draft.sourceId);
-    assert.match(input.fields.body,/!\[Ảnh nghiệm thu P8\]\(\/media\/tbt-[a-f0-9]{16}\/[a-f0-9]{32}\.webp\)/);
+    assert.match(input.fields.body,/!\[Ảnh nghiệm thu P8\]\(\/techblogtip\/media\/tbt-[a-f0-9]{16}\/[a-f0-9]{32}\.webp\)/);
     draft.body=input.fields.body;metrics.putDraft++;
     return json(res,{saved:true,snapshot:'fixture-snapshot',fields:input.fields});
    }

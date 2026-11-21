@@ -4,7 +4,7 @@
 - Authenticated same-origin Publisher endpoints: `GET /api/drive/files` lists image files from the pinned folder, `POST /api/media/import` imports 1–8 selected image IDs, `GET /api/media-library?sourceId=...` lists source-owned WebP, and `GET /api/media/:sourceId/:file.webp` serves authenticated preview bytes.
 - Images are downloaded by a server-only Drive read-only Google service-account token, converted by a Cloudflare Images binding and verified as RIFF/WEBP. The service account **must have Viewer access** to the private acceptance folder.
 - Content-addressed WebP is persisted in a per-source GitHub `media/tbt-...` branch for editorial review. Duplicate WebP bytes reuse the same path; paths are scoped to a system-issued source ID.
-- WYSIWYG Editor inserts Markdown `![alt](/media/tbt-.../<sha>.webp)` and serializes/restores safe images. Saving to the Sheet preserves the image reference. When a READY article is sent for review, the Publisher verifies every local referenced asset and copies the WebP to the same **Draft PR branch**, never directly to main.
+- WYSIWYG Editor inserts Markdown `![alt](/techblogtip/media/tbt-.../<sha>.webp)` and serializes/restores safe images. Saving to the Sheet preserves the image reference. When a READY article is sent for review, the Publisher verifies every local referenced asset and copies the WebP to the same **Draft PR branch**, never directly to main.
 - No client-side GitHub API, Google credentials, unattended merge, scheduled polling, or changes to the production blog delivery.
 
 ## Deployment prerequisites
