@@ -19,8 +19,17 @@ import { withBase } from '../../lib/content';
     const status = document.querySelector<HTMLElement>('#search-status');
     const results = document.querySelector<HTMLUListElement>('#search-results');
     const normalize = (s:string) => s.toLocaleLowerCase('vi').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
-    const items: SearchItem[] = await fetch(input?.dataset.indexUrl || '/search-index.json').then(r => { if (!r.ok) throw new Error('Không tải được danh sách tìm kiếm'); return r.json(); }).catch(() => []);
-    function renderResults() {
+    let items: SearchItem[] = [];
+    let pending: Promise<SearchItem[]> | undefined;
+    // Do not download the static search index until the visitor actually searches.
+    const ensureIndex = () => {
+      if (!pending) pending = fetch(input?.dataset.indexUrl || '/search-index.json')
+        .then(r => { if (!r.ok) throw new Error('Không tải được danh sách tìm kiếm'); return r.json() as Promise<SearchItem[]>; })
+        .then(data => { items = data; return data; })
+        .catch(error => { pending = undefined; throw error; });
+      return pending;
+    };
+    async function renderResults() {
       if (!input || !status || !results) return;
       const query = normalize(input.value.trim());
       const params = new URLSearchParams(window.location.search);
@@ -28,9 +37,17 @@ import { withBase } from '../../lib/content';
       history.replaceState(null,'',location.pathname+(params.toString()?'?'+params:''));
       results.replaceChildren();
       if (!query) { status.textContent='Nhập từ khóa để bắt đầu.'; return; }
+      status.textContent = 'Đang tìm kiếm…';
+      try { await ensureIndex(); }
+      catch {
+        if (query === normalize(input.value.trim())) status.textContent='Không tải được dữ liệu tìm kiếm. Vui lòng thử nhập lại.';
+        return;
+      }
+      // Ignore stale async responses after the visitor edits or clears the input.
+      if (query !== normalize(input.value.trim())) return;
       const tokens=query.split(/\s+/).filter(Boolean);
       const matches=items.filter(item=>tokens.every(token=>normalize([item.title,item.description,item.category,...item.tags].join(' ')).includes(token))).slice(0,30);
-      status.textContent=matches.length+' kết quả'+(items.length===0?' (dữ liệu tìm kiếm chưa tải được)':'');
+      status.textContent=matches.length+' kết quả';
       for (const item of matches) {
         const li=document.createElement('li');
         const a=document.createElement('a'); a.href=item.url;
@@ -40,6 +57,11 @@ import { withBase } from '../../lib/content';
         a.append(category,h,p); li.append(a); results.append(li);
       }
     }
-    if(input) { input.value=new URLSearchParams(location.search).get('q')||''; input.addEventListener('input',renderResults); renderResults(); }
+    if (input) {
+      input.value=new URLSearchParams(location.search).get('q')||'';
+      let debounce: ReturnType<typeof setTimeout> | undefined;
+      input.addEventListener('input', () => { if (debounce) clearTimeout(debounce); debounce=setTimeout(() => { void renderResults(); },120); });
+      if (input.value.trim()) void renderResults();
+    }
   </script>
 </BaseLayout>
