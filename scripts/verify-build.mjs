@@ -39,11 +39,19 @@ console.log('Verified HTML, sitemap, noindex, retired routes and exact SHA marke
 // Visualizer publication gate: every article with 2+ H2 sections must render its story map.
 import { readdirSync } from 'node:fs';
 const articlesDir=resolve('src/content/articles');
-const retained='techblogtip-100-diem-google-pagespeed-insights.md';
-const authored=readdirSync(articlesDir).filter(n=>n.endsWith('.md'));
-if(authored.length!==1 || authored[0]!==retained)throw new Error('Published sources must contain only '+retained);
-const builtSlugs=readdirSync(resolve('dist/bai-viet'),{withFileTypes:true}).filter(entry=>entry.isDirectory()).map(entry=>entry.name);
-if(builtSlugs.length!==1 || builtSlugs[0]!==retained.replace(/\.md$/,''))throw new Error('Built article routes contain removed posts');
+// An explicit new editorial request allows the GitHub CLI guide alongside the retained PageSpeed article.
+const approved=[
+  'techblogtip-100-diem-google-pagespeed-insights.md',
+  'xoa-nhieu-repository-github-cli-an-toan.md',
+].sort();
+const authored=readdirSync(articlesDir).filter(n=>n.endsWith('.md')).sort();
+if(JSON.stringify(authored)!==JSON.stringify(approved))
+  throw new Error('Published sources must match the two explicitly approved articles');
+const builtSlugs=readdirSync(resolve('dist/bai-viet'),{withFileTypes:true})
+  .filter(entry=>entry.isDirectory()).map(entry=>entry.name).sort();
+const expectedSlugs=approved.map(name=>name.replace(/\.md$/,'')).sort();
+if(JSON.stringify(builtSlugs)!==JSON.stringify(expectedSlugs))
+  throw new Error('Built article routes contain removed or missing posts');
 for(const name of readdirSync(articlesDir).filter(n=>n.endsWith('.md'))){
  const source=readFileSync(resolve(articlesDir,name),'utf8');
  if(/^draft:\s*true\s*$/m.test(source))continue;
@@ -54,6 +62,8 @@ for(const name of readdirSync(articlesDir).filter(n=>n.endsWith('.md'))){
  const markup=readFileSync(built,'utf8');
  if(sections>=2 && !markup.includes('data-auto-visualizer'))
   throw new Error('Visualizer gate: missing auto-generated story map for '+slug);
+ if(slug==='xoa-nhieu-repository-github-cli-an-toan' && !markup.includes('data-repo-deletion-flow'))
+  throw new Error('Visualizer gate: GitHub CLI article needs its safety flow');
  if(slug==='techblogtip-engineering-rules' && (!markup.includes('ENGINEERING CONTRACT') || !markup.includes('RELEASE TRUST CHAIN')))
   throw new Error('Visualizer gate: engineering rules diagrams not rendered');
 }
