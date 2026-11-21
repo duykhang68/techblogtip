@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {obsidianPreview} from '../workers/publisher/src/obsidian-import.mjs';
 
 test('plain notes may be edited without forced review',()=>{
- const out=obsidianPreview({path:'notes/hello.md',markdown:'# Xin chào'});
+ const out=obsidianPreview({path:'notes/hello.md',markdown:'## Xin chào'});
  assert.equal(out.requiresReview,false);
  assert.deepEqual(out.unresolvedLinks,[]);
 });
