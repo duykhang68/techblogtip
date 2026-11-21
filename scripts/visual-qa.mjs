@@ -176,12 +176,8 @@ try{
   if(w===390){
     try{
       const footerLinks=await page.locator('.site-footer nav a').allTextContents();
-      assert.deepEqual(footerLinks.map(s=>s.trim()),['Archive','Sitemap','Visual CMS'],'Footer must link Archive, Sitemap and Visual CMS');
-      const cmsHref=await page.locator('.site-footer nav a').last().getAttribute('href');
-      assert.match(cmsHref,/^(?:\/techblogtip)?\/tools\/cms\/$/,'Visual CMS footer href must respect the configured base path');
-      const cmsResponse=await page.request.get(base+'/tools/cms/');
-      assert.equal(cmsResponse.status(),200,'Visual CMS static entry page must load successfully');
-      assert.match(await cmsResponse.text(),/<title>Visual CMS/,'Visual CMS entry page title must be present');
+      assert.deepEqual(footerLinks.map(s=>s.trim()),['Archive','Sitemap'],'Footer must retain Archive and Sitemap only');
+      assert.equal(await page.locator('.site-footer nav a[href*="/tools/cms/"]').count(),0,'Retired CMS must not reappear in footer');
       const sitemapResponse=await page.goto(base+'/sitemap/',{waitUntil:'load'});
       assert.equal(sitemapResponse?.status(),200,'HTML sitemap must load successfully');
       assert.equal((await page.locator('#sitemap-title').textContent())?.trim(),'Sitemap');
