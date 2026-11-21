@@ -54,13 +54,13 @@ const essays = [['growth','성장과정 · Quá trình trưởng thành'],['pers
         <h2>Kết quả đã lưu trên Google Drive</h2>
         <p>Phần này chỉ hiển thị bản đã được Google Drive xác nhận lưu thành công. Không thể tải dữ liệu lưu vì API riêng tư chưa được triển khai.</p>
         <p id="saved-empty" class="kcv-empty">Chưa có bản CV đã lưu.</p>
-        <div class="kcv-actions"><button type="button" disabled aria-disabled="true">Export A4 PDF · chưa kích hoạt</button><button type="button" disabled aria-disabled="true">Export Excel .xlsx · chưa kích hoạt</button></div>
+        <div class="kcv-actions" id="kcv-export-actions"></div>
       </div>
       <div class="kcv-panel" id="temporary-review" hidden><h2>Xem bản nhập tạm thời (chưa lưu)</h2><pre id="temporary-json"></pre></div>
     </section>
     <p class="kcv-reference">Tham khảo cấu trúc từ <a href={withBase('/bai-viet/giai-ma-ho-so-samsung-heavy-industries-resume-han-quoc/')}>bài phân tích hồ sơ Hàn Quốc</a>. Mẫu lịch sử không phải biểu mẫu tuyển dụng chính thức hiện hành.</p>
   </div>
-  <script>import '../../../scripts/korea-cv-sync.ts'; import '../../../scripts/korea-cv-pdf.ts'; import '../../../scripts/korea-cv-xlsx.ts';</script>
+  <script>import '../../../scripts/korea-cv-sync.ts'; import '../../../scripts/korea-cv-pdf.ts'; import '../../../scripts/korea-cv-xlsx.ts'; import '../../../scripts/korea-cv-preview.ts';</script>
 </BaseLayout>
 <script>
   const q = (selector: string) => document.querySelector(selector) as HTMLElement | null;
