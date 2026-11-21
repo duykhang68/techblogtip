@@ -66,6 +66,15 @@
 - Long-form articles: an automatically generated visual map plus a topic-specific explanatory visual for architecture, comparisons or timelines. Visualization must explain content, not decorate it.
 - Branding page is a **reference**, not permission to alter unrelated pages.
 
+## Visual CMS Focus Workspace (editor UX)
+
+- The CMS is a functional editing tool, not a clone of Storyblok's layout. Learn content-management capabilities without copying another product's navigation or visual hierarchy.
+- Optimize the first viewport for authoring: a compact global action bar and document toolbar, central full-height scrollable canvas, and independently scrolling library/SEO inspector. Avoid redundant fake website chrome or decorative hero areas.
+- Keep Publish and Save clearly accessible; surface save/error feedback in the editor toolbar even if the library panel is hidden. The existing Google sign-in, optimistic conflict handling, autosave, preview, asset management, revisions and comments must remain intact.
+- On desktop allow independent collapse of library and inspector and a separate Focus mode for distraction-free editing. On tablet and mobile, use dismissible overlays rather than stacking panels above/below the canvas. Preserve Escape dismissal, visible toggle state, keyboard focus and accessible names.
+- Reuse TechBlogTip ink, paper, restrained terracotta and pastel tokens. Strong color is reserved for functional affordances, not decoration. Avoid horizontal document overflow at 390px and 1440px; do not require third-party UI dependencies.
+- CMS layout changes must update both `public/tools/cms/index.html` and `apps/visual-cms/src/ui.mjs` identically, pass inline-script syntax/unit tests and authenticated-layout-simulation visual QA (without real credentials).
+
 ## Page implementation contract for agents
 1. Read `AGENTS.md`, this Markdown contract, and actual CSS/layout components before coding.
 2. Reuse current tokens first; new tokens require documented names, light-background accessibility and a reason.
