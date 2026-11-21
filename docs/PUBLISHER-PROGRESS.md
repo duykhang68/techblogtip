@@ -33,7 +33,7 @@ theo exact SHA, merge theo FIFO. Chạy workflow Publisher DEV manual trên main
 với `deploy-dev-only`, kiểm tra `/health` SHA. Cloudflare staging không dùng
 để triển khai giao diện Admin Publisher.
 
-## Production Status — snapshot GitHub Actions trong Editorial Studio
+## Production Status — snapshot repository và hàng đợi PR trong Editorial Studio
 
 Ở **cuối trang Editorial Studio**, section phụ **Production Status** hiển thị
 snapshot chỉ đọc theo yêu cầu của biên tập viên đã đăng nhập Google.
@@ -41,15 +41,13 @@ snapshot chỉ đọc theo yêu cầu của biên tập viên đã đăng nhập
 **Cơ chế dữ liệu**
 - Nhấn **Lấy snapshot mới** gọi Worker `/api/production-status` (GET).
 - Worker lấy ref `main`, danh sách PR đang mở theo thời gian tạo (FIFO presentation),
-  GitHub Actions gần nhất và kiểm tra hai marker public:
+  và kiểm tra hai marker public:
   staging `/release.json` và Publisher DEV `/health`.
 - Toàn bộ GitHub API và token nằm **trên Worker**, trình duyệt chỉ gọi
   cùng origin. Không có cron, polling, push hook hoặc tự động phát hành.
 - Snapshot không được cache hoặc lưu vào localStorage; logout xóa dữ liệu UI.
-- Fine-grained GitHub publisher token có thể cần **Actions: Read** để hiện
-  đầy đủ lịch sử Actions; Worker thử fallback GET endpoint công khai của
-  repository (không có Authorization header). Nếu cả hai đều không đọc được, UI
-  hiện unavailable và không biến lỗi thành PASS. Không cần nới quyền token.
+- Không tải danh sách GitHub Actions gần nhất; trạng thái CI của từng bài vẫn
+  được xác minh qua chức năng **Cập nhật tiến độ** trên thẻ bài.
 
 **Phân biệt môi trường**
 - `MAIN`: commit ref hiện tại, không phải release.
@@ -65,3 +63,14 @@ không triển khai code và không sửa Google Sheets**.
 
 Khung được đặt sau editor, giao diện responsive. Nội dung từ GitHub được đưa
 vào DOM bằng `textContent`, đường dẫn được tạo/kiểm tra theo repository cố định.
+
+## Xóa bài khỏi Hàng đợi bài viết
+
+Bài chưa tạo PR/chưa xuất bản (IDEA, DRAFT, REVIEW hoặc READY) có nút **Xóa bài**.
+Người dùng xác nhận bằng hộp thoại có tên bài và nút hủy; Worker xác minh
+session, same-origin, bản chụp SHA-256 của hàng và quyền xóa trước khi ghi.
+Worker xóa toàn bộ ô A:O của hàng trong Sheet VN, không chỉ ẩn khỏi UI.
+Hàng vật lý được giữ trống để tránh dịch chuyển số hàng đang được các thao tác
+biên tập/xuất bản khác sử dụng. Bài có dữ liệu K:O hoặc đã PUBLISHED không thể
+xóa tại đây. Mỗi lần xóa được khóa theo source ID hoặc số hàng và xác minh
+Google Sheets không còn dữ liệu sau khi xóa.
