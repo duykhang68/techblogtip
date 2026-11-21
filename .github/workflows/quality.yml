@@ -22,6 +22,9 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '24'
+      - name: Verify Resume Google OAuth Client ID is configured (value hidden)
+        run: |
+          node -e "const id=process.env.PUBLIC_RESUME_GOOGLE_CLIENT_ID||''; if(!/^[A-Za-z0-9._-]+\\.apps\\.googleusercontent\\.com$/.test(id)){console.error('::error title=Resume OAuth not configured::Set PUBLIC_RESUME_GOOGLE_CLIENT_ID as a repository Actions variable with a valid Google OAuth Web Client ID.');process.exit(1)} console.log('Resume OAuth Client ID is configured (value not printed).')"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Validate, test and build
