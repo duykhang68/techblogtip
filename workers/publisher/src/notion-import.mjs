@@ -29,5 +29,5 @@ export async function notionPagePreview({id,token,fetcher=fetch}){
   cursor=batch.has_more?batch.next_cursor:null;
  }while(cursor);
  const title=Object.values(info.properties||{}).filter(v=>v.type==='title').flatMap(v=>v.title||[]).map(v=>v.plain_text||'').join('')||'Notion import';
- return {sourceType:'notion',sourceId:page,title,body:notionMarkdown(blocks),requiresReview:blocks.some(b=>b.has_children||!['heading_1','heading_2','heading_3','paragraph','bulleted_list_item','numbered_list_item','quote','code','divider'].includes(b.type))};
+ return {sourceType:'notion',sourceId:page,title,body:notionMarkdown(blocks),lastEditedTime:info.last_edited_time,requiresReview:blocks.some(b=>b.has_children||!['heading_2','heading_3','paragraph','bulleted_list_item','numbered_list_item'].includes(b.type))};
 }
