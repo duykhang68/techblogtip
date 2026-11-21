@@ -84,12 +84,17 @@ export async function importDriveFiles(env,scope,ids,fetcher=fetch){
  const list=await listDriveFiles(env,fetcher),allowed=new Set(list.files.map(x=>x.id));
  if(ids.some(id=>!allowed.has(id)))fail(403,'media_folder_denied','Selected media must belong to the configured Drive folder');
  const token=await getDriveToken(env,fetcher);
- const imported=[];
+ // Convert and validate the ENTIRE selection before mutating GitHub.
+ // A large image must not leave only half the selected batch imported.
+ const prepared=[];
  for(const id of ids){
   const {file,webp}=await driveImageWebp({id,token,images:env.IMAGES,fetcher});
   if(webp.byteLength>950000)fail(413,'webp_too_large','Converted WebP exceeds 950 KB GitHub storage safety limit');
   const filename=(await sha(webp)).slice(0,32)+'.webp';
-  const path=mediaPath(scope.tag,filename);
+  prepared.push({id,file,webp,filename,path:mediaPath(scope.tag,filename)});
+ }
+ const imported=[];
+ for(const {id,file,webp,filename,path} of prepared){
   const current=await githubRequest(env,'/contents/'+path+'?ref='+encodeURIComponent(scope.branch),{fetcher,missingOk:true});
   if(!current){
    await branchReady(env,scope,fetcher);
