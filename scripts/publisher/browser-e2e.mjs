@@ -209,7 +209,7 @@ try{
   const previewButton=editor.locator('#editor-preview-toggle');
   // The new tab must reuse the existing session cookie for protected draft data.
   await editor.waitForFunction(()=>document.querySelector('#editor-preview-toggle')?.disabled===false);
-  await editor.waitForFunction(()=>document.querySelector('.studio-status')?.textContent.includes('Bài đã khóa'));
+  await editor.waitForFunction(()=>document.querySelector('.studio-status')?.textContent.includes('Bản nháp đã tải'));
   assert.equal(await editor.locator('.studio-retry').isHidden(),true,'Healthy draft must not show retry action');
   assert.equal(await previewButton.isDisabled(),false);
   assert.equal(await editor.locator('#editor-body').getAttribute('contenteditable'),'false',
