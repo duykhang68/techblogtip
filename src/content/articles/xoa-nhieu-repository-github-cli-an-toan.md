@@ -73,8 +73,8 @@ if [[ "$ACTIVE_USER" != "$OWNER" ]]; then
 fi
 
 echo "=== DRY-RUN: kiểm tra các repository ==="
-for repo in "\${TO_DELETE[@]}"; do
-  for keep in "\${PROTECTED[@]}"; do
+for repo in "${TO_DELETE[@]}"; do
+  for keep in "${PROTECTED[@]}"; do
     if [[ "$repo" == "$keep" ]]; then
       echo "DỪNG: $repo thuộc danh sách được bảo vệ."
       exit 1
@@ -85,12 +85,12 @@ for repo in "\${TO_DELETE[@]}"; do
 done
 
 echo "SẼ GIỮ NGUYÊN:"
-for repo in "\${PROTECTED[@]}"; do
+for repo in "${PROTECTED[@]}"; do
   gh repo view "$OWNER/$repo" >/dev/null
   echo "GIỮ: $OWNER/$repo"
 done
 
-echo "Đã kiểm tra \${#TO_DELETE[@]} repository cần xóa."
+echo "Đã kiểm tra ${#TO_DELETE[@]} repository cần xóa."
 read -r -p "Gõ DELETE để thực sự xóa: " CONFIRM
 if [[ "$CONFIRM" != "DELETE" ]]; then
   echo "Đã hủy, không xóa repository nào."
@@ -100,7 +100,7 @@ fi
 # Chỉ yêu cầu quyền nhạy cảm sau khi đã xác nhận.
 gh auth refresh -s delete_repo
 
-for repo in "\${TO_DELETE[@]}"; do
+for repo in "${TO_DELETE[@]}"; do
   echo "Đang xóa $OWNER/$repo"
   gh repo delete "$OWNER/$repo" --yes
 done
@@ -111,17 +111,17 @@ echo "Đã chạy xong danh sách xóa."
 
 **Quan trọng:** đoạn script chỉ là ví dụ, **không xóa gì nếu bạn chưa chạy và xác nhận**. Một khi người dùng gõ *DELETE*, các repository trong danh sách sẽ thực sự bị xóa. Nếu một lệnh lỗi giữa chừng, Bash dừng lại và những repository đã xóa trước đó **không được khôi phục tự động**. Trong tình huống lỗi, hãy kiểm tra trạng thái từng repository và tự chạy lệnh thu hồi quyền ở phần dưới.
 
-Với repository **private có fork**, GitHub CLI có thể yêu cầu xác nhận bổ sung ngay cả khi dùng \`--yes\`; đây là hành vi bảo vệ khỏi việc kéo theo xóa các private fork. **Không tùy tiện thêm** \`--accept-cascading-deletion-of-private-forks\` nếu chưa hiểu hậu quả.
+Với repository **private có fork**, GitHub CLI có thể yêu cầu xác nhận bổ sung ngay cả khi dùng `--yes`; đây là hành vi bảo vệ khỏi việc kéo theo xóa các private fork. **Không tùy tiện thêm** `--accept-cascading-deletion-of-private-forks` nếu chưa hiểu hậu quả.
 
 ## Ba câu lệnh quan trọng cần hiểu
 
 | Lệnh | Tác dụng |
 | :-- | :-- |
-| \`gh auth refresh -s delete_repo\` | Xin scope cho phép xóa repository |
-| \`gh repo delete OWNER/REPO --yes\` | Xóa chính xác repository đã chỉ định, không phải toàn bộ tài khoản |
-| \`gh auth refresh --remove-scopes delete_repo\` | Gỡ scope xóa khỏi thông tin xác thực đang dùng |
+| `gh auth refresh -s delete_repo` | Xin scope cho phép xóa repository |
+| `gh repo delete OWNER/REPO --yes` | Xóa chính xác repository đã chỉ định, không phải toàn bộ tài khoản |
+| `gh auth refresh --remove-scopes delete_repo` | Gỡ scope xóa khỏi thông tin xác thực đang dùng |
 
-\`--yes\` chỉ bỏ qua xác nhận thông thường của lệnh xóa khi đã chỉ rõ OWNER/REPO; **nó không làm thao tác trở nên an toàn**. Các chốt kiểm tra trước đó mới là phần giảm thiểu sai sót.
+`--yes` chỉ bỏ qua xác nhận thông thường của lệnh xóa khi đã chỉ rõ OWNER/REPO; **nó không làm thao tác trở nên an toàn**. Các chốt kiểm tra trước đó mới là phần giảm thiểu sai sót.
 
 Nếu quy trình bị ngắt trước bước thu hồi quyền, hãy thực hiện lại:
 
