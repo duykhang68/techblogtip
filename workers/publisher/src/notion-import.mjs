@@ -31,12 +31,14 @@ export async function notionPagePreview({id,token,fetcher=fetch}){
  const headers={Authorization:'Bearer '+token,'Notion-Version':'2022-06-28'};
  async function get(path){const r=await fetcher('https://api.notion.com/v1/'+path,{headers,signal:AbortSignal.timeout(12000)});if(!r.ok)fail(502,'notion_read_failed','Notion page not shared with integration');return r.json();}
  const info=await get('pages/'+page);if(info.archived||info.in_trash)fail(422,'notion_archived','Archived Notion page');
- const blocks=[];let cursor;
+ const blocks=[];let cursor;const visitedCursors=new Set();
  do{
   const query=new URLSearchParams({page_size:'100',...(cursor?{start_cursor:cursor}:{})});
   const batch=await get('blocks/'+page+'/children?'+query);
   blocks.push(...(batch.results||[]));if(blocks.length>500)fail(413,'notion_too_large','Page exceeds 500 blocks');
+  if(batch.has_more&&!batch.next_cursor)fail(502,'notion_pagination_invalid','Missing pagination cursor');
   cursor=batch.has_more?batch.next_cursor:null;
+  if(cursor){if(visitedCursors.has(cursor))fail(502,'notion_pagination_cycle','Repeated pagination cursor');visitedCursors.add(cursor);}
  }while(cursor);
  const title=Object.values(info.properties||{}).filter(v=>v.type==='title').flatMap(v=>v.title||[]).map(v=>v.plain_text||'').join('')||'Notion import';
  return {sourceType:'notion',sourceId:page,title,body:notionMarkdown(blocks),lastEditedTime:info.last_edited_time,requiresReview:notionNeedsReview(blocks)};
