@@ -41,4 +41,15 @@ test('new endpoints are not unauthenticated public write APIs',async()=>{
  }
 });
 
-test('Studio v2 waits for actual protected DRAFT load and never infers success from status text',()=>{\n assert.match(EDITOR_JS,/techblogtip:editor-loading/);\n assert.match(EDITOR_JS,/techblogtip:editor-loaded/);\n assert.match(EDITOR_JS,/techblogtip:editor-load-error/);\n assert.match(EDITOR_JS,/AbortSignal\.timeout\(20000\)/);\n assert.match(STUDIO_EDITOR_JS,/addEventListener\('techblogtip:editor-loaded'/);\n assert.match(STUDIO_EDITOR_JS,/addEventListener\('techblogtip:editor-load-error'/);\n assert.match(STUDIO_EDITOR_JS,/studio-retry/);\n assert.match(STUDIO_EDITOR_JS,/if\(!loaded\)\{blocked=true/);\n assert.doesNotMatch(STUDIO_EDITOR_JS,/availability\.observe\(root/);\n assert.doesNotMatch(STUDIO_EDITOR_JS,/setInterval\(/);\n});\n
+test('Studio v2 waits for actual protected DRAFT load and never infers success from status text',()=>{
+ assert.match(EDITOR_JS,/techblogtip:editor-loading/);
+ assert.match(EDITOR_JS,/techblogtip:editor-loaded/);
+ assert.match(EDITOR_JS,/techblogtip:editor-load-error/);
+ assert.match(EDITOR_JS,/AbortSignal\.timeout\(20000\)/);
+ assert.match(STUDIO_EDITOR_JS,/addEventListener\('techblogtip:editor-loaded'/);
+ assert.match(STUDIO_EDITOR_JS,/addEventListener\('techblogtip:editor-load-error'/);
+ assert.match(STUDIO_EDITOR_JS,/studio-retry/);
+ assert.match(STUDIO_EDITOR_JS,/if\(!loaded\)\{blocked=true/);
+ assert.doesNotMatch(STUDIO_EDITOR_JS,/availability\.observe\(root/);
+ assert.doesNotMatch(STUDIO_EDITOR_JS,/setInterval\(/);
+});
