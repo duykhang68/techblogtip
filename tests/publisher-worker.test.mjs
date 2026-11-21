@@ -230,6 +230,27 @@ test('only authenticated editor can allocate system ID in column A',async()=>{
   assert.equal(second.data.sourceId,assigned.data.sourceId);
   assert.equal(f.state.calls.filter(c=>c.method==='PUT'&&c.url.includes('sheets.googleapis.com')).length,1);
 });
+test('authenticated markdown preview is read-only and never changes Google Sheets',async()=>{
+  const f=await fixture(),token=await f.sign();
+  const original=JSON.stringify(f.state.values);
+  const body='## Bằng chứng\\n\\n| Cột | Kết quả |\\n| --- | --- |\\n| M:O | Verified |';
+  const publicAttempt=await f.call('/api/preview','','POST',{body});
+  assert.equal(publicAttempt.status,401);
+  const crossOrigin=await f.call('/api/preview',token,'POST',{body},
+    {Origin:'https://untrusted.example'});
+  assert.equal(crossOrigin.status,403);
+  const result=await f.call('/api/preview',token,'POST',{body});
+  assert.equal(result.status,200);
+  assert.equal(result.data.format,'safe-markdown-preview-v1');
+  assert.ok(result.data.blocks.some(x=>x.type==='table'));
+  assert.equal(JSON.stringify(f.state.values),original);
+  assert.equal(f.state.calls.filter(c=>c.url.includes('sheets.googleapis.com')||
+     c.url.includes('api.github.com')).length,0);
+  const bad=await f.call('/api/preview',token,'POST',{body:'x'.repeat(100001)});
+  assert.equal(bad.status,422);
+  assert.equal(bad.data.error,'preview_invalid');
+});
+
 test('READY source can create exactly one GitHub Draft PR, with only K:L writeback',async()=>{
   const f=await fixture(),token=await f.sign();
   const assigned=await f.call('/api/allocate-id',token,'POST',{rowNumber:2});
