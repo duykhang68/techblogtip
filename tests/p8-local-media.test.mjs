@@ -69,3 +69,10 @@ test('P8 locked READY article exposes a revision action instead of pretending up
  assert.match(EDITOR_JS,/forkButton\.hidden=!locked/);
  assert.match(EDITOR_JS,/location\.assign\('\/editor\?sourceId='/);
 });
+
+
+test('P8 keeps advanced Markdown intact when appending an image',()=>{
+ assert.match(EDITOR_JS,/active\.complex\?\(active\.sourceBody/);
+ assert.match(EDITOR_JS,/active\.appendedMedia\.push/);
+ assert.match(EDITOR_JS,/active\.appendedMedia=\[\]/);
+});
