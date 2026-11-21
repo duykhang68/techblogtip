@@ -169,7 +169,7 @@ async function restore(v){if(!s.page||!editAllowed()||!confirm('Khôi phục phi
 async function comments(){if(!s.page)return;const area=$('inspector');area.replaceChildren();$('inspect-title').textContent='Thảo luận';$('inspect-meta').textContent='Ghi chú trang';try{const list=(await call('/api/pages/'+s.page.id+'/comments')).items||[];for(const c of list){const x=el('div','comment');x.append(el('strong',null,c.author),el('div',null,c.body),el('small',null,c.created_at));area.append(x);}const l=field('Bình luận mới','',()=>{},true);const input=l.querySelector('textarea');area.append(l,btn('Gửi bình luận',async()=>{try{await call('/api/pages/'+s.page.id+'/comments',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({body:input.value})});comments();}catch(e){info(e.message);}}),btn('Quay lại',inspector));}catch(e){info(e.message);}}
 function publishedLink(){
  if(!s.page||s.page.status!=='published'){info('Trang vẫn ở trạng thái Draft; hãy Xuất bản trước.');return;}
- window.open(API_BASE+'/p/'+encodeURIComponent(s.page.locale)+'/'+encodeURIComponent(s.page.slug),'_blank','noopener');
+ window.open(API_BASE+'/p/'+encodeURIComponent(s.page.publishedLocale||s.page.locale)+'/'+encodeURIComponent(s.page.publishedSlug||s.page.slug),'_blank','noopener');
 }
 function previewToggle(){s.preview=!s.preview;$('workspace').classList.toggle('preview-mode',s.preview);$('preview-toggle').textContent=s.preview?'Thoát xem trước':'Xem trước';}
 function showAuth(message){$('workspace').hidden=true;$('auth-panel').hidden=false;$('identity').textContent='Chưa đăng nhập';$('signout').hidden=true;$('auth-feedback').textContent=message||'Đăng nhập Google để tiếp tục.';}

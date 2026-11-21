@@ -25,7 +25,7 @@ async function bodyJson(req) {
 }
 async function getPage(db,id) {return db.prepare('SELECT * FROM cms_pages WHERE id=?').bind(id).first();}
 function publicPage(row) {
-  return {id:row.id,slug:row.slug,locale:row.locale,title:row.title,description:row.description,status:row.status,revision:row.revision,updatedAt:row.updated_at,publishedAt:row.published_at,blocks:JSON.parse(row.draft_json)};
+  return {id:row.id,slug:row.slug,locale:row.locale,title:row.title,description:row.description,status:row.status,revision:row.revision,updatedAt:row.updated_at,publishedAt:row.published_at,publishedSlug:row.published_slug,publishedLocale:row.published_locale,blocks:JSON.parse(row.draft_json)};
 }
 async function record(db,row,actor) {
   await db.prepare('INSERT INTO cms_revisions (page_id,revision,document_json,actor,created_at) VALUES (?,?,?,?,?)')
