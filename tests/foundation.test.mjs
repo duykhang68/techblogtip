@@ -40,9 +40,9 @@ test('staging stays Cloudflare while production is protected GitHub Pages',()=>{
  assert.doesNotMatch(pages,/cf deploy|CLOUDFLARE_API_TOKEN/);
 });
 
-test('demo post slugs are unique, no image format violation',()=>{
+test('only the explicitly retained PageSpeed article remains, with valid content assets',()=>{
  const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));
- assert.ok(names.length>=8);
+ assert.deepEqual(names, ['techblogtip-100-diem-google-pagespeed-insights.md']);
  assert.equal(new Set(names).size,names.length);
  for(const name of names){
   const data=read('src/content/articles/'+name);
