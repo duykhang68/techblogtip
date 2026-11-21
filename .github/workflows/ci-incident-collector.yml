@@ -1,4 +1,13 @@
 name: CI Incident Collector
+# The run title is evaluated even when a job-level `if` skips all runners.
+# Distinguish successful upstream runs from cancelled/skipped outcomes requiring review.
+run-name: >-
+  ${{ github.event_name != 'workflow_run' && format('BACKFILL · {0}', github.event_name)
+      || contains(fromJSON('["failure","timed_out","startup_failure","action_required"]'), github.event.workflow_run.conclusion)
+      && format('COLLECT INCIDENT · {0}: {1}', github.event.workflow_run.name, github.event.workflow_run.conclusion)
+      || github.event.workflow_run.conclusion == 'success'
+      && format('SKIP OK · {0} passed (no failure to collect)', github.event.workflow_run.name)
+      || format('SKIP REVIEW · {0}: {1} (untracked outcome)', github.event.workflow_run.name, github.event.workflow_run.conclusion) }}
 
 # Capture failures on completion. Backfill once at installation or on manual dispatch.
 # No periodic polling; do not run untrusted pull request code with a write token.

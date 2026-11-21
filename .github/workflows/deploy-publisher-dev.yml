@@ -1,4 +1,10 @@
 name: Deploy · TechBlogTip Publisher DEV (manual)
+run-name: >-
+  ${{ github.ref != 'refs/heads/main'
+      && format('SKIP · Publisher DEV requires main (got {0})', github.ref_name)
+      || inputs.confirm != 'deploy-dev-only'
+      && 'SKIP · Publisher DEV requires deploy-dev-only confirmation'
+      || format('Deploy Publisher DEV · SHA {0}', github.sha) }}
 on:
   workflow_dispatch:
     inputs:
