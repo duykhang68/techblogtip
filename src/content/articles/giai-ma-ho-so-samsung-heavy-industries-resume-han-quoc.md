@@ -128,3 +128,33 @@ Khi hiện đại hóa, hãy **giữ chiều sâu chuyên môn, bỏ dữ liệu
 ---
 
 **Nguồn chính:** tài liệu PDF sáu trang *삼성중공업 입사지원서* do người đọc cung cấp (trang 1–6). Toàn bộ timeline và số liệu dự án được dẫn dưới tư cách **nội dung ví dụ của tài liệu**, không phải nghiên cứu thực địa hay dữ liệu tuyển dụng hiện hành. Các bảng “framework”, “redesign” và “rubric” là phân tích và đề xuất của tác giả.
+
+<style>
+.resume-visual{margin:2.4rem 0;padding:clamp(1rem,3vw,1.6rem);border:1px solid #dfe7e5;border-radius:22px;background:linear-gradient(135deg,#f2f8ff,#fcf7ff 55%,#f3fff9);box-shadow:0 14px 30px rgba(32,63,90,.055);color:#21364a;overflow:hidden}
+.resume-visual *{box-sizing:border-box}
+.resume-visual-title{font:700 .76rem/1.5 system-ui,sans-serif;letter-spacing:.11em;color:#38516e;margin-bottom:1rem;text-align:left}
+.resume-visual figcaption{font:400 .8rem/1.6 system-ui,sans-serif;color:#58677b;margin-top:1.05rem;text-align:left}
+.resume-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem}
+.resume-steps>div{min-width:0;border:1px solid #dce7f1;background:#fff;border-radius:13px;padding:.95rem;display:flex;flex-direction:column;gap:.35rem}
+.resume-steps span{font:800 1.6rem/1 system-ui,sans-serif;color:#6e8ec8}
+.resume-steps strong{font:700 .88rem/1.45 system-ui,sans-serif;overflow-wrap:break-word;text-align:left}
+.resume-steps small{font:400 .78rem/1.5 system-ui,sans-serif;color:#52657a;text-align:left}
+.resume-timeline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;position:relative}
+.resume-timeline>div{padding:1rem;border-radius:14px;background:#fff;border-top:5px solid #9ecbd7;min-width:0}
+.resume-timeline>div:nth-child(2){border-top-color:#e8bf94}.resume-timeline>div:nth-child(3){border-top-color:#aeafdc}
+.resume-timeline time{display:block;font:700 .78rem/1.5 system-ui,sans-serif;color:#5d7387}
+.resume-timeline strong{display:block;margin:.45rem 0;font:750 1.01rem/1.45 system-ui,sans-serif;text-align:left}
+.resume-timeline p{font:400 .87rem/1.65 system-ui,sans-serif;margin:0!important;text-align:left!important;hyphens:none!important}
+.resume-framework{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.5rem}
+.resume-framework>div{display:flex;flex-direction:column;gap:.5rem;padding:1rem .8rem;background:#fff;border:1px solid #e1e6f2;border-radius:13px;min-width:0;text-align:left}
+.resume-framework>div:nth-child(1){background:#e5f5ff}.resume-framework>div:nth-child(2){background:#f0ecff}.resume-framework>div:nth-child(3){background:#fff1dd}.resume-framework>div:nth-child(4){background:#e6f7eb}
+.resume-framework span{font:750 .67rem/1.4 system-ui,sans-serif;color:#506278;letter-spacing:.04em}
+.resume-framework b{font:750 .93rem/1.35 system-ui,sans-serif}.resume-framework small{font:400 .78rem/1.5 system-ui,sans-serif}
+.resume-redesign{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.resume-old,.resume-new{display:flex;flex-direction:column;gap:.6rem;background:#fff;padding:1rem;border-radius:16px;border:1px solid #e3e8ed;min-width:0;text-align:left}
+.resume-old b,.resume-new b{color:#365575;font:800 .85rem/1.4 system-ui,sans-serif}
+.resume-old span,.resume-new span{padding:.5rem .7rem;border-radius:8px;background:#f3f5f8;font:500 .84rem/1.5 system-ui,sans-serif;text-align:left}
+.resume-new span{background:#e8f6ef}.resume-new em{font:800 .76rem/1.45 system-ui,sans-serif;color:#386b59;margin-top:.5rem;font-style:normal}
+@media(max-width:680px){.resume-steps,.resume-timeline{grid-template-columns:1fr 1fr}.resume-framework{grid-template-columns:1fr 1fr}.resume-visual{margin:1.7rem 0}.resume-redesign{grid-template-columns:1fr}}
+@media(max-width:420px){.resume-steps,.resume-timeline{grid-template-columns:1fr}.resume-framework{grid-template-columns:1fr 1fr}}
+</style>
