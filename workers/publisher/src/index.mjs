@@ -84,7 +84,7 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         .replace('</main>',EDITOR_HTML+PRODUCTION_HTML+'</main>')
         .replace('</body>','<script src="/editor.js" defer></script><script src="/production-status.js" defer></script></body>'),
         'text/html; charset=utf-8',{
-        'Content-Security-Policy':"default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        'Content-Security-Policy':"default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: https://*.googleusercontent.com https://duykhang68.github.io; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
       });
     }
     if(request.method==='GET'&&path==='/admin.js')
