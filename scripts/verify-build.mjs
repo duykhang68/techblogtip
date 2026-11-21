@@ -39,9 +39,9 @@ import { readdirSync } from 'node:fs';
 const articlesDir=resolve('src/content/articles');
 for(const name of readdirSync(articlesDir).filter(n=>n.endsWith('.md'))){
  const source=readFileSync(resolve(articlesDir,name),'utf8');
- if(/^draft:\\s*true\\s*$/m.test(source))continue;
- const sections=[...source.matchAll(/^##\\s+.+$/gm)].length;
- const slug=name.replace(/\\.md$/,'');
+ if(/^draft:\s*true\s*$/m.test(source))continue;
+ const sections=[...source.matchAll(/^##\s+.+$/gm)].length;
+ const slug=name.replace(/\.md$/,'');
  const built=resolve('dist/bai-viet',slug,'index.html');
  if(!existsSync(built))throw new Error('Visualizer gate: missing built article '+slug);
  const markup=readFileSync(built,'utf8');
