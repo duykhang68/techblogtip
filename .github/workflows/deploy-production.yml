@@ -75,7 +75,7 @@ jobs:
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
       - name: Verify live GitHub Pages release SHA, canonical and public robots
         run: node scripts/publisher/verify-production-deploy.mjs
-      - name: Reconcile verified Sheets M:O (when service secret is provisioned)
+      - name: Verify live sitemap, robots, canonical and sampled articles\n        run: node scripts/verify-live-sitemap.mjs\n      - name: Reconcile verified Sheets M:O (when service secret is provisioned)
         if: ${{ env.TBT_PRODUCTION_SYNC_TOKEN != '' }}
         run: node scripts/publisher/reconcile-from-actions.mjs
       - name: Explain skipped Sheets writeback when sync token is missing
