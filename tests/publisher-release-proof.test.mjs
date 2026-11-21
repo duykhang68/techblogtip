@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { webcrypto, generateKeyPairSync } from 'node:crypto';
 import { normalizeSheetRow } from '../scripts/publisher/sheets.mjs';
 import { branchFor } from '../workers/publisher/src/github-api.mjs';
@@ -196,4 +197,12 @@ test('event-driven sync verifies a trusted workflow run and writes bounded batch
  await assert.rejects(requireProductionSync(new Request(request.url,{
   method:'POST',headers:{Authorization:'Bearer invalid'}
  }),f.env,{runId:123,releaseSha:mainSha,cursor:1},f.fetcher),{code:'release_sync_denied'});
+});
+
+test('production run-name preserves trusted callback identity on main',()=>{
+ const workflow=readFileSync(new URL('../.github/workflows/deploy-production.yml',import.meta.url),'utf8');
+ const mainTitle=workflow.split('run-name: >-')[1]?.split('\non:')[0]||'';
+ assert.match(mainTitle,/github\.ref == 'refs\/heads\/main'/);
+ assert.match(mainTitle,/&& 'Deploy · GitHub Pages production'/);
+ assert.match(mainTitle,/SKIP · production requires main/);
 });

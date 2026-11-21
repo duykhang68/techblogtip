@@ -1,7 +1,9 @@
 name: Deploy · GitHub Pages production
+# IMPORTANT: Publisher Worker validates workflow_runs.name exactly for M:O writeback.
+# Keep main branch title equal to workflow name; only non-main skips get a custom title.
 run-name: >-
   ${{ github.ref == 'refs/heads/main'
-      && format('Deploy production · SHA {0}', github.sha)
+      && 'Deploy · GitHub Pages production'
       || format('SKIP · production requires main (got {0})', github.ref_name) }}
 on:
   push:

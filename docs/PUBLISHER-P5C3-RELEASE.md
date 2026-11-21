@@ -63,3 +63,7 @@ The trusted post-GitHub-Pages-deployment route POST /api/reconcile-production is
 **Safety:** staging, Publisher DEV, unmerged PRs, stale editorial revisions, missing CI evidence, missing production domain, wrong source ID, bad canonical, non-indexable content, incorrect ancestry, and conflicting release metadata all fail closed. The old test PR #35 stays closed and must never be merged.
 
 See also docs/PUBLISHER-PROGRESS.md for six-stage Editor UI.
+
+## Workflow name is part of the production callback contract
+
+Publisher Worker requires the GitHub Actions `workflow_runs.name` to be **exactly** `Deploy · GitHub Pages production` before trusted M:O writeback. GitHub `run-name` overrides that API field. On `main` the workflow must preserve the exact trusted title; non-main manual dispatches can still display `SKIP · production requires main`. A dynamic main title such as `Deploy production · SHA ...` causes the Worker to reject the callback with `403 release_sync_untrusted`, even after Pages successfully deploys. The regression test in `tests/publisher-release-proof.test.mjs` protects this contract.
