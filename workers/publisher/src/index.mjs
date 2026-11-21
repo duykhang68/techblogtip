@@ -11,7 +11,7 @@ import { parsePublisherPreview } from './markdown-preview.mjs';
 import { notionPagePreview } from './notion-import.mjs';
 import { obsidianPreview } from './obsidian-import.mjs';
 import { driveImageMetadata } from './drive-import.mjs';
-import { mediaScope,listDriveFiles,driveThumbnail,libraryItems,importDriveFiles,serveDraftMedia } from './media-library.mjs';
+import { mediaScope,listDriveFiles,driveThumbnail,libraryItems,importDriveFiles,importLocalFiles,serveDraftMedia } from './media-library.mjs';
 import { getSheetsToken } from './google-api.mjs';
 import { withSourceWriteLock,withRowWriteLock } from './source-lock.mjs';
 import { EDITOR_HTML,EDITOR_JS,EDITOR_CSS,EDITOR_IMPORT_CSS,EDITOR_WORKSPACE_CSS } from './editor-ui.mjs';
@@ -218,6 +218,13 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
         return respond(await withSourceWriteLock(env,data.sourceId,async()=>{
           const scope=await mediaScope(env,data.sourceId,fetcher,{editable:true});
           return importDriveFiles(env,scope,data.fileIds,fetcher);
+        }));
+      }
+      if(request.method==='POST'&&path==='/api/media/upload'){
+        const data=await jsonRequest(request,17500000);
+        return respond(await withSourceWriteLock(env,data.sourceId,async()=>{
+          const scope=await mediaScope(env,data.sourceId,fetcher,{editable:true});
+          return importLocalFiles(env,scope,data.files,fetcher);
         }));
       }
       if(request.method==='GET'&&path.startsWith('/api/media/')){
