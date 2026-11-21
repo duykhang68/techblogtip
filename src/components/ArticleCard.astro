@@ -15,15 +15,14 @@ const eagerCover = position === 1;
     {coverSrc
       ? <>
           <img
-            src={eagerCover ? coverSrc : undefined}
-            data-defer-src={!eagerCover ? coverSrc : undefined}
+            src={coverSrc}
             alt={article.data.coverAlt || ''}
             width="640" height="640"
             loading={eagerCover ? 'eager' : 'lazy'}
             decoding="async"
             fetchpriority={eagerCover ? 'high' : 'low'}
           />
-          {!eagerCover && <noscript><img src={coverSrc} alt={article.data.coverAlt || ''} width="640" height="640" loading="lazy" decoding="async" /></noscript>}
+
         </>
       : <div class:list={['fallback-art', color]} aria-hidden="true"><span>{String(position).padStart(2,'0')}</span><b>{article.data.category}</b><i>TECHBLOGTIP</i></div>}
   </a>
