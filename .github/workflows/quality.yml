@@ -31,6 +31,8 @@ jobs:
           node -e "const r=require('./dist/release.json');if(r.sha!==process.env.SOURCE_SHA) process.exit(1);"
       - name: Browser visual QA · mobile / desktop (no browser download)
         run: npm run qa:visual
+      - name: Isolated Publisher browser E2E · synthetic Google session (no real services)
+        run: npm run qa:publisher
       - name: Validate GitHub Pages /techblogtip/ release build (no deploy)
         env:
           DEPLOY_TARGET: github-pages
