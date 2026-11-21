@@ -27,6 +27,11 @@ const jsonLd = {
     <meta name="robots" content={indexable ? 'index,follow' : 'noindex,nofollow'} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- A font is an enhancement, not a render-critical dependency; CSS uses system fallback. -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" /></noscript>
     <link rel="alternate" type="application/rss+xml" title="TechBlogTip RSS" href={withBase('/rss.xml')} />
     <meta property="og:site_name" content="TechBlogTip" />
     <meta property="og:type" content="website" />
@@ -42,5 +47,6 @@ const jsonLd = {
     <SiteHeader />
     <main id="content"><slot /></main>
     <SiteFooter />
+    <script>import '../scripts/deferred-media.ts';</script>
   </body>
 </html>

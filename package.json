@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "astro dev --host 0.0.0.0",
-    "build": "astro build && node scripts/write-release.mjs",
+    "build": "astro build && node scripts/defer-article-media.mjs && node scripts/write-release.mjs",
     "preview": "astro preview --host 0.0.0.0",
     "check": "astro check",
     "lint:content": "node scripts/validate-content.mjs",
