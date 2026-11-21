@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light">
+<title>G-CMS · TechBlogTip</title>
+<style>
+:root{font-family:'Be Vietnam Pro',system-ui,-apple-system,sans-serif;--ink:#191b20;--muted:#667078;--paper:#fbfaf8;--line:#e6e5e1;--accent:#ad492c;--soft:#f3f1eb;--mint:#d5efd9;--sky:#d6e9fb;--lav:#dfdcfa;--peach:#f7d8ca;color:var(--ink);background:var(--paper)}
+*{box-sizing:border-box}body{margin:0;font-size:14px;line-height:1.55}button,input,textarea,select{font:inherit}button{cursor:pointer}a{color:inherit}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}.muted,.hint{color:var(--muted)}.hint{font-size:12px}.eyebrow{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:800}.top{position:sticky;top:0;z-index:5;min-height:60px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:8px clamp(12px,2vw,28px)}
+.logo{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800;text-decoration:none}.mark{display:grid;place-items:center;background:var(--ink);color:#fff;width:34px;height:34px;border-radius:9px}.top .spacer{flex:1}.top-status{color:var(--muted);font-size:12px}.layout{display:grid;grid-template-columns:224px minmax(0,1fr);min-height:calc(100dvh - 60px);max-width:1600px;margin:auto}
+.rail{background:#fff;border-right:1px solid var(--line);padding:18px 12px}.rail p{padding:0 11px}.nav{display:grid;gap:3px}.nav button{width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border:0;border-radius:9px;background:transparent;color:var(--ink);min-height:44px}.nav button:hover{background:var(--soft)}.nav button[aria-current=page]{background:var(--peach);font-weight:750}.nav small{color:var(--muted)}
+.main{min-width:0;padding:clamp(14px,2.5vw,34px)}.mainhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:15px;margin-bottom:20px}.mainhead h1{margin:0;font-size:clamp(20px,2.2vw,28px);line-height:1.3;overflow-wrap:normal}.mainhead p{margin:4px 0 0;color:var(--muted)}
+.btn{min-height:42px;border:1px solid #cfcac4;border-radius:9px;background:#fff;padding:9px 14px;color:var(--ink)}.btn:hover{background:var(--soft)}.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}.btn.warn{color:#8b3523;border-color:#e8c6bc}.btn:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:clamp(14px,2vw,22px);margin-bottom:16px;min-width:0}.panel h2{font-size:17px;margin:0 0 10px}.panel h3{font-size:15px;margin:0 0 8px}.panel p{margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.metric{padding:18px;background:#fff;border:1px solid var(--line);border-radius:10px}.metric strong{display:block;font-size:30px;line-height:1.2;font-variant-numeric:tabular-nums}.metric span{font-size:12px;color:var(--muted)}
+.stack{display:grid;gap:12px}.row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.content-list{display:grid;gap:8px}.item{border:1px solid var(--line);border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;min-width:0}.item h3{font-size:14px;margin:0;overflow-wrap:normal}.item p{margin:3px 0 0;font-size:12px;color:var(--muted)}.item .btn{white-space:nowrap}.empty{border:1px dashed #cfcac4;background:#fff;border-radius:10px;padding:24px;color:var(--muted)}
+.badge{display:inline-flex;border-radius:5px;background:var(--soft);font-size:11px;font-weight:700;padding:2px 7px;margin-left:5px}.badge.published{background:var(--mint)}.badge.scheduled{background:var(--sky)}.badge.draft{background:var(--lav)}
+label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}input:not([type=file]),textarea,select{border:1px solid #cacac6;background:#fff;color:var(--ink);border-radius:8px;padding:10px 11px;min-height:43px;width:100%}textarea{resize:vertical;min-height:90px}input:disabled{background:var(--soft)}.field{min-width:0}.field p{font-size:12px;color:var(--muted);margin-top:4px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.wide{grid-column:1/-1}.editor{display:grid;grid-template-columns:minmax(0,1fr) 284px;gap:16px;align-items:start}.editor .panel{margin-bottom:0}.inspector{position:sticky;top:74px}.block{border:1px solid var(--line);padding:12px;border-radius:9px;margin:9px 0;background:#fff}.block .block-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}.block textarea{min-height:92px}.block .controls{display:flex;gap:5px;flex-wrap:wrap}.small-btn{min-height:35px;border:1px solid var(--line);border-radius:7px;background:var(--soft);padding:4px 9px}.editor textarea{line-height:1.6}.note{font-size:12px;line-height:1.65;background:var(--soft);border-left:3px solid var(--accent);padding:11px 14px;border-radius:5px}.inline-links a{color:var(--accent)}.statusline{font-size:13px;min-height:23px;margin:9px 0;color:var(--muted)}.statusline.error{color:#9e2b22}.statusline.ok{color:#286e43}
+.help-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.help-grid article{padding:15px;border:1px solid var(--line);border-radius:9px;background:#fff}.help-grid h3{margin:0 0 6px;font-size:14px}.help-grid p{font-size:12px;color:var(--muted);margin:0}.filterbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:15px}.filterbar input{max-width:300px}.filterbar select{max-width:170px}.login{max-width:630px;margin:0 auto}.login h2{margin:0 0 8px;font-size:20px}.login #signin{min-height:46px;margin:15px 0}#toast{position:fixed;bottom:18px;right:18px;z-index:10;background:#fff;border:1px solid var(--line);padding:10px 14px;border-radius:9px;box-shadow:0 6px 30px #191b201b;max-width:320px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.rail{border-right:0;border-bottom:1px solid var(--line);padding:7px 12px}.rail>.eyebrow,.rail>.hint{display:none}.nav{display:flex;overflow-x:auto;scrollbar-width:thin}.nav button{flex:none;width:auto;padding:9px 12px}.main{padding:15px}.editor{grid-template-columns:1fr}.inspector{position:static}}
+@media(max-width:530px){.top-status{display:none}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.form-grid,.help-grid{grid-template-columns:1fr}.item{align-items:flex-start;flex-direction:column}.item .btn{align-self:flex-start}.mainhead{align-items:flex-start}.top{gap:6px}.top .btn{padding:8px}.metric{padding:13px}.metric strong{font-size:24px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="top">
+<a class="logo" href="/techblogtip/"><span class="mark">G</span><span>G-CMS</span></a>
+<span class="top-status" id="connection">Đang kiểm tra kết nối…</span>
+<span class="spacer"></span>
+<a class="btn" href="/techblogtip/">Về blog</a>
+<button class="btn" type="button" id="signout" hidden>Đăng xuất</button>
+</header>
+<div class="layout">
+<aside class="rail" aria-label="Điều hướng G-CMS">
+<p class="eyebrow">Quản trị nội dung</p>
+<nav class="nav" id="navigation" aria-label="Các khu vực quản trị">
+<button type="button" data-view="overview" aria-current="page">Tổng quan</button>
+<button type="button" data-view="posts">Bài viết</button>
+<button type="button" data-view="pages">Trang</button>
+<button type="button" data-view="media">Thư viện</button>
+<button type="button" data-view="members">Thành viên</button>
+<button type="button" data-view="newsletters">Newsletter</button>
+<button type="button" data-view="tiers">Gói hội viên</button>
+<button type="button" data-view="analytics">Phân tích</button>
+<button type="button" data-view="integrations">Tích hợp</button>
+<button type="button" data-view="settings">Thiết lập</button>
+</nav>
+<p class="hint">Thiết kế độc lập · Tham khảo Ghost Custom</p>
+</aside>
+<main class="main" id="main">
+<section class="login panel" id="auth-panel">
+<h2>Đăng nhập để quản trị G-CMS</h2>
+<p class="muted">Dữ liệu chỉ được truy cập sau khi Google xác nhận danh tính và Worker xác minh quyền trên máy chủ. Không có tài khoản mẫu.</p>
+<div id="signin"></div><p class="statusline" id="auth-message" role="status">Đang tải cấu hình đăng nhập…</p>
+</section>
+<section id="app" hidden>
+<header class="mainhead"><div><h1 id="view-title">Tổng quan</h1><p id="view-subtitle">Dữ liệu vận hành được đọc trực tiếp từ G-CMS API.</p></div><div class="actions" id="view-actions"></div></header>
+<p id="feedback" class="statusline" role="status" aria-live="polite"></p>
+<div id="view-body"></div>
+</section>
+</main>
+</div>
+<div id="toast" hidden role="status" aria-live="polite"></div>
+<script>
+'use strict';
+const API_BASE='https://techblogtip-gcms.tamsudev-com.workers.dev';
+const TOKEN_KEY='gcms.google.id-token';
+const q=id=>document.getElementById(id);
+const state={token:sessionStorage.getItem(TOKEN_KEY)||'',user:null,view:'overview',editor:null,items:[]};
+const titles={overview:'Tổng quan',posts:'Bài viết',pages:'Trang',media:'Thư viện',members:'Thành viên',newsletters:'Newsletter',tiers:'Gói hội viên',analytics:'Phân tích',integrations:'Tích hợp',settings:'Thiết lập'};
+function node(tag,attributes={},children=[]) {
+ const element=document.createElement(tag);
+ for(const [name,value] of Object.entries(attributes)) {
+  if(name==='text')element.textContent=String(value);
+  else if(name==='class')element.className=value;
+  else if(name==='onclick')element.addEventListener('click',value);
+  else if(name==='value')element.value=value;
+  else element.setAttribute(name,value);
+ }
+ for(const child of children) element.append(child instanceof Node?child:document.createTextNode(String(child)));
+ return element;
+}
+const button=(label,handler,kind='btn')=>node('button',{type:'button',class:kind,text:label,onclick:handler});
+function clear(element){element.replaceChildren();}
+function say(message,kind=''){q('feedback').textContent=message;q('feedback').className='statusline '+kind;}
+function toast(message){const target=q('toast');target.textContent=message;target.hidden=false;setTimeout(()=>{target.hidden=true},3300);}
+async function api(path,options={}) {
+ const headers={...(options.headers||{})};
+ if(state.token)headers.Authorization='Bearer '+state.token;
+ if(options.body && typeof options.body!=='string' && !(options.body instanceof ArrayBuffer)){
+  headers['Content-Type']='application/json';options.body=JSON.stringify(options.body);
+ }
+ const response=await fetch(API_BASE+path,{...options,headers,mode:'cors',cache:'no-store'});
+ let body;
+ try{body=await response.json();}catch{throw Error('Phản hồi API không hợp lệ');}
+ if(!response.ok)throw Error(body.error||'HTTP '+response.status);
+ return body;
+}
+function presentView(name){
+ state.view=name;state.editor=null;
+ for(const b of document.querySelectorAll('[data-view]')) {
+  if(b.dataset.view===name)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
+ }
+ q('view-title').textContent=titles[name];q('view-subtitle').textContent=name==='overview'?'Số liệu thực từ cơ sở dữ liệu G-CMS.':'Không sử dụng dữ liệu hoặc trạng thái giả lập.';
+ clear(q('view-actions'));clear(q('view-body'));say('');
+ render().catch(e=>say('Không thể tải dữ liệu: '+e.message,'error'));
+}
+async function render(){
+ switch(state.view){
+ case 'overview':return overview();
+ case 'posts':case 'pages':return entries();
+ case 'members':return members();
+ case 'newsletters':return catalog('newsletters');
+ case 'tiers':return catalog('tiers');
+ case 'media':return media();
+ case 'analytics':return guide('Phân tích nâng cao','Chưa triển khai hệ thống ghi nhận lượt xem, nguồn đăng ký, chuyển đổi và dữ liệu newsletter. Không hiển thị số liệu tự tạo.');
+ case 'integrations':return guide('Admin API · Webhooks · Tích hợp','G-CMS có Content API công khai và Admin API có xác thực. Tích hợp webhook outbound, Zapier, n8n, Stripe và gửi email chưa được kích hoạt.');
+ case 'settings':return settings();
+ }
+}
+function card(title,description){
+ return node('article',{class:'panel'},[node('h2',{text:title}),node('p',{class:'muted',text:description})]);
+}
+async function overview(){
+ const data=await api('/api/stats');
+ const grid=node('div',{class:'grid'});
+ for(const [key,label] of [['posts','Bài viết'],['pages','Trang'],['drafts','Bản nháp'],['published','Đã xuất bản'],['scheduled','Đang lên lịch'],['members','Thành viên'],['newsletters','Newsletter'],['tiers','Gói hội viên']]){
+  grid.append(node('article',{class:'metric'},[node('strong',{text:data[key]||0}),node('span',{text:label})]));
+ }
+ q('view-body').append(grid);
+ q('view-body').append(node('div',{class:'panel',style:'margin-top:16px'},[
+  node('h2',{text:'Phạm vi triển khai thực tế'}),
+  node('p',{text:'Bản nền tảng có quản trị bài viết/trang, lịch sử phiên bản, SEO, Google OAuth, thành viên cơ bản, định nghĩa newsletter/gói hội viên, thư viện ảnh và API headless. Không đồng nghĩa với bộ Ghost Custom hoàn chỉnh.'}),
+  node('p',{class:'hint',text:'Xuất bản ở đây tạo bản nội dung trong G-CMS API; bài viết chưa tự động xuất hiện trên Astro blog nếu chưa triển khai cầu nối xuất bản.'})
+ ]));
+}
+function itemRow(title,meta,action){
+ return node('article',{class:'item'},[node('div',{},[node('h3',{text:title}),node('p',{text:meta})]),action]);
+}
+async function entries(){
+ const type=state.view==='posts'?'post':'page';
+ const data=await api('/api/entries?type='+type);state.items=data.items||[];
+ const actions=q('view-actions');
+ if(state.user.role!=='reviewer')actions.append(button('+ Tạo '+(type==='post'?'bài viết':'trang'),()=>editEntry(null,type),'btn primary'));
+ const toolbar=node('div',{class:'filterbar'},[
+  node('input',{type:'search',placeholder:'Tìm theo tiêu đề hoặc slug','aria-label':'Tìm nội dung',id:'entry-query'}),
+  node('select',{'aria-label':'Lọc trạng thái',id:'entry-status'},[
+   node('option',{value:'',text:'Tất cả trạng thái'}),node('option',{value:'draft',text:'Bản nháp'}),
+   node('option',{value:'scheduled',text:'Đã hẹn lịch'}),node('option',{value:'published',text:'Đã xuất bản'})
+  ])
+ ]);
+ const list=node('div',{class:'content-list'});
+ const update=()=>{
+  clear(list);
+  const term=q('entry-query').value.trim().toLowerCase(),status=q('entry-status').value;
+  const filtered=state.items.filter(e=>(!status||e.status===status)&&(!term||(e.title+' '+e.slug).toLowerCase().includes(term)));
+  if(!filtered.length)list.append(node('div',{class:'empty',text:'Không có nội dung phù hợp. Dữ liệu mới sẽ hiển thị ở đây.'}));
+  for(const e of filtered){
+   const meta=e.slug+' · '+e.status+' · '+new Date(e.updatedAt).toLocaleString('vi-VN');
+   list.append(itemRow(e.title,meta,button('Mở',()=>editEntry(e.id,type))));
+  }
+ };
+ toolbar.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',update));
+ q('view-body').append(toolbar,list);update();
+}
+function field(label,id,value='',hint='',type='text'){
+ const wrap=node('div',{class:'field'}),control=type==='textarea'?node('textarea',{id,value}):node('input',{id,type,value});
+ if(type==='textarea')control.value=value;
+ wrap.append(node('label',{for:id,text:label}),control);
+ if(hint)wrap.append(node('p',{text:hint}));
+ return wrap;
+}
+function collectBlocks(){
+ return [...q('block-list').querySelectorAll('.block')].map(block=>({
+  type:block.querySelector('select').value,
+  text:block.querySelector('textarea').value.trim()
+ })).filter(block=>block.type==='divider'||block.text);
+}
+function addBlock(type='paragraph',value=''){
+ const list=q('block-list'),wrap=node('section',{class:'block'});
+ const select=node('select',{'aria-label':'Loại khối nội dung'});
+ for(const [key,label] of [['paragraph','Đoạn văn'],['heading','Tiêu đề'],['quote','Trích dẫn'],['code','Code'],['image','Ảnh HTTPS'],['divider','Đường phân cách']]){
+  select.append(node('option',{value:key,text:label}));
+ }
+ select.value=type;
+ const valueBox=node('textarea',{placeholder:'Nhập nội dung…','aria-label':'Nội dung khối'});valueBox.value=value;
+ const buttons=node('div',{class:'controls'},[
+  button('↑',()=>{if(wrap.previousElementSibling)list.insertBefore(wrap,wrap.previousElementSibling)},'small-btn'),
+  button('↓',()=>{if(wrap.nextElementSibling)list.insertBefore(wrap.nextElementSibling,wrap)},'small-btn'),
+  button('Xóa',()=>wrap.remove(),'small-btn')
+ ]);
+ select.addEventListener('change',()=>{valueBox.hidden=select.value==='divider';valueBox.placeholder=select.value==='image'?'https://…/media/id':'Nhập nội dung…';});
+ valueBox.hidden=type==='divider';
+ wrap.append(node('div',{class:'block-top'},[select,buttons]),valueBox);
+ list.append(wrap);
+}
+function editable(){
+ return ['admin','editor'].includes(state.user.role);
+}
+async function editEntry(id,type){
+ const data=id?await api('/api/entries/'+id):null;
+ state.editor=data?data.entry:{id:null,type,title:'',slug:'',excerpt:'',visibility:'public',tags:[],blocks:[{type:'paragraph',text:''}],seo:{},revision:0,status:'draft'};
+ const entry=state.editor;
+ clear(q('view-body'));clear(q('view-actions'));say('');
+ q('view-title').textContent=id?'Chỉnh sửa nội dung':'Tạo nội dung';
+ q('view-subtitle').textContent='Lưu theo phiên bản; không tự xuất bản khi chưa xác nhận.';
+ const form=node('form',{id:'entry-form',class:'editor'});
+ const left=node('section',{class:'panel'});
+ const fields=node('div',{class:'form-grid'});
+ for(const f of [
+  field('Tiêu đề','entry-title',entry.title),
+  field('Slug','entry-slug',entry.slug,'Chữ thường, a-z, 0-9 và dấu gạch nối.'),
+  field('Mô tả ngắn','entry-excerpt',entry.excerpt,'Dùng cho danh sách và đoạn giới thiệu.','textarea'),
+  field('Thẻ — cách nhau bằng dấu phẩy','entry-tags',entry.tags.join(','))
+ ])fields.append(f);
+ const blocks=node('div',{id:'block-list'});
+ left.append(node('h2',{text:'Nội dung'}),fields,node('h3',{text:'Các khối nội dung'}),blocks,
+  node('div',{class:'actions'},[button('+ Thêm đoạn',()=>addBlock()),button('+ Thêm tiêu đề',()=>addBlock('heading')),button('+ Thêm ảnh',()=>addBlock('image'))]));
+ const inspector=node('aside',{class:'panel inspector'},[
+  node('h2',{text:'Xuất bản & SEO'}),
+  field('Tiêu đề SEO','entry-seo-title',entry.seo?.title||''),
+  field('Meta description','entry-seo-description',entry.seo?.description||'','', 'textarea'),
+  field('Canonical URL','entry-seo-canonical',entry.seo?.canonical||''),
+  node('label',{for:'entry-visibility',text:'Quyền đọc'}),
+  node('select',{id:'entry-visibility'},[
+   node('option',{value:'public',text:'Công khai'}),
+   node('option',{value:'members',text:'Chỉ thành viên (API teaser)'}),
+   node('option',{value:'paid',text:'Trả phí (API teaser)'})
+  ]),
+  node('p',{class:'hint',text:'Các chế độ thành viên/trả phí chưa có cổng đăng nhập/thu phí cho độc giả.'})
+ ]);
+ inspector.querySelector('#entry-visibility').value=entry.visibility;
+ const status=node('p',{class:'statusline',id:'entry-status-text',text:'Trạng thái: '+entry.status+' · phiên bản '+entry.revision});
+ const save=button(id?'Lưu thay đổi':'Tạo bản nháp',()=>saveEntry(),'btn primary');
+ const actionBar=node('div',{class:'actions'},[save,button('Quay lại',()=>presentView(type==='post'?'posts':'pages'))]);
+ if(id&&entry.status!=='published'&&state.user.role==='admin')
+  actionBar.append(button('Xuất bản',()=>transition('publish')));
+ if(id&&entry.status==='published'&&state.user.role==='admin')
+  actionBar.append(button('Gỡ xuất bản',()=>transition('unpublish'),'btn warn'));
+ if(id && state.user.role==='admin'){
+  const scheduleInput=node('input',{id:'entry-schedule',type:'datetime-local','aria-label':'Thời gian xuất bản'});
+  const scheduleButton=button('Lên lịch',()=>transition('schedule'));
+  inspector.append(node('hr'),node('label',{for:'entry-schedule',text:'Hẹn xuất bản (giờ địa phương)'}),scheduleInput,scheduleButton,
+   node('p',{class:'hint',text:'Chỉ tự xuất bản khi Worker Cron đã kích hoạt. Không đồng bộ bài Astro.'}));
+ }
+ if(id)actionBar.append(button('Lịch sử phiên bản',()=>versions()));
+ if(id&&state.user.role==='admin')actionBar.append(button('Xóa',()=>removeEntry(),'btn warn'));
+ if(!editable()){save.disabled=true;inspector.querySelectorAll('input,textarea,select').forEach(el=>el.disabled=true);left.querySelectorAll('input,textarea,select,button').forEach(el=>el.disabled=true);}
+ left.append(status,actionBar);
+ form.append(left,inspector);
+ q('view-body').append(form);
+ entry.blocks.forEach(block=>addBlock(block.type,block.text));
+ q('entry-title').addEventListener('input',()=>{
+  if(!entry.id && !q('entry-slug').dataset.touched)
+    q('entry-slug').value=q('entry-title').value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+ });
+ q('entry-slug').addEventListener('input',()=>q('entry-slug').dataset.touched='true');
+ form.addEventListener('submit',e=>e.preventDefault());
+}
+function editorPayload(){
+ const e=state.editor;
+ return {type:e.type,revision:e.revision,title:q('entry-title').value.trim(),slug:q('entry-slug').value.trim(),
+  excerpt:q('entry-excerpt').value.trim(),tags:q('entry-tags').value.split(',').map(s=>s.trim()).filter(Boolean),
+  visibility:q('entry-visibility').value,seo:{title:q('entry-seo-title').value,description:q('entry-seo-description').value,canonical:q('entry-seo-canonical').value},
+  blocks:collectBlocks()};
+}
+async function saveEntry(){
+ const current=state.editor;
+ try{
+  say('Đang lưu…');
+  const reply=await api(current.id?'/api/entries/'+current.id:'/api/entries',{method:current.id?'PUT':'POST',body:editorPayload()});
+  state.editor=reply.entry;say('Đã lưu phiên bản '+reply.entry.revision+' vào G-CMS.','ok');
+  await editEntry(reply.entry.id,reply.entry.type);say('Đã lưu vào cơ sở dữ liệu.','ok');
+ }catch(e){say('Lưu thất bại: '+e.message,'error');}
+}
+async function transition(action){
+ if(action==='publish'&&!confirm('Xuất bản bản nháp này lên G-CMS Content API? Bài viết CHƯA tự hiển thị trên Astro blog.'))return;
+ if(action==='unpublish'&&!confirm('Gỡ nội dung khỏi G-CMS Content API?'))return;
+ try{
+  const body=action==='schedule'?{scheduledAt:new Date(q('entry-schedule').value).toISOString()}:undefined;
+  await api('/api/entries/'+state.editor.id+'/'+action,{method:'POST',body});
+  await editEntry(state.editor.id,state.editor.type);say('Đã cập nhật trạng thái.','ok');
+ }catch(e){say('Thao tác thất bại: '+e.message,'error');}
+}
+async function versions(){
+ const result=await api('/api/entries/'+state.editor.id+'/versions');
+ const panel=card('Lịch sử phiên bản','Khôi phục tạo phiên bản mới; không xóa lịch sử cũ.');
+ for(const item of result.items||[]){
+  const action=button('Khôi phục',async()=>{
+   if(!confirm('Khôi phục phiên bản '+item.revision+'?'))return;
+   try{await api('/api/entries/'+state.editor.id+'/restore',{method:'POST',body:{revision:item.revision}});await editEntry(state.editor.id,state.editor.type);say('Đã khôi phục.','ok');}
+   catch(e){say(e.message,'error');}
+  });action.disabled=!editable();
+  panel.append(itemRow('Phiên bản '+item.revision,item.actor+' · '+item.createdAt,action));
+ }
+ q('view-body').prepend(panel);
+}
+async function removeEntry(){
+ if(!confirm('Xóa vĩnh viễn nội dung và lịch sử? Không thể hoàn tác.'))return;
+ try{await api('/api/entries/'+state.editor.id,{method:'DELETE'});presentView(state.editor.type==='post'?'posts':'pages');}
+ catch(e){say(e.message,'error');}
+}
+async function members(){
+ const data=await api('/api/members');const root=q('view-body');
+ root.append(card('Độc giả & thành viên','Quản lý danh sách thủ công. Chưa tích hợp đăng ký công khai, xác nhận email hoặc phân phối nội dung trả phí.'));
+ if(state.user.role==='admin'){
+  const panel=node('section',{class:'panel'},[node('h2',{text:'Thêm thành viên'})]);
+  const form=node('form',{class:'form-grid'});
+  form.append(field('Email','member-email'),field('Tên','member-name'));
+  form.append(node('div',{class:'wide actions'},[node('button',{type:'submit',class:'btn primary',text:'Lưu thành viên'})]));
+  form.addEventListener('submit',async event=>{
+   event.preventDefault();try{await api('/api/members',{method:'POST',body:{email:q('member-email').value,name:q('member-name').value}});toast('Đã thêm thành viên');presentView('members');}catch(e){say(e.message,'error');}
+  });
+  panel.append(form);root.append(panel);
+ }
+ const panel=card('Danh sách',data.items.length+' thành viên');
+ if(!data.items.length)panel.append(node('p',{class:'muted',text:'Chưa có thành viên.'}));
+ for(const member of data.items){
+  const action=button('Xóa',async()=>{
+   if(!confirm('Xóa thành viên '+member.email+'?'))return;
+   try{await api('/api/members/'+member.id,{method:'DELETE'});presentView('members');}catch(e){say(e.message,'error');}
+  });action.disabled=state.user.role!=='admin';
+  panel.append(itemRow(member.name||member.email,member.email+' · '+member.status,action));
+ }
+ root.append(panel);
+}
+async function catalog(name){
+ const response=await api('/api/'+name),root=q('view-body'),isTier=name==='tiers';
+ root.append(card(isTier?'Định nghĩa gói hội viên':'Quản lý bản tin',
+  isTier?'Lưu cấu hình sản phẩm, chưa kích hoạt Stripe, checkout hay phân quyền độc giả trả phí.':'Tạo định nghĩa bản tin, chưa có máy gửi email, người nhận hay số liệu gửi.'));
+ if(state.user.role==='admin'){
+  const panel=node('section',{class:'panel'},[node('h2',{text:isTier?'Tạo gói':'Tạo bản tin'})]);
+  const form=node('form',{class:'form-grid'});
+  form.append(field(isTier?'Tên gói':'Tên bản tin','catalog-title'),field('Mô tả','catalog-description','','','textarea'));
+  if(isTier){
+   form.append(field('Giá tháng (đơn vị cent)','catalog-month','0','','number'),field('Giá năm (đơn vị cent)','catalog-year','0','','number'),field('Mã tiền tệ ISO','catalog-currency','USD'));
+  }
+  form.append(node('div',{class:'wide actions'},[node('button',{type:'submit',class:'btn primary',text:'Lưu cấu hình'})]));
+  form.addEventListener('submit',async event=>{
+   event.preventDefault();
+   const body=isTier?{name:q('catalog-title').value,description:q('catalog-description').value,
+    monthly_cents:Number(q('catalog-month').value),yearly_cents:Number(q('catalog-year').value),currency:q('catalog-currency').value}:
+    {title:q('catalog-title').value,description:q('catalog-description').value};
+   try{await api('/api/'+name,{method:'POST',body});presentView(name);}catch(e){say(e.message,'error');}
+  });
+  panel.append(form);root.append(panel);
+ }
+ const list=card('Đã lưu',response.items.length+' cấu hình');
+ for(const item of response.items)list.append(itemRow(item.title||item.name,
+  isTier?(item.monthly_cents/100)+' '+item.currency+'/tháng · chưa thu phí':item.status+' · chưa gửi email',
+  node('span',{class:'badge',text:'Cấu hình'})));
+ if(!response.items.length)list.append(node('p',{text:'Chưa có cấu hình nào.',class:'muted'}));
+ root.append(list);
+}
+async function media(){
+ const result=await api('/api/media');const root=q('view-body');
+ root.append(card('Tài sản hình ảnh','Tải ảnh WebP/JPEG/PNG tối đa 8 MB lên R2 riêng. Ảnh có URL công khai — không tải dữ liệu riêng tư.'));
+ if(editable()){
+  const panel=node('section',{class:'panel'});
+  const file=node('input',{type:'file',id:'media-file',accept:'image/png,image/jpeg,image/webp'});
+  const upload=button('Tải ảnh lên',async()=>{
+   if(!file.files?.length)return say('Hãy chọn ảnh.','error');
+   try{
+    const f=file.files[0],response=await fetch(API_BASE+'/api/media',{method:'POST',mode:'cors',
+     headers:{Authorization:'Bearer '+state.token,'Content-Type':f.type,'X-File-Name':f.name},body:f});
+    const data=await response.json();if(!response.ok)throw Error(data.error||response.status);
+    presentView('media');
+   }catch(e){say('Không thể tải ảnh: '+e.message,'error');}
+  },'btn primary');
+  panel.append(node('label',{for:'media-file',text:'Chọn ảnh'}),file,upload);root.append(panel);
+ }
+ const panel=card('Tệp đã tải',result.items.length+' hình ảnh');
+ for(const item of result.items){
+  const link=node('a',{href:API_BASE+item.path,target:'_blank',rel:'noopener noreferrer',class:'btn',text:'Xem ảnh'});
+  panel.append(itemRow(item.filename,item.mime+' · '+Math.round(item.size/1024)+' KB',link));
+ }
+ if(!result.items.length)panel.append(node('p',{class:'muted',text:'Chưa có ảnh.'}));
+ root.append(panel);
+}
+function guide(title,description){q('view-body').append(card(title,description));}
+function settings(){
+ const root=q('view-body');
+ root.append(card('Tài khoản và dữ liệu','Google OAuth xác thực phía Worker; dữ liệu nằm trong Cloudflare D1 riêng của G-CMS, ảnh ở R2 riêng nếu đã cấu hình.'));
+ const list=node('div',{class:'help-grid'});
+ const groups=[
+ ['Đã xây trong mã nguồn','Bài/trang, bản nháp, SEO, gắn thẻ, lịch sử phiên bản, phân quyền, API đọc công khai, audit và cấu hình thành viên/bản tin/gói.'],
+ ['Yêu cầu cấu hình hạ tầng','Worker, D1 migration, R2, OAuth client ID + allowlist, kích hoạt Cron cho lịch xuất bản.'],
+ ['Chưa có kết nối đầy đủ','Stripe, gửi email, analytics lượt xem, webhooks, nhập/xuất dữ liệu, rich-text nâng cao, SSO, ActivityPub, backup tự động và SLA.'],
+ ['Đường kết nối xuất bản','Nội dung Worker chưa tự trở thành bài Astro/GitHub Pages. Cần quy trình xuất bản có kiểm tra CI và xác minh SHA.']
+ ];
+ for(const [head,description] of groups)list.append(node('article',{},[node('h3',{text:head}),node('p',{text:description})]));
+ root.append(list,node('p',{class:'hint inline-links'},[node('a',{href:'https://docs.ghost.org/',text:'Ghost Developer Docs'}),' · ',
+  node('a',{href:'https://ghost.org/pricing/',text:'Ghost Custom feature reference'})]));
+}
+function signedIn(user){
+ state.user=user;q('auth-panel').hidden=true;q('app').hidden=false;q('signout').hidden=false;
+ q('connection').textContent=user.email+' · '+user.role;presentView('overview');
+}
+function signedOut(message){
+ state.user=null;state.token='';sessionStorage.removeItem(TOKEN_KEY);
+ q('app').hidden=true;q('auth-panel').hidden=false;q('signout').hidden=true;
+ q('connection').textContent='Chưa đăng nhập';
+ q('auth-message').textContent=message||'Đăng nhập bằng tài khoản quản trị được cấp quyền.';
+}
+async function acceptToken(token){
+ state.token=token;sessionStorage.setItem(TOKEN_KEY,token);
+ try{const user=await api('/api/me');signedIn(user);}catch(e){signedOut('Không thể xác nhận quyền: '+e.message);}
+}
+async function init(){
+ q('signout').addEventListener('click',()=>{window.google?.accounts?.id?.disableAutoSelect();signedOut('Đã đăng xuất khỏi G-CMS.');});
+ document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{if(state.user)presentView(b.dataset.view);}));
+ if(state.token){try{signedIn(await api('/api/me'));}catch{signedOut('Phiên cũ không còn hợp lệ.');}}
+ try{
+  const response=await fetch(API_BASE+'/api/config',{mode:'cors'});if(!response.ok)throw Error('HTTP '+response.status);
+  const config=await response.json();
+  if(!config.googleClientId)throw Error('Worker chưa cấu hình Google OAuth');
+  const script=document.createElement('script');script.src='https://accounts.google.com/gsi/client';script.async=true;
+  script.onload=()=>{
+   if(!window.google?.accounts?.id)return signedOut('Không tải được Google Identity Services.');
+   window.google.accounts.id.initialize({client_id:config.googleClientId,callback:result=>acceptToken(result.credential)});
+   window.google.accounts.id.renderButton(q('signin'),{theme:'outline',size:'large',text:'signin_with',width:260});
+   if(!state.user)q('auth-message').textContent='Chỉ email có trong danh sách nhân sự G-CMS được truy cập.';
+  };
+  script.onerror=()=>{if(!state.user)signedOut('Google Sign-In không thể tải.');};
+  document.head.append(script);
+  if(!state.user)q('connection').textContent='Sẵn sàng đăng nhập';
+ }catch(e){if(!state.user)signedOut('G-CMS API chưa sẵn sàng: '+e.message);}
+}
+init();
+</script>
+</body>
+</html>
