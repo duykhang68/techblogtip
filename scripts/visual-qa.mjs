@@ -98,6 +98,25 @@ try{
    await page.screenshot({path:join('artifacts/visual-qa','article-'+w+'.png'),animations:'disabled'});
    console.log('PASS article '+w+'px');
   }catch(e){record('article '+w,e);}
+  // Visual publication regression: story map plus topic-specific diagrams.
+  if(w===390 || w===1440){
+    try{
+      const response=await page.goto(base+'/bai-viet/techblogtip-engineering-rules/',{waitUntil:'load'});
+      assert.equal(response.status(),200);
+      assert.equal(await page.locator('[data-auto-visualizer]').count(),1,'Missing auto story map');
+      assert.equal(await page.locator('.rules-visual').count(),2,'Missing engineering-specific infographics');
+      const details=await page.evaluate(()=>({
+        scrollWidth:document.documentElement.scrollWidth,
+        mapCards:document.querySelectorAll('[data-auto-visualizer] .map-grid li').length,
+        ruleCards:document.querySelectorAll('.rules-grid li').length
+      }));
+      assert.ok(details.scrollWidth<=w+1,'Engineering article horizontal overflow at '+w+'px');
+      assert.ok(details.mapCards>=2,'Visualizer map must include headings');
+      assert.equal(details.ruleCards,11,'Engineering visual must cover 11 rules');
+      await page.screenshot({path:join('artifacts/visual-qa','engineering-rules-'+w+'.png'),animations:'disabled'});
+      console.log('PASS engineering story visual QA '+w+'px');
+    }catch(e){record('engineering visual '+w,e);}
+  }
   if(w===1440){
     try{
       const response=await page.goto(base+'/bai-viet/hanh-trinh-xay-dung-google-sheets-publisher-techblogtip/',{waitUntil:'load'});
