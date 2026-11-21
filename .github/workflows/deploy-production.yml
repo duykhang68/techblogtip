@@ -35,6 +35,9 @@ jobs:
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - name: Verify main checkout
         run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+      - name: Verify Resume OAuth configuration (never print Client ID)
+        run: |
+          node -e "const id=(process.env.PUBLIC_RESUME_GOOGLE_CLIENT_ID||'').trim(); if(!/^[A-Za-z0-9._-]+\\.apps\\.googleusercontent\\.com$/.test(id)){console.error('::error title=Resume OAuth missing::Set PUBLIC_RESUME_GOOGLE_CLIENT_ID as an Actions repository variable.');process.exit(1)}console.log('Resume OAuth configured: yes (value hidden).')"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Quality, content tests, Pages base-path and exact release SHA

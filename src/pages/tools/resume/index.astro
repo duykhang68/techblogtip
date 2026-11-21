@@ -38,7 +38,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   type Resume = { id:string;title:string;name:string;role:string;email:string;phone:string;location:string;website:string;summary:string;experience:string;education:string;skills:string;projects:string;certificates:string;updatedAt:string };
   type Job = {id:string;company:string;position:string;url:string;stage:string;resumeId:string;notes:string;createdAt:string};
   const FOLDER_ID='1y0QzF2onlUrVdaQv8I-pu3L8T2d0CE19';
-  const CLIENT_ID=import.meta.env.PUBLIC_RESUME_GOOGLE_CLIENT_ID || '';
+  const CLIENT_ID=String(import.meta.env.PUBLIC_RESUME_GOOGLE_CLIENT_ID || '').trim();
   const DRIVE_SCOPE='https://www.googleapis.com/auth/drive';
   let accessToken='';let expires=0;let fileId='';let version='';let connected=false;let busy=false;let pending=false;let snapshot='';
   type TokenClient={requestAccessToken:(v:{prompt:string})=>void};
