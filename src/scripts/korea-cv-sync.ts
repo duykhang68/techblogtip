@@ -1,4 +1,5 @@
 import {configured,connectGoogle,connected,disconnectGoogle,driveRequest,createCVId} from '../lib/korea-cv-client.mjs';
+import {captureKoreaCvDraft} from '../lib/korea-cv-draft.mjs';
 
 const element = (id:string) => document.getElementById(id) as HTMLElement;
 const status = (value:string, tone:'neutral'|'info'|'success'|'error'='info') => {
@@ -18,26 +19,18 @@ const btn=(id:string)=>element(id) as HTMLButtonElement;
 const select=()=>element('kcv-select') as HTMLSelectElement;
 function buttons(auth:boolean) {
   btn('kcv-connect').hidden=auth;btn('kcv-signout').hidden=!auth;
-  for(const name of ['kcv-save','kcv-new','kcv-refresh'])btn(name).disabled=!auth;
+  for(const name of ['kcv-save','kcv-refresh'])btn(name).disabled=!auth;
+  btn('kcv-new').disabled=false;
   for(const id of ['kcv-open','kcv-copy','kcv-remove'])btn(id).disabled=!auth||!select().value;
 }
 function capture() {
-  const cv:any={schemaVersion:1,id:currentId||createCVId(),label:'',targetCompany:'',targetRole:'',locale:'ko',revision:revision < 0 ? 0 : revision + 1,createdAt:createdAt || new Date().toISOString(),updatedAt:new Date().toISOString(),content:{personal:{},essays:{},optionalSensitive:{},declarationOptional:null}};
-  document.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>('#input-panel [name]').forEach(field=>{
-    const [section = '',key]=field.name.split('.');
-    if(key)cv.content[section][key]=field.value;else cv[section]=field.value;
+  return captureKoreaCvDraft(document,{
+    id:currentId||undefined,
+    revision:revision<0?0:revision+1,
+    createdAt,
   });
-  document.querySelectorAll<HTMLElement>('[data-rows]').forEach(container=>{
-    const section=container.dataset.rows!;
-    cv.content[section]=Array.from(container.querySelectorAll<HTMLElement>('.kcv-row'),row=>{
-      if(!row.dataset.cvRowId)row.dataset.cvRowId=createCVId();
-      const data:any={id:row.dataset.cvRowId};
-      row.querySelectorAll<HTMLInputElement|HTMLTextAreaElement>('[data-field]').forEach(field=>{data[field.dataset.field!]=field.value;});
-      return data;
-    });
-  });
-  return cv;
 }
+
 function fill(cv:any) {
   document.querySelectorAll<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>('#input-panel [name]').forEach(field=>{
     const [section = '',key]=field.name.split('.');
@@ -58,7 +51,8 @@ async function refresh(){
   const result=await driveRequest(api);
   select().replaceChildren(new Option('Chọn CV đã lưu',''));
   for(const item of result.items||[])select().add(new Option((item.label||item.targetCompany||'CV '+item.id.slice(0,8))+' · '+(item.updatedAt||''),item.id));
-  status('Đã kết nối Google Drive · '+(result.items||[]).length+' phiên bản CV đã lưu.','success');
+  const count=(result.items||[]).length;
+  status(count ? 'Đã kết nối Google Drive · '+count+' CV đã lưu.' : 'Đã kết nối Google Drive · Chưa có CV nào được lưu. Bạn có thể soạn, xuất PDF/Excel hoặc chọn “Lưu CV”.','success');
 }
 async function task(fn:()=>Promise<void>){
   try{await fn();}
@@ -76,6 +70,11 @@ if(!configured(clientId,api)){
 }else{
   status('Chưa kết nối · Nhấn “Kết nối Google” để lưu CV riêng tư. Có thể nhập hồ sơ trước.', 'neutral');
 }
+document.getElementById('input-panel')?.addEventListener('input',()=>{
+  status(connected()
+    ? 'Đang chỉnh sửa · Có thay đổi chưa lưu lên Google Drive. Bạn vẫn có thể xuất PDF/Excel ngay.'
+    : 'Đang soạn trên thiết bị · Chưa kết nối hoặc chưa lưu lên Google Drive. Có thể xuất PDF/Excel ngay.','info');
+});
 btn('kcv-connect').addEventListener('click',()=>task(async()=>{
   btn('kcv-connect').disabled=true;
   status('Đang yêu cầu quyền Google Drive appData…','info');
@@ -97,8 +96,8 @@ btn('kcv-save').addEventListener('click',()=>task(async()=>{
   const result=await driveRequest(api,'/'+cv.id,'PUT',cv);
   if(!result.saved)throw new Error('Google Drive chưa xác nhận lưu');
   currentId=cv.id;revision=cv.revision;createdAt=cv.createdAt;
-  status('Đã lưu thành công lên Google Drive · phiên bản '+revision+'.','success');
   await refresh();
+  status('Đã lưu CV lên Google Drive thành công · phiên bản '+revision+'.','success');
 }));
 btn('kcv-refresh').addEventListener('click',()=>task(refresh));
 select().addEventListener('change',()=>{
