@@ -3,6 +3,7 @@ import { issueSessionCookie,verifySession,expiredSessionCookie,SESSION_TTL_SECON
 import { readSheet,putSystemCells,rowById,sheetConfig } from './google-api.mjs';
 import { createDraftPR,githubRequest } from './github-api.mjs';
 import { inspectPublisherPR } from './pr-status.mjs';
+import { finalizeVerifiedArticle,requireProductionSync,reconcileProductionBatch } from './release-writeback.mjs';
 import { readProductionStatus } from './production-status.mjs';
 import { loadEditableDraft,saveEditableDraft } from './editorial.mjs';
 import { withSourceWriteLock,withRowWriteLock } from './source-lock.mjs';
@@ -93,6 +94,13 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
     if(request.method==='GET'&&path==='/production-status.js')
       return staticResponse(PRODUCTION_JS,'application/javascript; charset=utf-8');
     if(path.startsWith('/api/')){
+      // Trusted GitHub Actions production-deploy callback. Separate strong
+      // service credential, exact main workflow run, and no browser cookie.
+      if(path==='/api/reconcile-production'&&request.method==='POST'){
+        const payload=await jsonRequest(request,2048);
+        const trusted=await requireProductionSync(request,env,payload,fetcher);
+        return respond(await reconcileProductionBatch(env,trusted,fetcher));
+      }
       requireSameOrigin(request);
       if(path==='/api/session'){
         if(request.method==='GET'){
@@ -154,6 +162,14 @@ export async function handleRequest(request,env,{fetcher=fetch}={}){
           return respond(await withSourceWriteLock(env,input.sourceId,()=>saveEditableDraft(env,input,fetcher)));
         }
         fail(405,'method_not_allowed','Unsupported draft method');
+      }
+      if(request.method==='POST'&&path==='/api/verify-release'){
+        const payload=await jsonRequest(request,512);
+        const sourceId=payload.sourceId;
+        if(typeof sourceId!=='string'||!/^TBT-[A-Za-z0-9-]{8,80}$/.test(sourceId))
+          fail(400,'source_invalid','System-issued source ID required');
+        return respond(await withSourceWriteLock(env,sourceId,()=>
+          finalizeVerifiedArticle(env,sourceId,fetcher)));
       }
       if(request.method==='GET'&&path==='/api/pr-status'){
         const sourceId=new URL(request.url).searchParams.get('sourceId');
