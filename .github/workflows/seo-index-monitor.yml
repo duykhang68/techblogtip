@@ -1,0 +1,27 @@
+name: SEO · Google indexing monitor
+run-name: SEO · manual index inspection
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: techblogtip-google-index-monitor
+  cancel-in-progress: false
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+      GSC_SITE_URL: ${{ vars.GSC_SITE_URL }}
+    steps:
+      - name: Checkout trusted main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+      - name: Inspect Google indexed status (read-only, sampled)
+        run: node scripts/monitor-google-index.mjs
