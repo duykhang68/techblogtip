@@ -20,6 +20,24 @@ dự án xác nhận.** Một PR merged không đồng nghĩa chức năng đã 
 - **Không sửa status I để ép PUBLISHED:** M:O là biên nhận có xác minh; việc Sheet vẫn giữ READY không được dùng để suy diễn đã lỗi hay để âm thầm đổi nội dung do editor sở hữu.
 - **Safety:** bài test PR #35 đóng không merge; không tạo PR viết bài giả, không thay đổi K:O để làm đẹp thống kê. Mỗi bài xuất bản mới phải chứng minh lại K:L, merge, exact SHA, URL public và M:O.
 
+## Kế hoạch còn lại — không bao gồm Resume Studio (21/11/2026)
+
+**Giai đoạn 1: DONE 100%.** Production SHA, Publisher DEV và C3 Owner Acceptance đã PASS.
+
+**Giai đoạn 2: Publisher E2E DONE.** Bài thật Google Sheets VN!4 đã có Draft PR #54, CI/merge, production URL và biên nhận M:O. P8 Media đã được chủ dự án xác nhận PASS. Resume Studio đã nghỉ và gỡ khỏi TechBlogTip, không còn là điều kiện đóng giai đoạn.
+
+- **Retired feature:** [PR #124](https://github.com/duykhang68/techblogtip/pull/124) xóa Astro route `/tools/resume/`, script QA, tài liệu và OAuth build gate. Public release `33c9c101c0e3bc524dbffcea0329057d879ed355` đã verified; URL cũ trả HTTP 404, sitemap không có route. Không xóa dữ liệu Google Drive người dùng hoặc bài nghiên cứu CV Samsung độc lập.
+- **FIFO/CI:** PR #121 (SEO), #122 (typography), #124 (retire Resume Studio) đã merge. [Issue #123](https://github.com/duykhang68/techblogtip/issues/123) đóng sau khi loại trigger `workflow_run` nguy hiểm và Security Audit PASS.
+
+**Giai đoạn 3: chưa nghiệm thu end-to-end**, tập trung:
+
+1. [P6 Notion #125](https://github.com/duykhang68/techblogtip/issues/125): dữ liệu nguồn thật → preview lossless/review → WYSIWYG → DRAFT Google Sheets → Draft PR. Blocks/media chưa hỗ trợ phải Review, không ghi đè âm thầm.
+2. [P7 Obsidian #126](https://github.com/duykhang68/techblogtip/issues/126): file Markdown thật → bảo toàn frontmatter/wikilinks/attachments hoặc Review bắt buộc → DRAFT Sheets → Draft PR. Không xuất bản tự động.
+3. **SEO:** live sitemap 78 URL, 6 sampled HTML pages, robots/canonical PASS trong run #44920107716. Google URL Inspection **SKIP** vì `GSC_SERVICE_ACCOUNT_JSON` chưa được cấu hình; không được suy đoán là Google đã index. Monitor chỉ đọc, không submit URL hàng loạt và không cron.
+4. **Mobile/performance:** tiếp tục kiểm thử hồi quy khi có thay đổi; không tái kiểm thử tính năng đã nghỉ.
+
+**Quy tắc:** Giai đoạn 3 chỉ được đóng sau live acceptance bằng nguồn được cấp phép; code merge và Worker endpoint có sẵn không chứng minh nhập dữ liệu thật đã PASS.
+
 ## Ưu tiên theo rủi ro và giá trị
 
 | Ưu tiên | Hạng mục | Trạng thái có bằng chứng | Việc còn lại / điều kiện đóng |
