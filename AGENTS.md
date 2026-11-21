@@ -1,7 +1,9 @@
 # TechBlogTip engineering rules
 
 - Scope is exclusively `duykhang68/techblogtip`. Never use OneBlog content, secrets, workers, domains or Sheet IDs.
-- New changes to source, configuration and workflows go through **Draft Pull Requests**. Only README.md and AGENTS.md documentation updates may be directly committed if explicitly requested.
+- New changes to source, configuration and workflows go through **Open / Ready for review Pull Requests** (`draft: false`), never Draft by default. Only README.md and AGENTS.md documentation updates may be directly committed if explicitly requested.
+- **FIFO merge policy:** merge in PR creation order, one active merge at a time. Require current head-SHA CI/security gates, no conflicts, and verified production SHA before advancing when delivery depends on it. Keep other queued PRs Open; Open does not mean approved to merge.
+- **Draft exception:** only convert the specific PR being merged to Draft if an actual merge-time error occurs (failed required CI, conflict, merge protection, or deployment verification failure). Record the failure reason, fix it, then restore Open and resume FIFO. Do not preemptively draft later queued PRs.
 - Do not merge a Draft PR, bypass quality checks or claim deployed just because CI passed.
 - Deployment only from validated `main` commit via GitHub Actions, serialized; the public `/release.json` SHA must equal the deployed SHA.
 - Staging must remain `noindex` and must never be treated as a production SEO launch.
