@@ -9,7 +9,7 @@ const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.readonly';
 const SOURCE=/^TBT-[A-Za-z0-9-]{8,80}$/;
 const FILE=/^[a-f0-9]{32}\.webp$/;
 const sha=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',typeof value==='string'?new TextEncoder().encode(value):value)),x=>x.toString(16).padStart(2,'0')).join('');
-export function mediaPath(tag,filename){if(!/^[a-f0-9]{16}$/.test(tag)||!FILE.test(filename))fail(400,'media_path_invalid','Invalid media path');return 'public/techblogtip/media/tbt-'+tag+'/'+filename;}
+export function mediaPath(tag,filename){if(!/^[a-f0-9]{16}$/.test(tag)||!FILE.test(filename))fail(400,'media_path_invalid','Invalid media path');return 'public/media/tbt-'+tag+'/'+filename;}
 export async function mediaScope(env,sourceId,fetcher=fetch,{editable=false}={}){
  if(!SOURCE.test(String(sourceId||'')))fail(400,'source_invalid','System-issued source ID required');
  const sheet=await readSheet(env,fetcher),row=rowById(sheet.records,sourceId);
@@ -51,7 +51,7 @@ async function branchReady(env,scope,fetcher){
  await read('/git/refs',{method:'POST',body:{ref:'refs/heads/'+scope.branch,sha:main.object.sha}});
 }
 export async function libraryItems(env,scope,fetcher=fetch){
- const data=await githubRequest(env,'/contents/public/techblogtip/media/tbt-'+scope.tag+'?ref='+encodeURIComponent(scope.branch),{fetcher,missingOk:true});
+ const data=await githubRequest(env,'/contents/public/media/tbt-'+scope.tag+'?ref='+encodeURIComponent(scope.branch),{fetcher,missingOk:true});
  if(!data)return [];
  if(!Array.isArray(data))fail(502,'media_library_invalid','Invalid GitHub Media Library');
  return data.filter(x=>x.type==='file'&&FILE.test(x.name)).map(x=>({filename:x.name,path:'/techblogtip/media/tbt-'+scope.tag+'/'+x.name,bytes:x.size,preview:'/api/media/'+encodeURIComponent(scope.sourceId)+'/'+x.name}));
