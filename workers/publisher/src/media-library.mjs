@@ -104,6 +104,63 @@ export async function importDriveFiles(env,scope,ids,fetcher=fetch){
  }
  return {items:imported};
 }
+
+function validateLocalUpload(item){
+ if(!item||typeof item.name!=='string'||item.name.length>160||typeof item.data!=='string'||item.data.length>4200000)
+  fail(422,'local_media_invalid','Invalid local image upload');
+ if(!['image/jpeg','image/png','image/webp'].includes(item.type))
+  fail(415,'local_media_type','Choose JPG, PNG or WebP images');
+ if(!/^[A-Za-z0-9+/]+={0,2}$/.test(item.data)||item.data.length%4!==0)
+  fail(422,'local_media_base64','Invalid image encoding');
+ const bytes=bytes64(item.data);
+ if(!bytes.length||bytes.length>3000000)fail(413,'local_media_large','Local images must be 3 MB or smaller');
+ const head=Array.from(bytes.slice(0,12));
+ const png=head.slice(0,8).join(',')==='137,80,78,71,13,10,26,10';
+ const jpeg=head[0]===255&&head[1]===216&&head[2]===255;
+ const webp=String.fromCharCode(...bytes.slice(0,4))==='RIFF'&&String.fromCharCode(...bytes.slice(8,12))==='WEBP';
+ if(!((item.type==='image/png'&&png)||(item.type==='image/jpeg'&&jpeg)||(item.type==='image/webp'&&webp)))
+  fail(415,'local_media_signature','Image format does not match file contents');
+ return bytes;
+}
+async function convertLocalWebp(bytes,images){
+ if(!images?.input)fail(503,'images_binding_missing','Cloudflare Images converter unavailable');
+ for(const target of [{width:1800,quality:80},{width:1400,quality:70},{width:1100,quality:60},{width:850,quality:50}]){
+  const conversion=await images.input(new Response(bytes).body)
+   .transform({width:target.width,height:target.width,fit:'scale-down'})
+   .output({format:'image/webp',quality:target.quality});
+  const response=await conversion.response();
+  if(!response.ok)fail(502,'webp_conversion_failed','Local image conversion failed');
+  const output=new Uint8Array(await response.arrayBuffer());
+  if(output.length<12||String.fromCharCode(...output.slice(0,4))!=='RIFF'||String.fromCharCode(...output.slice(8,12))!=='WEBP')
+   fail(502,'webp_invalid','Converter returned invalid WebP');
+  if(output.length<=950000)return output;
+ }
+ fail(413,'webp_too_large','Converted WebP exceeds 950 KB');
+}
+export async function importLocalFiles(env,scope,files,fetcher=fetch){
+ if(!Array.isArray(files)||files.length<1||files.length>4)
+  fail(422,'local_media_selection','Choose 1–4 local images per upload');
+ // Prepare every image before creating GitHub files; preserve content-addressed deduplication.
+ const prepared=[];
+ for(const item of files){
+  const bytes=validateLocalUpload(item);
+  const webp=await convertLocalWebp(bytes,env.IMAGES);
+  const filename=(await sha(webp)).slice(0,32)+'.webp';
+  prepared.push({name:item.name,webp,filename,path:mediaPath(scope.tag,filename)});
+ }
+ const items=[];
+ for(const item of prepared){
+  await branchReady(env,scope,fetcher);
+  const current=await githubRequest(env,'/contents/'+item.path+'?ref='+encodeURIComponent(scope.branch),{fetcher,missingOk:true});
+  if(!current)await githubRequest(env,'/contents/'+item.path,{method:'PUT',fetcher,body:{
+   message:'media: stage local WebP for '+scope.sourceId,branch:scope.branch,content:b64(item.webp)
+  }});
+  items.push({name:item.name,filename:item.filename,path:'/techblogtip/media/tbt-'+scope.tag+'/'+item.filename,
+   preview:'/api/media/'+encodeURIComponent(scope.sourceId)+'/'+item.filename,bytes:item.webp.length,created:!current});
+ }
+ return {items};
+}
+
 export async function serveDraftMedia(env,scope,filename,fetcher=fetch){
  if(!FILE.test(filename))fail(400,'media_file_invalid','Invalid media filename');
  const record=await githubRequest(env,'/contents/'+mediaPath(scope.tag,filename)+'?ref='+encodeURIComponent(scope.branch),{fetcher,missingOk:true});
