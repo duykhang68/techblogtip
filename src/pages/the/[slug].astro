@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ArticleList from '../../components/ArticleList.astro';
-import { getArticles, slugify } from '../../lib/content';
+import { getArticles, slugify, withBase } from '../../lib/content';
 export async function getStaticPaths(){
  const all=await getArticles(); const tags=[...new Set(all.flatMap(a=>a.data.tags))];
  return tags.map(name=>({params:{slug:slugify(name)},props:{name}}));
@@ -9,4 +9,4 @@ export async function getStaticPaths(){
 const {name}=Astro.props;
 const articles=(await getArticles()).filter(a=>a.data.tags.includes(name));
 ---
-<BaseLayout title={'Thẻ: '+name} description={'Bài viết mang thẻ '+name+' tại TechBlogTip.'}><section class="container list-page"><nav class="breadcrumb"><a href="/">Trang chủ</a><span>/</span><a href="/the/">Thẻ</a></nav><p class="section-kicker">THẺ</p><h1>#{name}</h1><ArticleList articles={articles}/></section></BaseLayout>
+<BaseLayout title={'Thẻ: '+name} description={'Bài viết mang thẻ '+name+' tại TechBlogTip.'}><section class="container list-page"><nav class="breadcrumb"><a href={withBase('/')}>Trang chủ</a><span>/</span><a href={withBase('/the/')}>Thẻ</a></nav><p class="section-kicker">THẺ</p><h1>#{name}</h1><ArticleList articles={articles}/></section></BaseLayout>
