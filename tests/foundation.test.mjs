@@ -37,15 +37,26 @@ test('retired Cloudflare staging cannot redeploy while production GitHub Pages s
  assert.doesNotMatch(pages,/cf deploy|CLOUDFLARE_API_TOKEN/);
 });
 
-test('only the six explicitly authorized articles remain, with valid content assets',()=>{
+test('only the seven explicitly authorized articles remain, with valid content assets',()=>{
  const names=readdirSync('src/content/articles').filter(p=>p.endsWith('.md'));
- assert.deepEqual(names.sort(), ['lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md','releaseproof-quyen-rieng-tu-github-app-privacy-first.md','techblogtip-100-diem-google-pagespeed-insights.md','tu-ma-nguon-ios-den-app-store-dong-goi-ipa-apple-review.md','vibe-code-app-ios-macos-kiem-tien-2026.md','xoa-nhieu-repository-github-cli-an-toan.md']);
+ assert.deepEqual(names.sort(), ['happyquote-saas-roadmap-chien-luoc-thu-phi-kien-truc.md','lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md','releaseproof-quyen-rieng-tu-github-app-privacy-first.md','techblogtip-100-diem-google-pagespeed-insights.md','tu-ma-nguon-ios-den-app-store-dong-goi-ipa-apple-review.md','vibe-code-app-ios-macos-kiem-tien-2026.md','xoa-nhieu-repository-github-cli-an-toan.md']);
  assert.equal(new Set(names).size,names.length);
  for(const name of names){
   const data=read('src/content/articles/'+name);
   assert.ok(data.startsWith('---\n'));
   assert.doesNotMatch(data,/!\[[^\]]*\]\([^)]*\.(png|jpg|jpeg)(?:\?|\))/i);
  }
+});
+test('public HappyQuote roadmap has visual business, pricing, architecture and release gates',()=>{
+ const article=read('src/content/articles/happyquote-saas-roadmap-chien-luoc-thu-phi-kien-truc.md');
+ const visual=read('src/components/HappyQuoteRoadmapVisual.astro');
+ const route=read('src/pages/bai-viet/[slug].astro');
+ assert.match(article,/draft: false/);
+ for(const token of ['79.000đ','790.000đ','MoMo','Google Sheets','hq-plans','hq-architecture','hq-roadmap','P8','P0']){assert.ok(article.includes(token),token)}
+ assert.equal((article.match(/^## /gm)||[]).length,7);
+ assert.equal((article.match(/style="--hq-stage:/g)||[]).length,9);
+ assert.match(visual,/\.hq-hero/);
+ assert.match(route,/showHappyQuoteRoadmap&&<HappyQuoteRoadmapVisual\/>/);
 });
 test('new iOS roadmap article provides the full visual interactive learning plan',()=>{
  const article=read('src/content/articles/lo-trinh-hoc-lap-trinh-ios-tu-con-so-0.md');
