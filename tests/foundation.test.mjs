@@ -52,7 +52,7 @@ test('public HappyQuote roadmap has visual business, pricing, architecture and r
  const visual=read('src/components/HappyQuoteRoadmapVisual.astro');
  const route=read('src/pages/bai-viet/[slug].astro');
  assert.match(article,/draft: false/);
- for(const token of ['79.000đ','790.000đ','MoMo','Google Sheets','h[q]-plans','hq-architecture','hq-roadmap','P8','P0','NOT']){if(token==='NOT')continue;assert.ok(article.includes(token),token)}
+ for(const token of ['79.000đ','790.000đ','MoMo','Google Sheets','hq-plans','hq-architecture','hq-roadmap','P8','P0']){assert.ok(article.includes(token),token)}
  assert.equal((article.match(/^## /gm)||[]).length,7);
  assert.equal((article.match(/style="--hq-stage:/g)||[]).length,9);
  assert.match(visual,/\.hq-hero/);
