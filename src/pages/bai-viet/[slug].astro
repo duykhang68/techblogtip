@@ -11,6 +11,7 @@ import IOSRoadmapEnhancer from '../../components/IOSRoadmapEnhancer.astro';
 import AppEconomicsEnhancer from '../../components/AppEconomicsEnhancer.astro';
 import IOSReleasePipelineVisual from '../../components/IOSReleasePipelineVisual.astro';
 import ReleaseProofPrivacyVisual from '../../components/ReleaseProofPrivacyVisual.astro';
+import HappyQuoteRoadmapVisual from '../../components/HappyQuoteRoadmapVisual.astro';
 export async function getStaticPaths() {
   return (await getArticles()).map(post => ({ params: { slug: post.id }, props: { post } }));
 }
@@ -22,6 +23,7 @@ const showIOSRoadmap = post.id.replace(/\.md$/, '') === 'lo-trinh-hoc-lap-trinh-
 const showAppEconomics = post.id.replace(/\.md$/, '') === 'vibe-code-app-ios-macos-kiem-tien-2026';
 const showIOSReleaseFlow = post.id.replace(/\.md$/, '') === 'tu-ma-nguon-ios-den-app-store-dong-goi-ipa-apple-review';
 const showReleaseProofPrivacy = post.id.replace(/\.md$/, '') === 'releaseproof-quyen-rieng-tu-github-app-privacy-first';
+const showHappyQuoteRoadmap = post.id.replace(/\.md$/, '') === 'happyquote-saas-roadmap-chien-luoc-thu-phi-kien-truc';
 const showPublisherVisual = post.id.replace(/\.md$/, '') === 'hanh-trinh-xay-dung-google-sheets-publisher-techblogtip' && post.data.sourceType === 'google-sheets';
 const related = (await getArticles()).filter(item => item.id !== post.id && (item.data.category === post.data.category || item.data.tags.some(t => post.data.tags.includes(t)))).slice(0,3);
 const site = Astro.site || new URL(Astro.url.origin);
@@ -36,7 +38,7 @@ const jsonLd = {
 ---
 <BaseLayout title={post.data.title} description={post.data.description} canonicalPath={articleUrl(post)}>
   <div class="container article-top"><nav class="breadcrumb" aria-label="Breadcrumb"><a href={withBase('/')}>Trang chủ</a><span>/</span><a href={categoryUrl(post.data.category)}>{post.data.category}</a></nav><a class="eyebrow" href={categoryUrl(post.data.category)}>{post.data.category}</a><h1>{post.data.title}</h1><p class="article-lead">{post.data.description}</p><div class="article-byline"><strong>{post.data.author}</strong><span>·</span><time datetime={post.data.published.toISOString()}>{formatDate(post.data.published)}</time>{post.data.updated && <span>· Cập nhật {formatDate(post.data.updated)}</span>}</div></div>
-  <div class="container article-layout"><article class="prose" id="article-body" data-publisher-source-id={post.data.sourceType === 'google-sheets' ? post.data.sourceId : undefined} data-publisher-source-revision={post.data.sourceType === 'google-sheets' ? post.data.sourceRevision : undefined}>{showPublisherVisual&&<PublisherStoryVisual variant="flow"/>}<ArticleVisualMap headings={headings}/>{showRepoDeletionVisual&&<RepoDeletionVisual/>}{showEngineeringRulesVisual&&<EngineeringRulesVisual variant="principles"/>}{showIOSRoadmap&&<IOSRoadmapEnhancer/>}{showAppEconomics&&<AppEconomicsEnhancer/>}{showIOSReleaseFlow&&<IOSReleasePipelineVisual/>}{showReleaseProofPrivacy&&<ReleaseProofPrivacyVisual/>}<Content />{showEngineeringRulesVisual&&<EngineeringRulesVisual variant="release"/>}{showPublisherVisual&&<PublisherStoryVisual variant="proof"/>}<div class="article-taxonomy">{post.data.tags.map(tag=><a href={tagUrl(tag)}>#{tag}</a>)}{post.data.series&&<a href={seriesUrl(post.data.series)}>Chủ đề: {post.data.series}</a>}</div></article>
+  <div class="container article-layout"><article class="prose" id="article-body" data-publisher-source-id={post.data.sourceType === 'google-sheets' ? post.data.sourceId : undefined} data-publisher-source-revision={post.data.sourceType === 'google-sheets' ? post.data.sourceRevision : undefined}>{showPublisherVisual&&<PublisherStoryVisual variant="flow"/>}<ArticleVisualMap headings={headings}/>{showRepoDeletionVisual&&<RepoDeletionVisual/>}{showEngineeringRulesVisual&&<EngineeringRulesVisual variant="principles"/>}{showIOSRoadmap&&<IOSRoadmapEnhancer/>}{showAppEconomics&&<AppEconomicsEnhancer/>}{showIOSReleaseFlow&&<IOSReleasePipelineVisual/>}{showReleaseProofPrivacy&&<ReleaseProofPrivacyVisual/>}{showHappyQuoteRoadmap&&<HappyQuoteRoadmapVisual/>}<Content />{showEngineeringRulesVisual&&<EngineeringRulesVisual variant="release"/>}{showPublisherVisual&&<PublisherStoryVisual variant="proof"/>}<div class="article-taxonomy">{post.data.tags.map(tag=><a href={tagUrl(tag)}>#{tag}</a>)}{post.data.series&&<a href={seriesUrl(post.data.series)}>Chủ đề: {post.data.series}</a>}</div></article>
     {headings.filter(h=>h.depth===2||h.depth===3).length>2&&<SmartToc headings={headings} />}
   </div>
   {related.length>0&&<section class="container related-section"><div class="section-head"><h2>Bài viết liên quan</h2><a href={categoryUrl(post.data.category)}>Xem chuyên mục →</a></div><div class="related-links">{related.map(item=><a href={articleUrl(item)}><span>{item.data.category}</span><strong>{item.data.title}</strong><span aria-hidden="true">↗</span></a>)}</div></section>}
