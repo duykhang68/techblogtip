@@ -60,10 +60,11 @@ const approved=[
   'vibe-code-app-ios-macos-kiem-tien-2026.md',
   'tu-ma-nguon-ios-den-app-store-dong-goi-ipa-apple-review.md',
   'releaseproof-quyen-rieng-tu-github-app-privacy-first.md',
+  'happyquote-saas-roadmap-chien-luoc-thu-phi-kien-truc.md',
 ].sort();
 const authored=readdirSync(articlesDir).filter(n=>n.endsWith('.md')).sort();
 if(JSON.stringify(authored)!==JSON.stringify(approved))
-  throw new Error('Published sources must match the six explicitly approved articles');
+  throw new Error('Published sources must match the seven explicitly approved articles');
 const builtSlugs=readdirSync(resolve('dist/bai-viet'),{withFileTypes:true})
   .filter(entry=>entry.isDirectory()).map(entry=>entry.name).sort();
 const expectedSlugs=approved.map(name=>name.replace(/\.md$/,'')).sort();
@@ -91,6 +92,8 @@ for(const name of readdirSync(articlesDir).filter(n=>n.endsWith('.md'))){
   throw new Error('Visualizer gate: iOS roadmap must render its 9-stage map, checklist, app previews and daily schedule');
  if(slug==='vibe-code-app-ios-macos-kiem-tien-2026' && (!markup.includes('data-econ-calc') || !markup.includes('econ-ranking') || !markup.includes('econ-target') || !markup.includes('econ-funnel')))
   throw new Error('Visualizer gate: app economics article must render original rankings, unit economics and validation flow');
+ if(slug==='happyquote-saas-roadmap-chien-luoc-thu-phi-kien-truc' && (!markup.includes('hq-hero-trio') || !markup.includes('hq-plans') || !markup.includes('hq-architecture') || !markup.includes('hq-roadmap')))
+  throw new Error('Visualizer gate: HappyQuote hero, pricing, architecture and roadmap visualizations missing');
  if(slug==='releaseproof-quyen-rieng-tu-github-app-privacy-first' && (!markup.includes('data-rpp-architecture') || !markup.includes('data-rpp-modes') || !markup.includes('data-rpp-threats') || !markup.includes('data-rpp-checklist')))
   throw new Error('Visualizer gate: ReleaseProof privacy diagrams, permissions and threat model missing');
  if(slug==='tu-ma-nguon-ios-den-app-store-dong-goi-ipa-apple-review' && !markup.includes('data-ios-release-flow'))
