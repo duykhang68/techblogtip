@@ -65,7 +65,7 @@ try{
    assert.equal(await page.locator('.home-search-link').count(),0,'Removed homepage search hero must not return');
    assert.equal(await page.locator('[data-theme-toggle]').count(),1,'Lightbulb theme toggle must be available');
    const cards=await page.locator('.article-card').count();
-   assert.equal(cards,6,'Homepage should show the six explicitly approved articles');
+   assert.equal(cards,7,'Homepage should show the seven explicitly approved articles');
    const metric=await page.evaluate(()=>{
     const rect=selector=>document.querySelector(selector)?.getBoundingClientRect();
     return {
@@ -159,6 +159,27 @@ try{
       await page.screenshot({path:join('artifacts/visual-qa','app-economics-'+w+'.png'),animations:'disabled',fullPage:true});
       console.log('PASS app economics interactive and visual QA '+w+'px');
     }catch(e){record('App economics visuals '+w,e);}
+  }
+  // HappyQuote strategy: render the full public article with responsive business visuals.
+  if(w===390 || w===1440){
+    try{
+      const response=await page.goto(base+'/bai-viet/happyquote-saas-roadmap-chien-luoc-thu-phi-kien-truc/',{waitUntil:'load'});
+      assert.equal(response.status(),200);
+      assert.equal(await page.locator('[data-auto-visualizer]').count(),1,'HappyQuote story map missing');
+      assert.equal(await page.locator('.hq-plan').count(),2,'HappyQuote pricing tiers missing');
+      assert.equal(await page.locator('.hq-roadmap>div').count(),9,'HappyQuote P0-P8 timeline missing');
+      assert.equal(await page.locator('.hq-step').count(),5,'HappyQuote MoMo license flow incomplete');
+      const metrics=await page.evaluate(()=>({
+        scrollWidth:document.documentElement.scrollWidth,
+        heroRight:document.querySelector('.hq-hero').getBoundingClientRect().right,
+        roadmapRight:document.querySelector('.hq-roadmap').getBoundingClientRect().right
+      }));
+      assert.ok(metrics.scrollWidth<=w+1,'HappyQuote article horizontal overflow '+metrics.scrollWidth+' > '+w);
+      assert.ok(metrics.heroRight<=w+1,'HappyQuote hero clipped at '+w+'px');
+      assert.ok(metrics.roadmapRight<=w+1,'HappyQuote timeline clipped at '+w+'px');
+      await page.screenshot({path:join('artifacts/visual-qa','happyquote-roadmap-'+w+'.png'),animations:'disabled',fullPage:true});
+      console.log('PASS HappyQuote public roadmap '+w+'px');
+    }catch(e){record('HappyQuote visual '+w,e);}
   }
   // ReleaseProof privacy-by-design: visual trust boundaries, permission matrix,
   // keyboard-accessible connection modes and threat model.
